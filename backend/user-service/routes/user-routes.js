@@ -4,6 +4,7 @@ import {
   createUser,
   deleteUser,
   getUser,
+  getUserProfile,
   updateUser,
   updateUserPrivilege,
 } from "../controller/user-controller.js";
@@ -21,6 +22,9 @@ const router = express.Router();
 
 // Create new user (public endpoint for registration)
 router.post("/", normalizeEmail, normalizeUsername, validateCreateUser, createUser);
+
+// Get current user's profile (authenticated users only)
+router.get("/profile", verifyToken, getUserProfile);
 
 // Get specific user (admin only)
 router.get("/:id", validateUserIdParam, verifyToken, isAdmin, getUser);

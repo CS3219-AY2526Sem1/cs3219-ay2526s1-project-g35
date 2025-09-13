@@ -12,7 +12,7 @@ router.post("/login", handleLogin);
 router.get("/verify-token", verifyToken, handleVerifyToken);
 
 // Refresh token endpoint
-router.post("/refresh-token", handleRefreshToken);
+router.post("/refresh", handleRefreshToken);
 
 // Logout endpoint
 router.post("/logout", verifyToken, handleLogout);

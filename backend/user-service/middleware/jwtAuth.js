@@ -51,22 +51,16 @@ export const verifyToken = (req, res, next) => {
         });
       }
 
-      // Check if token version matches (invalidate old tokens)
-      if (decoded.tokenVersion !== user.tokenVersion) {
-        return res.status(401).json({ 
-          message: "Token has been invalidated",
-          error: "TOKEN_INVALIDATED" 
-        });
-      }
-
+      // Set user information in request object
       req.userId = user.id;
       req.user = {
         id: user.id,
         username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,
+        isVerified: user.isVerified,
         createdAt: user.createdAt,
-        tokenVersion: user.tokenVersion
+        lastLogin: user.lastLogin
       };
       
       next();
@@ -111,7 +105,7 @@ export const generateToken = (user, sessionId = null) => {
       username: user.username,
       email: user.email,
       isAdmin: user.isAdmin,
-      tokenVersion: user.tokenVersion || 0,
+      isVerified: user.isVerified,
       sessionId: sessionId || Date.now().toString() // Unique per login
     },
     process.env.JWT_SECRET,

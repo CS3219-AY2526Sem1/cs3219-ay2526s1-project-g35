@@ -61,6 +61,32 @@ export async function createUser(req, res) {
   }
 }
 
+export async function getUserProfile(req, res) {
+  try {
+    // Use the authenticated user's ID from the token (set by verifyToken middleware)
+    const userId = req.userId;
+    
+    const user = await _findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        message: `User not found`,
+        error: "USER_NOT_FOUND" 
+      });
+    }
+    
+    return res.status(200).json({ 
+      message: "Profile retrieved successfully", 
+      data: formatUserResponse(user) 
+    });
+  } catch (err) {
+    console.error("Error in getUserProfile:", err);
+    return res.status(500).json({ 
+      message: "Database or server error",
+      error: "INTERNAL_SERVER_ERROR" 
+    });
+  }
+}
+
 export async function getUser(req, res) {
   try {
     const userId = req.params.id;

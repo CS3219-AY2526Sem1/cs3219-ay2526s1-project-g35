@@ -31,31 +31,32 @@ export async function handleLogin(req, res) {
       });
     }
 
-    // Update lastLogin timestamp and ensure tokenVersion is set
+    // Update lastLogin timestamp
     const updatedUser = await UserRepository.updateById(user.id, {
-      lastLogin: new Date(),
-      tokenVersion: user.tokenVersion || 0
+      lastLogin: new Date()
     });
 
-    // Generate tokens (use updated user data)
-    const accessToken = generateToken(updatedUser);
-    const refreshToken = generateRefreshToken(updatedUser);
+    // Generate tokens
+    const accessToken = generateToken(updatedUser || user);
+    const refreshToken = generateRefreshToken(updatedUser || user);
 
-    // Set httpOnly cookie for refresh token (more secure)
+    // Set httpOnly cookie for refresh token 
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      httpOnly: true,                                    // Cannot be accessed by JavaScript
+      secure: process.env.COOKIE_SECURE === 'true',     // Use environment setting
+      sameSite: process.env.COOKIE_SAME_SITE || 'lax',  // Use environment setting
+      maxAge: 7 * 24 * 60 * 60 * 1000,                 // 7 days
+      path: '/',                                        // Available for all paths
+      domain: process.env.COOKIE_DOMAIN                 // Use environment domain
     });
 
+    // ONLY return access token in response (SECURE)
     return res.status(200).json({ 
       message: "User logged in successfully", 
       data: { 
-        accessToken, 
-        user: formatUserResponse(updatedUser),
-        // Optional: also return refresh token in response for non-cookie implementations
-        refreshToken: process.env.INCLUDE_REFRESH_IN_RESPONSE === 'true' ? refreshToken : undefined
+        accessToken,
+        user: formatUserResponse(updatedUser || user)
+        // NOTE: No refresh token in response for security
       } 
     });
   } catch (err) {
@@ -85,12 +86,12 @@ export async function handleVerifyToken(req, res) {
 
 export async function handleRefreshToken(req, res) {
   try {
-    // Get refresh token from cookie or request body
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    // Get refresh token ONLY from httpOnly cookie (SECURE)
+    const refreshToken = req.cookies.refreshToken;
     
     if (!refreshToken) {
       return res.status(401).json({ 
-        message: "Refresh token not provided",
+        message: "Refresh token not provided. Please login again.",
         error: "MISSING_REFRESH_TOKEN" 
       });
     }
@@ -108,39 +109,53 @@ export async function handleRefreshToken(req, res) {
     // Get user from database (refresh token only contains id)
     const user = await UserRepository.findById(decoded.id);
     if (!user) {
+      // Clear invalid refresh token cookie
+      res.clearCookie('refreshToken', { path: '/auth' });
       return res.status(401).json({ 
-        message: "User not found",
+        message: "User not found. Please login again.",
         error: "USER_NOT_FOUND" 
       });
     }
 
-    // Increment token version to invalidate all existing access tokens
-    const updatedUser = await UserRepository.updateById(user.id, {
-      tokenVersion: (user.tokenVersion || 0) + 1
+    // Generate new access token (same user, no version increment needed)
+    const newAccessToken = generateToken(user);
+    
+    // Optional: Generate new refresh token for rotation (more secure)
+    const newRefreshToken = generateRefreshToken(user);
+    
+    // Update refresh token cookie with new token (TOKEN ROTATION)
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.COOKIE_SECURE === 'true',
+      sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+      domain: process.env.COOKIE_DOMAIN
     });
-
-    // Generate new access token with updated version
-    const newAccessToken = generateToken(updatedUser);
     
     return res.status(200).json({
       message: "Token refreshed successfully",
       data: {
         accessToken: newAccessToken,
-        user: formatUserResponse(updatedUser)
+        expiresIn: 15 * 60, // 15 minutes in seconds
+        user: formatUserResponse(user)
       }
     });
   } catch (err) {
     console.error("Refresh token error:", err);
     
+    // Clear potentially invalid refresh token cookie
+    res.clearCookie('refreshToken', { path: '/auth' });
+    
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ 
-        message: "Refresh token expired",
+        message: "Refresh token expired. Please login again.",
         error: "REFRESH_TOKEN_EXPIRED" 
       });
     }
     
     return res.status(401).json({ 
-      message: "Invalid refresh token",
+      message: "Invalid refresh token. Please login again.",
       error: "INVALID_REFRESH_TOKEN" 
     });
   }
@@ -148,18 +163,19 @@ export async function handleRefreshToken(req, res) {
 
 export async function handleLogout(req, res) {
   try {
-    // Clear refresh token cookie
-    res.clearCookie('refreshToken');
-    
-    // Invalidate all access tokens by incrementing token version
-    if (req.user && req.user.id) {
-      await UserRepository.updateById(req.user.id, {
-        tokenVersion: (req.user.tokenVersion || 0) + 1
-      });
-    }
+    // Clear refresh token cookie (SECURE logout)
+    res.clearCookie('refreshToken', { 
+      path: '/auth',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
     
     return res.status(200).json({ 
-      message: "Logged out successfully" 
+      message: "Logged out successfully",
+      data: {
+        message: "Please discard your access token on the client side"
+      }
     });
   } catch (err) {
     console.error("Logout error:", err);
