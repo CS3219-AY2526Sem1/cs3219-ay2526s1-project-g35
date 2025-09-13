@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { UserRepository } from "../model/user-repository.js";
 import { formatUserResponse } from "./user-controller.js";
 import { generateToken, generateRefreshToken } from "../middleware/jwtAuth.js";
+import { redisService } from "../services/redis-service.js";
 
 export async function handleLogin(req, res) {
   const { email, password } = req.body;
@@ -86,7 +87,7 @@ export async function handleVerifyToken(req, res) {
 
 export async function handleRefreshToken(req, res) {
   try {
-    // Get refresh token ONLY from httpOnly cookie (SECURE)
+
     const refreshToken = req.cookies.refreshToken;
     
     if (!refreshToken) {
@@ -117,13 +118,13 @@ export async function handleRefreshToken(req, res) {
       });
     }
 
-    // Generate new access token (same user, no version increment needed)
+    // Generate new access token
     const newAccessToken = generateToken(user);
     
-    // Optional: Generate new refresh token for rotation (more secure)
+    // Optional: Generate new refresh token for rotation
     const newRefreshToken = generateRefreshToken(user);
     
-    // Update refresh token cookie with new token (TOKEN ROTATION)
+    // Update refresh token cookie with new token
     res.cookie('refreshToken', newRefreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === 'true',
@@ -163,18 +164,48 @@ export async function handleRefreshToken(req, res) {
 
 export async function handleLogout(req, res) {
   try {
-    // Clear refresh token cookie (SECURE logout)
+    // Get access token from Authorization header to blacklist it
+    const authHeader = req.headers["authorization"];
+    let accessToken = null;
+    
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      accessToken = authHeader.split(" ")[1];
+    }
+
+    // Blacklist the access token if present
+    if (accessToken) {
+      try {
+        // Get token expiry to set appropriate TTL in Redis
+        const decoded = jwt.decode(accessToken);
+        const currentTime = Math.floor(Date.now() / 1000);
+        const expiryTime = decoded?.exp || currentTime + (15 * 60); // Default 15 min
+        const ttlSeconds = Math.max(expiryTime - currentTime, 60); // At least 1 minute
+        
+        const blacklisted = await redisService.blacklistToken(accessToken, ttlSeconds);
+        if (blacklisted) {
+          console.log('Access token blacklisted successfully');
+        } else {
+          console.warn('Failed to blacklist access token - Redis may not be available');
+        }
+      } catch (tokenError) {
+        console.error('Error processing access token for blacklisting:', tokenError);
+        // Continue with logout even if blacklisting fails
+      }
+    }
+
+    // Clear refresh token cookie with correct path and domain settings
     res.clearCookie('refreshToken', { 
-      path: '/auth',
+      path: '/',
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      secure: process.env.COOKIE_SECURE === 'true',
+      sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+      domain: process.env.COOKIE_DOMAIN
     });
     
     return res.status(200).json({ 
       message: "Logged out successfully",
       data: {
-        message: "Please discard your access token on the client side"
+        message: "Access token invalidated. You have been logged out securely."
       }
     });
   } catch (err) {

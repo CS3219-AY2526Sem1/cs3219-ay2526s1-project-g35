@@ -1,5 +1,8 @@
-# Use official Node.js runtime as base image
-FROM node:18-alpine
+# Use official Node.js runtime as base image (updated to Node 20)
+FROM node:20-alpine
+
+# Install build dependencies for native modules like argon2
+RUN apk add --no-cache python3 make g++
 
 # Set working directory in container
 WORKDIR /app
@@ -7,8 +10,8 @@ WORKDIR /app
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (use npm install to handle package-lock.json sync)
+RUN npm install --omit=dev
 
 # Copy application code
 COPY . .
@@ -24,9 +27,9 @@ USER nodejs
 # Expose port
 EXPOSE 3001
 
-# Health check
+# Health check (using wget instead of curl for alpine)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

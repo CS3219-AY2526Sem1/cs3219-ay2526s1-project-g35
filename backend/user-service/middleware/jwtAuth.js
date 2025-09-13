@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { UserRepository } from "../model/user-repository.js";
+import { redisService } from "../services/redis-service.js";
 
 /**
  * Middleware to verify JWT token and extract user information
@@ -41,6 +42,15 @@ export const verifyToken = (req, res, next) => {
     }
 
     try {
+      // Check if token is blacklisted (logout protection)
+      const isBlacklisted = await redisService.isTokenBlacklisted(token);
+      if (isBlacklisted) {
+        return res.status(401).json({ 
+          message: "Token has been invalidated. Please login again.",
+          error: "TOKEN_BLACKLISTED" 
+        });
+      }
+
       // Fetch the latest user data from database
       const user = await UserRepository.findById(decoded.id);
       

@@ -63,7 +63,7 @@ export async function createUser(req, res) {
 
 export async function getUserProfile(req, res) {
   try {
-    // Use the authenticated user's ID from the token (set by verifyToken middleware)
+
     const userId = req.userId;
     
     const user = await _findUserById(userId);
