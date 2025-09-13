@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    depends_on:
+      - user-service
+      - collaboration-service
+      - question-service
+      - matching-service
+
+  # User Service
+  user-service:
+    build: ./backend/UserService
+    ports:
+      - "8001:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - DATABASE_URL=postgresql://user:password@user-db:5432/userdb
+    depends_on:
+      - user-db
+
+  # Collaboration Service
+  collaboration-service:
+    build: ./backend/CollaborationService
+    ports:
+      - "8002:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+  # Question Service
+  question-service:
+    build: ./backend/QuestionService
+    ports:
+      - "8003:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - DATABASE_URL=postgresql://user:password@question-db:5432/questiondb
+    depends_on:
+      - question-db
+
+  # Matching Service
+  matching-service:
+    build: ./backend/MatchingService
+    ports:
+      - "8004:8000"
+    environment:
+      - NODE_ENV=development
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+
+  # Databases
+  user-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=userdb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - user_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  question-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=questiondb
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - question_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  # Redis for caching and real-time features
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  user_data:
+  question_data:
+  redis_data:
