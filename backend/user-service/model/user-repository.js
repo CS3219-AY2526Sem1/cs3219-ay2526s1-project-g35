@@ -14,20 +14,19 @@ export async function connectToDB() {
   await mongoose.connect(mongoDBUri);
 }
 
-export class    UserRepository {
+export class UserRepository {
+  /**
+   *  Create a new user
+   */
 
-    /**
-     *  Create a new user
-     */
-
-    static async createUser(userData) {
-        try {
-            const user = new userModel(userData);
-            return await user.save();
-        } catch (error) {
-            throw new Error("Error creating user: " + error.message);
-        }
+  static async createUser(userData) {
+    try {
+      const user = new userModel(userData);
+      return await user.save();
+    } catch (error) {
+      throw new Error("Error creating user: " + error.message);
     }
+  }
 
   /**
    * Find user by ID
@@ -37,7 +36,7 @@ export class    UserRepository {
       if (!mongoose.Types.ObjectId.isValid(id)) {
         return null;
       }
-      return await userModel.findById(id).select('-password');
+      return await userModel.findById(id).select("-password");
     } catch (error) {
       throw new Error(`Failed to find user by ID: ${error.message}`);
     }
@@ -62,9 +61,9 @@ export class    UserRepository {
    */
   static async findByEmail(email) {
     try {
-      return await userModel.findOne({ 
-        email: email.toLowerCase()
-    });
+      return await userModel.findOne({
+        email: email.toLowerCase(),
+      });
     } catch (error) {
       throw new Error(`Failed to find user by email: ${error.message}`);
     }
@@ -75,7 +74,7 @@ export class    UserRepository {
    */
   static async findByUsername(username) {
     try {
-      return await userModel.findOne({ username }).select('-password');
+      return await userModel.findOne({ username }).select("-password");
     } catch (error) {
       throw new Error(`Failed to find user by username: ${error.message}`);
     }
@@ -87,13 +86,12 @@ export class    UserRepository {
   static async findByUsernameOrEmail(username, email) {
     try {
       return await userModel.findOne({
-        $or: [
-          { username },
-          { email: email?.toLowerCase() }
-        ]
+        $or: [{ username }, { email: email?.toLowerCase() }],
       });
     } catch (error) {
-      throw new Error(`Failed to find user by username or email: ${error.message}`);
+      throw new Error(
+        `Failed to find user by username or email: ${error.message}`
+      );
     }
   }
 
@@ -106,11 +104,13 @@ export class    UserRepository {
         return null;
       }
 
-      const user = await userModel.findByIdAndUpdate(
-        id,
-        { $set: { password: hashedPassword } },
-        { new: true }
-      ).select('-password');
+      const user = await userModel
+        .findByIdAndUpdate(
+          id,
+          { $set: { password: hashedPassword } },
+          { new: true }
+        )
+        .select("-password");
 
       return user;
     } catch (error) {
@@ -118,7 +118,6 @@ export class    UserRepository {
     }
   }
 
-  
   /**
    * Update user privilege
    */
@@ -128,11 +127,9 @@ export class    UserRepository {
         return null;
       }
 
-      const user = await userModel.findByIdAndUpdate(
-        id,
-        { $set: { isAdmin } },
-        { new: true }
-      ).select('-password');
+      const user = await userModel
+        .findByIdAndUpdate(id, { $set: { isAdmin } }, { new: true })
+        .select("-password");
 
       return user;
     } catch (error) {
@@ -189,16 +186,18 @@ export class    UserRepository {
         return null;
       }
 
-      const user = await userModel.findByIdAndUpdate(
-        id,
-        { 
-          $set: { 
-            isActive: false,
-            deletedAt: new Date()
-          } 
-        },
-        { new: true }
-      ).select('-password');
+      const user = await userModel
+        .findByIdAndUpdate(
+          id,
+          {
+            $set: {
+              isActive: false,
+              deletedAt: new Date(),
+            },
+          },
+          { new: true }
+        )
+        .select("-password");
 
       return user;
     } catch (error) {
@@ -211,11 +210,13 @@ export class    UserRepository {
    */
   static async updateById(id, updateData) {
     try {
-      const user = await userModel.findByIdAndUpdate(
-        id,
-        { ...updateData, updatedAt: new Date() },
-        { new: true, runValidators: true }
-      ).select('-password');
+      const user = await userModel
+        .findByIdAndUpdate(
+          id,
+          { ...updateData, updatedAt: new Date() },
+          { new: true, runValidators: true }
+        )
+        .select("-password");
 
       return user;
     } catch (error) {
@@ -223,4 +224,3 @@ export class    UserRepository {
     }
   }
 }
-

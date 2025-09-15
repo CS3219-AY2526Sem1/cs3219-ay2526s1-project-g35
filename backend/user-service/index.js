@@ -10,16 +10,18 @@ import authRoutes from "./routes/auth-routes.js";
 const app = express();
 
 // Security middleware
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: {
-    error: "Too many requests from this IP, please try again later."
+    error: "Too many requests from this IP, please try again later.",
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -29,7 +31,7 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 auth requests per windowMs
   message: {
-    error: "Too many authentication attempts, please try again later."
+    error: "Too many authentication attempts, please try again later.",
   },
   skipSuccessfulRequests: true,
 });
@@ -40,36 +42,42 @@ app.use(limiter);
 app.use(cookieParser());
 
 // Body parsing middleware
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "10mb" }));
 
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'https://peerprep.com',
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002",
+      "https://peerprep.com",
       // Add your frontend domains here
     ];
-    
-    if (process.env.NODE_ENV === 'development') {
+
+    if (process.env.NODE_ENV === "development") {
       allowedOrigins.push(origin);
     }
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Origin",
+    "X-Requested-With",
+    "Content-Type",
+    "Accept",
+    "Authorization",
+  ],
 };
 
 app.use(cors(corsOptions));
@@ -81,10 +89,10 @@ app.use((req, res, next) => {
   if (corsOptions.origin(origin, () => {})) {
     res.header("Access-Control-Allow-Origin", origin);
   }
-  
+
   res.header(
     "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
   res.header("Access-Control-Allow-Credentials", "true");
 
@@ -102,7 +110,7 @@ app.get("/health", (req, res) => {
     status: "OK",
     timestamp: new Date().toISOString(),
     service: "user-service",
-    version: process.env.npm_package_version || "1.0.0"
+    version: process.env.npm_package_version || "1.0.0",
   });
 });
 
@@ -116,7 +124,7 @@ app.get("/health", (req, res) => {
     status: "OK",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -130,8 +138,8 @@ app.get("/", (req, res) => {
     endpoints: {
       health: "/health",
       users: "/users",
-      auth: "/auth"
-    }
+      auth: "/auth",
+    },
   });
 });
 
@@ -148,14 +156,14 @@ app.use((error, req, res, next) => {
   console.error(error.stack);
 
   // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
+  const isDevelopment = process.env.NODE_ENV === "development";
+
   res.status(error.status || 500).json({
     error: {
       message: error.message,
       status: error.status || 500,
       ...(isDevelopment && { stack: error.stack }),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     },
   });
 });

@@ -1,6 +1,11 @@
 import express from "express";
 
-import { handleLogin, handleVerifyToken, handleRefreshToken, handleLogout } from "../controller/auth-controller.js";
+import {
+  handleLogin,
+  handleVerifyToken,
+  handleRefreshToken,
+  handleLogout,
+} from "../controller/auth-controller.js";
 import { verifyToken } from "../middleware/jwtAuth.js";
 
 const router = express.Router();

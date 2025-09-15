@@ -18,7 +18,10 @@ const UserModelSchema = new Schema({
     trim: true,
     minlength: 5,
     lowercase: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
+    match: [
+      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
+      "Please enter a valid email",
+    ],
   },
   password: {
     type: String,
@@ -52,7 +55,7 @@ const UserModelSchema = new Schema({
     type: Date,
     default: null,
   },
-    profile: {
+  profile: {
     firstName: {
       type: String,
       trim: true,
@@ -74,21 +77,23 @@ const UserModelSchema = new Schema({
   },
 });
 
-
 // Pre-save middleware to update updatedAt
-UserModelSchema.pre('save', function (next) {
+UserModelSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
 // Pre-update middleware to update updatedAt
-UserModelSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function(next) {
-  this.set({ updatedAt: Date.now() });
-  next();
-});
+UserModelSchema.pre(
+  ["findOneAndUpdate", "updateOne", "updateMany"],
+  function (next) {
+    this.set({ updatedAt: Date.now() });
+    next();
+  }
+);
 
 // Virtual for full name
-UserModelSchema.virtual('profile.fullName').get(function() {
+UserModelSchema.virtual("profile.fullName").get(function () {
   if (this.profile.firstName && this.profile.lastName) {
     return `${this.profile.firstName} ${this.profile.lastName}`;
   }
@@ -96,14 +101,13 @@ UserModelSchema.virtual('profile.fullName').get(function() {
 });
 
 // Transform function to handle JSON serialization
-UserModelSchema.set('toJSON', {
+UserModelSchema.set("toJSON", {
   virtuals: true,
-  transform: function(doc, ret) {
+  transform: function (doc, ret) {
     delete ret.password;
     delete ret.__v;
     return ret;
-  }
+  },
 });
-
 
 export default mongoose.model("UserModel", UserModelSchema);
