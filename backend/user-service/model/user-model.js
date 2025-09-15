@@ -75,10 +75,6 @@ const UserModelSchema = new Schema({
 });
 
 
-UserModelSchema.index({ isAdmin: 1 });
-UserModelSchema.index({ isActive: 1 });
-UserModelSchema.index({ createdAt: -1 });
-
 // Pre-save middleware to update updatedAt
 UserModelSchema.pre('save', function (next) {
   this.updatedAt = Date.now();

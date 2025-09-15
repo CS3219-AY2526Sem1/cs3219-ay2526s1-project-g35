@@ -16,31 +16,10 @@
 
 # User Service Guide
 
-## Setting-up
-
-> :notebook: If you are familiar to MongoDB and wish to use a local instance, please feel free to do so. This guide utilizes MongoDB Cloud Services.
-
-1. Set up a MongoDB Shared Cluster by following the steps in this [Guide](./MongoDBSetup.md).
-
-2. After setting up, go to the Database Deployment Page. You would see a list of the Databases you have set up. Select `Connect` on the cluster you just created earlier on for User Service.
-
-    ![alt text](./GuideAssets/ConnectCluster.png)
-
-3. Select the `Drivers` option, as we have to link to a Node.js App (User Service).
-
-    ![alt text](./GuideAssets/DriverSelection.png)
-
-4. Select `Node.js` in the `Driver` pull-down menu, and copy the connection string.
-
-    Notice, you may see `<password>` in this connection string. We will be replacing this with the admin account password that we created earlier on when setting up the Shared Cluster.
-
-    ![alt text](./GuideAssets/ConnectionString.png)
-
-5. In the `user-service` directory, create a copy of the `.env.sample` file and name it `.env`.
-
-6. Update the `DB_CLOUD_URI` of the `.env` file, and paste the string we copied earlier in step 4. Also remember to replace the `<password>` placeholder with the actual password.
 
 ## Running User Service
+
+### Local Development
 
 1. Open Command Line/Terminal and navigate into the `user-service` directory.
 
@@ -49,6 +28,24 @@
 3. Run the command `npm start` to start the User Service in production mode, or use `npm run dev` for development mode, which includes features like automatic server restart when you make code changes.
 
 4. Using applications like Postman, you can interact with the User Service on port 3001. If you wish to change this, please update the `.env` file.
+
+### Docker Setup
+
+1. Ensure you have Docker and Docker Compose installed on your system.
+
+2. In the `user-service` directory, create a copy of the `.env.docker` file if it doesn't exist and configure your environment variables.
+
+3. Build and start the User Service with Docker Compose:
+   ```bash
+   docker-compose --env-file .env.docker up --build
+   ```
+
+4. The service will be available on port 3001. To stop the containers:
+   ```bash
+   docker-compose down
+   ```
+
+Note: The Docker setup includes Redis for token blacklisting and uses the environment variables from `.env.docker`.
 
 ## User Service API Guide
 
@@ -286,3 +283,109 @@
     | 200 (OK)                    | Token verified, authenticated user's data returned |
     | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
     | 500 (Internal Server Error) | Database or server error                           |
+
+### Refresh Token
+
+- This endpoint allows refreshing an expired access token using a valid refresh token stored in httpOnly cookies.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/refresh
+- Headers
+  - Required: Cookie with valid refresh token (automatically sent by browser)
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | New access token generated and returned           |
+    | 401 (Unauthorized)          | Missing/invalid/expired refresh token             |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+### Logout
+
+- This endpoint allows a user to securely logout by blacklisting their access token and clearing refresh token cookies.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/logout
+- Headers
+  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | Logout successful, tokens invalidated             |
+    | 401 (Unauthorized)          | Missing/invalid JWT                                |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+### Get User Profile
+
+- This endpoint allows authenticated users to retrieve their own profile information.
+- HTTP Method: `GET`
+- Endpoint: http://localhost:3001/users/profile
+- Headers
+  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | User profile data returned                         |
+    | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+### Update User Privilege
+
+- This endpoint allows admin users to update another user's privilege level (admin/non-admin).
+- HTTP Method: `PATCH`
+- Endpoint: http://localhost:3001/users/{userId}/privilege
+- Parameters
+  - Required: `userId` path parameter
+
+- Body
+  - Required: `isAdmin` (boolean)
+
+    ```json
+    {
+      "isAdmin": true
+    }
+    ```
+
+- Headers
+  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+  - Auth Rules: Admin users only
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | User privilege updated successfully                |
+    | 400 (Bad Request)           | Missing or invalid isAdmin field                   |
+    | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
+    | 403 (Forbidden)             | Access denied for non-admin users                 |
+    | 404 (Not Found)             | User with specified ID not found                   |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+## API Endpoints Summary
+
+### Authentication Routes (`/auth`)
+- `POST /auth/login` - User login
+- `GET /auth/verify-token` - Verify JWT token
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - User logout
+
+### User Routes (`/users`)
+- `POST /users` - Create new user (registration)
+- `GET /users/profile` - Get current user's profile
+- `GET /users/:id` - Get specific user (admin only)
+- `PATCH /users/:id` - Update user
+- `PATCH /users/:id/privilege` - Update user privilege (admin only)
+- `DELETE /users/:id` - Delete user (admin only)
+
+## Security Features
+
+- **JWT Authentication**: Access tokens with 15-minute expiry
+- **Refresh Tokens**: 7-day expiry stored in httpOnly cookies
+- **Token Blacklisting**: Redis-based immediate token invalidation on logout
+- **Password Security**: Argon2id hashing with configurable parameters
+- **Input Validation**: Comprehensive validation middleware
+- **Admin Authorization**: Role-based access control
+- **Rate Limiting**: Configurable request rate limits

@@ -15,17 +15,12 @@ class RedisService {
         url: process.env.REDIS_URL || 'redis://localhost:6379',
         retry_strategy: (options) => {
           if (options.error && options.error.code === 'ECONNREFUSED') {
-            // End reconnecting on a specific error and flush all commands with
-            // a individual error
             return new Error('The server refused the connection');
           }
           if (options.total_retry_time > 1000 * 60 * 60) {
-            // End reconnecting after a specific timeout and flush all commands
-            // with a individual error
             return new Error('Retry time exhausted');
           }
           if (options.attempt > 10) {
-            // End reconnecting with built in error
             return undefined;
           }
           // reconnect after
@@ -51,7 +46,6 @@ class RedisService {
       await this.client.connect();
     } catch (error) {
       console.error('Failed to connect to Redis:', error);
-      // Don't throw error - app should work without Redis (graceful degradation)
       this.isConnected = false;
     }
   }
@@ -80,8 +74,6 @@ class RedisService {
    */
   async isTokenBlacklisted(token) {
     if (!this.isConnected || !this.client) {
-      // If Redis is not available, assume token is not blacklisted
-      // This provides graceful degradation
       return false;
     }
 
@@ -91,7 +83,6 @@ class RedisService {
       return result === 'blacklisted';
     } catch (error) {
       console.error('Error checking token blacklist:', error);
-      // On error, assume token is not blacklisted for graceful degradation
       return false;
     }
   }

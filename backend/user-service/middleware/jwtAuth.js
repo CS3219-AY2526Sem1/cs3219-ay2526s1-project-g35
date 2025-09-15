@@ -120,7 +120,7 @@ export const generateToken = (user, sessionId = null) => {
     },
     process.env.JWT_SECRET,
     { 
-      expiresIn: process.env.JWT_EXPIRES_IN || "15m" 
+      expiresIn: process.env.JWT_EXPIRES_IN ? `${process.env.JWT_EXPIRES_IN}s` : "15m"
     }
   );
 };
@@ -136,7 +136,7 @@ export const generateRefreshToken = (user) => {
     },
     process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
     { 
-      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d" 
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ? `${process.env.JWT_REFRESH_EXPIRES_IN}s` : "7d"
     }
   );
 };

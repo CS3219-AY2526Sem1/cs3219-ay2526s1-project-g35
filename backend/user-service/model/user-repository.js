@@ -14,7 +14,7 @@ export async function connectToDB() {
   await mongoose.connect(mongoDBUri);
 }
 
-export class UserRepository {
+export class    UserRepository {
 
     /**
      *  Create a new user

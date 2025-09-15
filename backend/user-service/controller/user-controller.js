@@ -153,7 +153,6 @@ export async function updateUser(req, res) {
     if (profile) updateData.profile = { ...user.profile, ...profile };
     if (preferences) updateData.preferences = { ...user.preferences, ...preferences };
 
-    // Handle password update separately for security
     let updatedUser;
     if (password) {
       const hashedPassword = await argon2.hash(password, {
