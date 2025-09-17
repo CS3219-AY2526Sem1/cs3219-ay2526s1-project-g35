@@ -5,6 +5,7 @@ import {
   handleVerifyToken,
   handleRefreshToken,
   handleLogout,
+  handleResetTokenTTL,
 } from "../controller/auth-controller.js";
 import { verifyToken } from "../middleware/jwtAuth.js";
 
@@ -21,5 +22,8 @@ router.post("/refresh", handleRefreshToken);
 
 // Logout endpoint
 router.post("/logout", verifyToken, handleLogout);
+
+// Reset token TTL to full duration (activity-based refresh)
+router.post("/reset-ttl", verifyToken, handleResetTokenTTL);
 
 export default router;

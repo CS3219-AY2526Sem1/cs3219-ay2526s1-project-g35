@@ -4,7 +4,6 @@ import Joi from "joi";
  * Validation schemas for user service
  */
 export const userSchemas = {
-  // User registration validation
   createUser: Joi.object({
     username: Joi.string().alphanum().min(3).max(30).required().messages({
       "string.alphanum": "Username must only contain alphanumeric characters",
@@ -39,7 +38,6 @@ export const userSchemas = {
     }).optional(),
   }),
 
-  // User update validation
   updateUser: Joi.object({
     username: Joi.string().alphanum().min(3).max(30).optional(),
     email: Joi.string().email().optional(),
@@ -58,9 +56,7 @@ export const userSchemas = {
       bio: Joi.string().max(500).optional(),
       avatar: Joi.string().uri().optional(),
     }).optional(),
-  }).min(1), // At least one field is required
-
-  // User privilege update validation
+  }).min(1),
   updatePrivilege: Joi.object({
     isAdmin: Joi.boolean().required(),
   }),
@@ -75,8 +71,6 @@ export const userSchemas = {
       "any.required": "Password is required",
     }),
   }),
-
-  // Query parameters validation
   getUsersQuery: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
@@ -87,8 +81,6 @@ export const userSchemas = {
     search: Joi.string().max(100).optional(),
     isAdmin: Joi.boolean().optional(),
   }),
-
-  // MongoDB ObjectId validation
   mongoId: Joi.string()
     .pattern(/^[0-9a-fA-F]{24}$/)
     .required()
@@ -103,9 +95,9 @@ export const userSchemas = {
 export const validate = (schema, property = "body") => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req[property], {
-      abortEarly: false, // Return all errors
-      allowUnknown: false, // Don't allow unknown fields
-      stripUnknown: true, // Remove unknown fields
+      abortEarly: false,
+      allowUnknown: false,
+      stripUnknown: true,
     });
 
     if (error) {
@@ -121,8 +113,6 @@ export const validate = (schema, property = "body") => {
         details: errors,
       });
     }
-
-    // Replace the original data with validated data
     req[property] = value;
     next();
   };

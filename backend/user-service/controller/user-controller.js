@@ -5,8 +5,6 @@ import { UserRepository } from "../model/user-repository.js";
 export async function createUser(req, res) {
   try {
     const { username, email, password, profile } = req.body;
-
-    // Check if user already exists
     const existingUser = await _findUserByUsernameOrEmail(username, email);
     if (existingUser) {
       const conflict =
@@ -17,8 +15,6 @@ export async function createUser(req, res) {
         field: conflict,
       });
     }
-
-    // Hash password with Argon2id
     const hashedPassword = await argon2.hash(password, {
       type: argon2.argon2id,
       memoryCost: parseInt(process.env.ARGON2_MEMORY_COST) || 65536, // 64 MB
@@ -49,7 +45,6 @@ export async function createUser(req, res) {
   } catch (err) {
     console.error("Create user error:", err);
 
-    // Handle specific MongoDB errors
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
       return res.status(409).json({
@@ -94,6 +89,13 @@ export async function getUserProfile(req, res) {
 export async function getUser(req, res) {
   try {
     const userId = req.params.id;
+    const tokenUserId = req.userId;
+    if (userId !== tokenUserId) {
+      return res.status(403).json({
+        message: "Access denied. You can only access your own user data.",
+        error: "UNAUTHORIZED_ACCESS",
+      });
+    }
 
     const user = await _findUserById(userId);
     if (!user) {
@@ -128,8 +130,6 @@ export async function updateUser(req, res) {
         error: "USER_NOT_FOUND",
       });
     }
-
-    // Check for conflicts if updating username or email
     if (username && username !== user.username) {
       const existingUser = await _findUserByUsername(username);
       if (existingUser && existingUser.id !== userId) {
@@ -149,8 +149,6 @@ export async function updateUser(req, res) {
         });
       }
     }
-
-    // Prepare update data
     const updateData = {};
     if (username) updateData.username = username;
     if (email) updateData.email = email.toLowerCase();
@@ -169,8 +167,6 @@ export async function updateUser(req, res) {
         saltLength: parseInt(process.env.ARGON2_SALT_LENGTH) || 16,
       });
       updatedUser = await UserRepository.updatePassword(userId, hashedPassword);
-
-      // Update other fields if any
       if (Object.keys(updateData).length > 0) {
         updatedUser = await UserRepository.updateById(userId, updateData);
       }
@@ -230,8 +226,6 @@ export async function deleteUser(req, res) {
         error: "USER_NOT_FOUND",
       });
     }
-
-    // Use soft delete in production, hard delete in development
     if (process.env.NODE_ENV === "production") {
       await UserRepository.softDelete(userId);
       return res.status(200).json({

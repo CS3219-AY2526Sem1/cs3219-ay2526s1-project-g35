@@ -6,27 +6,27 @@ import { redisService } from "../services/redis-service.js";
  * Middleware to verify JWT token and extract user information
  */
 export const verifyToken = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-
-  if (!authHeader) {
-    return res.status(401).json({
-      message: "No token provided",
-      error: "MISSING_TOKEN",
-    });
-  }
-
-  // Extract token from "Bearer <token>" format
-  const token = authHeader.split(" ")[1];
+  // Get token from cookie instead of Authorization header
+  const token = req.cookies.accessToken;
 
   if (!token) {
     return res.status(401).json({
-      message: "Invalid token format",
-      error: "INVALID_TOKEN_FORMAT",
+      message: "No access token provided in cookie",
+      error: "MISSING_TOKEN",
     });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
     if (err) {
+      // Clear the invalid cookie
+      res.clearCookie("accessToken", {
+        path: "/",
+        httpOnly: true,
+        secure: process.env.COOKIE_SECURE === "true",
+        sameSite: process.env.COOKIE_SAME_SITE || "lax",
+        domain: process.env.COOKIE_DOMAIN,
+      });
+
       let message = "Invalid token";
       let error = "INVALID_TOKEN";
 
@@ -42,12 +42,24 @@ export const verifyToken = (req, res, next) => {
     }
 
     try {
-      // Check if token is blacklisted (logout protection)
-      const isBlacklisted = await redisService.isTokenBlacklisted(token);
-      if (isBlacklisted) {
+      // Check if token is whitelisted for this user
+      const isWhitelisted = await redisService.isTokenWhitelisted(
+        decoded.id,
+        token
+      );
+      if (!isWhitelisted) {
+        // Clear the unauthorized cookie
+        res.clearCookie("accessToken", {
+          path: "/",
+          httpOnly: true,
+          secure: process.env.COOKIE_SECURE === "true",
+          sameSite: process.env.COOKIE_SAME_SITE || "lax",
+          domain: process.env.COOKIE_DOMAIN,
+        });
+
         return res.status(401).json({
-          message: "Token has been invalidated. Please login again.",
-          error: "TOKEN_BLACKLISTED",
+          message: "Token is not authorized. Please login again.",
+          error: "TOKEN_NOT_WHITELISTED",
         });
       }
 
@@ -55,6 +67,8 @@ export const verifyToken = (req, res, next) => {
       const user = await UserRepository.findById(decoded.id);
 
       if (!user) {
+        // Remove invalid token from whitelist
+        await redisService.removeWhitelistToken(decoded.id);
         return res.status(401).json({
           message: "User not found",
           error: "USER_NOT_FOUND",

@@ -45,7 +45,7 @@
    docker-compose down
    ```
 
-Note: The Docker setup includes Redis for token blacklisting and uses the environment variables from `.env.docker`.
+Note: The Docker setup includes Redis for token whitelisting and uses the environment variables from `.env.docker`.
 
 ## User Service API Guide
 
@@ -91,11 +91,16 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
     - Required: `userId` path parameter
     - Example: `http://localhost:3001/users/60c72b2f9b1d4c3a2e5f8b4c`
 
-- <a name="auth-header">Headers</a>
+- <a name="auth-header">Authentication</a>
   
-    - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+    - Required: Valid authentication cookies (automatically managed by browser)
     
-    - Explanation: This endpoint requires the client to include a JWT (JSON Web Token) in the HTTP request header for authentication and authorization. This token is generated during the authentication process (i.e., login) and contains information about the user's identity. The server verifies this token to ensure that the client is authorized to access the data.
+    - Explanation: This endpoint requires the client to include JWT cookies in the HTTP request for authentication and authorization. These cookies are automatically set during the authentication process (i.e., login) and contain access tokens with information about the user's identity. The server verifies these cookies to ensure that the client is authorized to access the data.
+    
+    - Cookie Details:
+        - `accessToken`: httpOnly cookie containing the JWT access token (15 minutes TTL)
+        - `refreshToken`: httpOnly cookie containing the refresh token (7 days TTL)
+        - Cookies are automatically sent by the browser with `credentials: 'include'`
     
     - Auth Rules:
     
@@ -118,8 +123,8 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
 - This endpoint allows retrieval of all users' data from the database.
 - HTTP Method: `GET`
 - Endpoint: http://localhost:3001/users
-- Headers
-    - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+    - Required: Valid authentication cookies (automatically managed by browser)
     - Auth Rules:
 
         - Admin users: Can retrieve all users' data. The server verifies the user associated with the JWT token is an admin user and allows access to all users' data.
@@ -157,8 +162,8 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
     }
     ```
 
-- Headers
-    - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+    - Required: Valid authentication cookies (automatically managed by browser)
     - Auth Rules:
 
         - Admin users: Can update any user's data. The server verifies the user associated with the JWT token is an admin user and allows the update of requested user's data.
@@ -197,8 +202,8 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
     }
     ```
 
-- Headers
-    - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+    - Required: Valid authentication cookies (automatically managed by browser)
     - Auth Rules:
 
         - Admin users: Can update any user's privilege. The server verifies the user associated with the JWT token is an admin user and allows the privilege update.
@@ -225,9 +230,9 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
 - Parameters
 
   - Required: `userId` path parameter
-- Headers
+- Authentication
 
-  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+  - Required: Valid authentication cookies (automatically managed by browser)
 
   - Auth Rules:
 
@@ -246,7 +251,7 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
 
 ### Login
 
-- This endpoint allows a user to authenticate with an email and password and returns a JWT access token. The token is valid for 1 day and can be used subsequently to access protected resources. For example usage, refer to the [Authorization header section in the Get User endpoint](#auth-header).
+- This endpoint allows a user to authenticate with an email and password and returns authentication cookies. The access token cookie is valid for 15 minutes and the refresh token cookie is valid for 7 days. These cookies are automatically included in subsequent requests to access protected resources.
 - HTTP Method: `POST`
 - Endpoint: http://localhost:3001/auth/login
 - Body
@@ -259,22 +264,24 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
     }
     ```
 
+- Response: Sets httpOnly cookies (`accessToken` and `refreshToken`) and returns user data
+
 - Responses:
 
     | Response Code               | Explanation                                        |
     |-----------------------------|----------------------------------------------------|
-    | 200 (OK)                    | Login successful, JWT token and user data returned |
+    | 200 (OK)                    | Login successful, authentication cookies set, user data returned |
     | 400 (Bad Request)           | Missing fields                                     |
     | 401 (Unauthorized)          | Incorrect email or password                        |
     | 500 (Internal Server Error) | Database or server error                           |
 
 ### Verify Token
 
-- This endpoint allows one to verify a JWT access token to authenticate and retrieve the user's data associated with the token.
+- This endpoint allows one to verify authentication cookies and retrieve the user's data associated with the access token.
 - HTTP Method: `GET`
 - Endpoint: http://localhost:3001/auth/verify-token
-- Headers
-  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
 
 - Responses:
 
@@ -302,27 +309,56 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
 
 ### Logout
 
-- This endpoint allows a user to securely logout by blacklisting their access token and clearing refresh token cookies.
+- This endpoint allows a user to securely logout by removing their access token from the whitelist and clearing authentication cookies.
 - HTTP Method: `POST`
 - Endpoint: http://localhost:3001/auth/logout
-- Headers
-  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
 
 - Responses:
 
     | Response Code               | Explanation                                        |
     |-----------------------------|----------------------------------------------------|
-    | 200 (OK)                    | Logout successful, tokens invalidated             |
+    | 200 (OK)                    | Logout successful, tokens invalidated and cookies cleared |
     | 401 (Unauthorized)          | Missing/invalid JWT                                |
     | 500 (Internal Server Error) | Database or server error                           |
+
+### Reset Token TTL
+
+- This endpoint allows authenticated users to reset their access token's TTL (Time To Live) back to the full 15 minutes. This is useful for keeping active users logged in without requiring a full token refresh.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/reset-ttl
+- Body: No body required
+
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | Token TTL reset successfully                       |
+    | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+- Example Response (200 OK):
+    ```json
+    {
+      "message": "Token TTL reset successfully",
+      "data": {
+        "newExpiryInSeconds": 900,
+        "message": "Session reset to full 15 minutes"
+      }
+    }
+    ```
 
 ### Get User Profile
 
 - This endpoint allows authenticated users to retrieve their own profile information.
 - HTTP Method: `GET`
 - Endpoint: http://localhost:3001/users/profile
-- Headers
-  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
 
 - Responses:
 
@@ -349,8 +385,8 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
     }
     ```
 
-- Headers
-  - Required: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
   - Auth Rules: Admin users only
 
 - Responses:
@@ -371,6 +407,7 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
 - `GET /auth/verify-token` - Verify JWT token
 - `POST /auth/refresh` - Refresh access token
 - `POST /auth/logout` - User logout
+- `POST /auth/reset-ttl` - Reset token TTL to full duration
 
 ### User Routes (`/users`)
 - `POST /users` - Create new user (registration)
@@ -382,10 +419,15 @@ Note: The Docker setup includes Redis for token blacklisting and uses the enviro
 
 ## Security Features
 
-- **JWT Authentication**: Access tokens with 15-minute expiry
-- **Refresh Tokens**: 7-day expiry stored in httpOnly cookies
-- **Token Blacklisting**: Redis-based immediate token invalidation on logout
+- **Cookie-Based Authentication**: httpOnly cookies for secure token storage
+- **JWT Access Tokens**: 15-minute expiry with automatic refresh
+- **Refresh Tokens**: 7-day expiry stored in secure httpOnly cookies
+- **Token Whitelisting**: Redis-based token validation with automatic cleanup
+- **Single Session Enforcement**: One active session per user
+- **TTL Reset**: Reset token expiration for active users
 - **Password Security**: Argon2id hashing with configurable parameters
 - **Input Validation**: Comprehensive validation middleware
 - **Admin Authorization**: Role-based access control
 - **Rate Limiting**: Configurable request rate limits
+- **XSS Protection**: httpOnly cookies prevent JavaScript access
+- **CSRF Protection**: SameSite cookie configuration

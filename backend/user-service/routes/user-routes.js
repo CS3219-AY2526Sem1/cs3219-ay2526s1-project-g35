@@ -20,7 +20,7 @@ import {
 
 const router = express.Router();
 
-// Create new user (public endpoint for registration)
+// Create new user
 router.post(
   "/",
   normalizeEmail,
@@ -29,11 +29,11 @@ router.post(
   createUser
 );
 
-// Get current user's profile (authenticated users only)
+// Get current user's profile (authenticated users)
 router.get("/profile", verifyToken, getUserProfile);
 
-// Get specific user (admin only)
-router.get("/:id", validateUserIdParam, verifyToken, isAdmin, getUser);
+// Get specific user (authenticated users & only access own data)
+router.get("/:id", validateUserIdParam, verifyToken, getUser);
 
 // Update user (authenticated users only)
 router.patch(
