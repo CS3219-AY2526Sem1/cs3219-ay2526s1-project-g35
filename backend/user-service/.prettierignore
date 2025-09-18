@@ -1,0 +1,21 @@
+# Ignore artifacts:
+build
+coverage
+node_modules
+
+# Ignore all HTML files:
+*.html
+
+# Ignore package-lock.json (auto-generated)
+package-lock.json
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore Docker files
+Dockerfile
+docker-compose.yml
+
+# Ignore README files (to preserve manual formatting)
+*.md
