@@ -39,8 +39,10 @@ export async function createUser(req, res) {
     );
 
     return res.status(201).json({
-      message: `User ${username} created successfully`,
-      data: formatUserResponse(createdUser),
+      message: `User ${username} created successfully. Please login to verify your email address.`,
+      data: {
+        user: formatUserResponse(createdUser)
+      },
     });
   } catch (err) {
     console.error("Create user error:", err);
@@ -255,6 +257,7 @@ export function formatUserResponse(user) {
     email: user.email,
     isAdmin: user.isAdmin,
     isActive: user.isActive,
+    isVerified: user.isVerified,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLogin: user.lastLogin,
@@ -268,7 +271,6 @@ export function formatUserResponse(user) {
   };
 }
 
-// Helper functions for database operations
 async function _findUserByUsernameOrEmail(username, email) {
   return await UserRepository.findByUsernameOrEmail(username, email);
 }

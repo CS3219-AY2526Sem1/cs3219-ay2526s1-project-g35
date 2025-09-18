@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import "dotenv/config";
 
 /**
- * Database Connection Helper
+ * Database Connection
  */
 export async function connectToDB() {
   let mongoDBUri =
@@ -43,7 +43,7 @@ export class UserRepository {
   }
 
   /**
-   * Find user by ID including password (for authentication)
+   * Find user by ID including password
    */
   static async findByIdWithPassword(id) {
     try {
@@ -210,6 +210,8 @@ export class UserRepository {
    */
   static async updateById(id, updateData) {
     try {
+      console.log(`Updating user ${id} with data:`, updateData);
+      
       const user = await userModel
         .findByIdAndUpdate(
           id,
@@ -218,8 +220,10 @@ export class UserRepository {
         )
         .select("-password");
 
+      console.log(`Update result for user ${id}:`, user ? `Success - isVerified: ${user.isVerified}` : 'User not found');
       return user;
     } catch (error) {
+      console.error(`Error in updateById for user ${id}:`, error);
       throw new Error(`Failed to update user: ${error.message}`);
     }
   }

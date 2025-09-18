@@ -87,6 +87,46 @@ export const userSchemas = {
     .messages({
       "string.pattern.base": "Invalid user ID format",
     }),
+
+  // OTP validation schemas (cookie-based authentication)
+  verifyOTPOnly: Joi.object({
+    otp: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        "string.pattern.base": "OTP must be a 6-digit number",
+        "any.required": "OTP is required",
+      }),
+  }),
+
+  // Legacy OTP validation schemas (for backward compatibility if needed)
+  verifyOTP: Joi.object({
+    email: Joi.string().email().required().messages({
+      "string.email": "Please provide a valid email address",
+      "any.required": "Email is required",
+    }),
+    otp: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        "string.pattern.base": "OTP must be a 6-digit number",
+        "any.required": "OTP is required",
+      }),
+  }),
+
+  resendOTP: Joi.object({
+    email: Joi.string().email().required().messages({
+      "string.email": "Please provide a valid email address",
+      "any.required": "Email is required",
+    }),
+  }),
+
+  verificationStatus: Joi.object({
+    email: Joi.string().email().required().messages({
+      "string.email": "Please provide a valid email address",
+      "any.required": "Email is required",
+    }),
+  }),
 };
 
 /**
