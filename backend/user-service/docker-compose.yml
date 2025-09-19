@@ -19,31 +19,10 @@ services:
     container_name: peerprep-user-service
     ports:
       - "3001:3001"
+    env_file:
+      - .env.docker
     environment:
-      - NODE_ENV=production
-      - PORT=3001
       - REDIS_URL=redis://redis:6379
-      # MongoDB connection (you'll need to update these)
-      - DB_CLOUD_URI=${DB_CLOUD_URI}
-      - DB_LOCAL_URI=mongodb://host.docker.internal:27017/peerprepUserServiceDB
-      - ENV=${ENV:-PROD}
-      # JWT Configuration
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
-      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
-      # Cookie Configuration
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-localhost}
-      - COOKIE_SECURE=${COOKIE_SECURE:-false}
-      - COOKIE_SAME_SITE=${COOKIE_SAME_SITE:-lax}
-      # Security Configuration
-      - ARGON2_MEMORY_COST=${ARGON2_MEMORY_COST:-65536}
-      - ARGON2_TIME_COST=${ARGON2_TIME_COST:-3}
-      - ARGON2_PARALLELISM=${ARGON2_PARALLELISM:-4}
-      - ARGON2_HASH_LENGTH=${ARGON2_HASH_LENGTH:-32}
-      - ARGON2_SALT_LENGTH=${ARGON2_SALT_LENGTH:-16}
-      # CORS Configuration
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:3002}
     depends_on:
       - redis
     networks:

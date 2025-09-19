@@ -31,7 +31,7 @@ const UserModelSchema = new Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now, // Setting default to the current date/time
+    default: Date.now,
   },
   updatedAt: {
     type: Date,
@@ -76,14 +76,11 @@ const UserModelSchema = new Schema({
     },
   },
 });
-
-// Pre-save middleware to update updatedAt
 UserModelSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-// Pre-update middleware to update updatedAt
 UserModelSchema.pre(
   ["findOneAndUpdate", "updateOne", "updateMany"],
   function (next) {
@@ -91,16 +88,12 @@ UserModelSchema.pre(
     next();
   }
 );
-
-// Virtual for full name
 UserModelSchema.virtual("profile.fullName").get(function () {
   if (this.profile.firstName && this.profile.lastName) {
     return `${this.profile.firstName} ${this.profile.lastName}`;
   }
   return this.profile.firstName || this.profile.lastName || this.username;
 });
-
-// Transform function to handle JSON serialization
 UserModelSchema.set("toJSON", {
   virtuals: true,
   transform: function (doc, ret) {
