@@ -19,7 +19,7 @@ export const verifyToken = (req, res, next) => {
         path: "/",
         httpOnly: true,
         secure: process.env.COOKIE_SECURE === "true",
-        sameSite: process.env.COOKIE_SAME_SITE || "lax",
+        sameSite: process.env.COOKIE_SAME_SITE,
         domain: process.env.COOKIE_DOMAIN,
       });
 

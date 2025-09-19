@@ -1,10 +1,4 @@
-/**
- * User management related error definitions
- * Centralized error messages and codes for better maintainability
- */
-
 export const USER_ERRORS = {
-  // User creation errors
   USER_EXISTS: {
     code: "USER_EXISTS",
     message: field => `User with this ${field} already exists`,
@@ -26,7 +20,6 @@ export const USER_ERRORS = {
     status: 409,
   },
 
-  // User retrieval errors
   USER_NOT_FOUND: {
     code: "USER_NOT_FOUND",
     message: "User not found",
@@ -38,7 +31,6 @@ export const USER_ERRORS = {
     status: 403,
   },
 
-  // Generic server errors
   SERVER_ERROR: {
     code: "SERVER_ERROR",
     message: "Failed to create user",

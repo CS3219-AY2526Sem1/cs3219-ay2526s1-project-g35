@@ -4,7 +4,6 @@
  */
 
 export const AUTH_ERRORS = {
-  // Login errors
   MISSING_CREDENTIALS: {
     code: "MISSING_CREDENTIALS",
     message: "Missing email and/or password",
@@ -16,7 +15,6 @@ export const AUTH_ERRORS = {
     status: 401,
   },
 
-  // Token errors
   MISSING_TOKEN: {
     code: "MISSING_TOKEN",
     message: "No access token provided in cookie",
@@ -73,7 +71,6 @@ export const AUTH_ERRORS = {
     status: 500,
   },
 
-  // OTP errors
   ALREADY_VERIFIED: {
     code: "ALREADY_VERIFIED",
     message: "User is already verified",
@@ -111,7 +108,6 @@ export const AUTH_ERRORS = {
     status: 500,
   },
 
-  // Generic server errors
   SERVER_ERROR: {
     code: "SERVER_ERROR",
     message: "Internal server error",
@@ -128,14 +124,12 @@ export const AUTH_ERRORS = {
     status: 500,
   },
 
-  // Database and system errors
   DATABASE_ERROR: {
     code: "DATABASE_ERROR",
     message: "Internal server error",
     status: 500,
   },
 
-  // Admin access errors
   NOT_AUTHENTICATED: {
     code: "NOT_AUTHENTICATED",
     message: "Authentication required",

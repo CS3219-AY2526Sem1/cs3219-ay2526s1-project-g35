@@ -31,7 +31,7 @@ const UserModelSchema = new Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now, // Setting default to the current date/time
+    default: Date.now,
   },
   updatedAt: {
     type: Date,

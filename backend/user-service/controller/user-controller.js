@@ -27,7 +27,6 @@ export async function createUser(req, res) {
       saltLength: parseInt(process.env.ARGON2_SALT_LENGTH),
     });
 
-    // Create user data object
     const userData = {
       username,
       email: email.toLowerCase(),
