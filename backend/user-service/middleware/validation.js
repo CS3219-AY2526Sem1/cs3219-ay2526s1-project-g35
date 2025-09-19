@@ -1,4 +1,8 @@
 import Joi from "joi";
+import {
+  VALIDATION_ERRORS,
+  sendValidationErrorResponse,
+} from "../errors/index.js";
 
 /**
  * Validation schemas for user service
@@ -88,7 +92,7 @@ export const userSchemas = {
       "string.pattern.base": "Invalid user ID format",
     }),
 
-  // OTP validation schemas (cookie-based authentication)
+  // OTP validation schemas
   verifyOTPOnly: Joi.object({
     otp: Joi.string()
       .pattern(/^\d{6}$/)
@@ -97,35 +101,6 @@ export const userSchemas = {
         "string.pattern.base": "OTP must be a 6-digit number",
         "any.required": "OTP is required",
       }),
-  }),
-
-  // Legacy OTP validation schemas (for backward compatibility if needed)
-  verifyOTP: Joi.object({
-    email: Joi.string().email().required().messages({
-      "string.email": "Please provide a valid email address",
-      "any.required": "Email is required",
-    }),
-    otp: Joi.string()
-      .pattern(/^\d{6}$/)
-      .required()
-      .messages({
-        "string.pattern.base": "OTP must be a 6-digit number",
-        "any.required": "OTP is required",
-      }),
-  }),
-
-  resendOTP: Joi.object({
-    email: Joi.string().email().required().messages({
-      "string.email": "Please provide a valid email address",
-      "any.required": "Email is required",
-    }),
-  }),
-
-  verificationStatus: Joi.object({
-    email: Joi.string().email().required().messages({
-      "string.email": "Please provide a valid email address",
-      "any.required": "Email is required",
-    }),
   }),
 };
 
@@ -147,11 +122,11 @@ export const validate = (schema, property = "body") => {
         value: detail.context?.value,
       }));
 
-      return res.status(400).json({
-        message: "Validation error",
-        error: "VALIDATION_ERROR",
-        details: errors,
-      });
+      return sendValidationErrorResponse(
+        res,
+        VALIDATION_ERRORS.VALIDATION_ERROR,
+        errors
+      );
     }
     req[property] = value;
     next();
@@ -175,10 +150,7 @@ export const validateUserIdParam = (req, res, next) => {
   const { error } = userSchemas.mongoId.validate(req.params.id);
 
   if (error) {
-    return res.status(400).json({
-      message: "Invalid user ID format",
-      error: "INVALID_USER_ID",
-    });
+    return sendValidationErrorResponse(res, VALIDATION_ERRORS.INVALID_USER_ID);
   }
 
   next();

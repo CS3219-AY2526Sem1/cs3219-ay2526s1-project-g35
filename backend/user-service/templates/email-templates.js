@@ -5,9 +5,6 @@
 
 /**
  * Generate HTML template for registration OTP email
- * @param {string} otp - The OTP code
- * @param {string} username - Username for personalization
- * @returns {string} HTML email template
  */
 export function generateRegistrationOTPTemplate(otp, username) {
   return `
@@ -63,9 +60,6 @@ export function generateRegistrationOTPTemplate(otp, username) {
 
 /**
  * Generate text template for registration OTP email
- * @param {string} otp - The OTP code
- * @param {string} username - Username for personalization
- * @returns {string} Plain text email template
  */
 export function generateRegistrationOTPTextTemplate(otp, username) {
   return `
@@ -93,13 +87,13 @@ This is an automated email. Please do not reply to this message.
 
 /**
  * Generate HTML template for generic OTP email
- * @param {string} otp - The OTP code
- * @param {string} purpose - Purpose of the OTP (e.g., 'verification', 'password reset')
- * @param {string} username - Username for personalization
- * @param {number} expiryMinutes - Expiry time in minutes
- * @returns {string} HTML email template
  */
-export function generateGenericOTPTemplate(otp, purpose, username, expiryMinutes) {
+export function generateGenericOTPTemplate(
+  otp,
+  purpose,
+  username,
+  expiryMinutes
+) {
   return `
 <!DOCTYPE html>
 <html>
@@ -153,13 +147,14 @@ export function generateGenericOTPTemplate(otp, purpose, username, expiryMinutes
 
 /**
  * Generate text template for generic OTP email
- * @param {string} otp - The OTP code
- * @param {string} purpose - Purpose of the OTP
- * @param {string} username - Username for personalization
- * @param {number} expiryMinutes - Expiry time in minutes
- * @returns {string} Plain text email template
+ *
  */
-export function generateGenericOTPTextTemplate(otp, purpose, username, expiryMinutes) {
+export function generateGenericOTPTextTemplate(
+  otp,
+  purpose,
+  username,
+  expiryMinutes
+) {
   return `
 PeerPrep ${purpose}
 

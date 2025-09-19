@@ -211,7 +211,7 @@ export class UserRepository {
   static async updateById(id, updateData) {
     try {
       console.log(`Updating user ${id} with data:`, updateData);
-      
+
       const user = await userModel
         .findByIdAndUpdate(
           id,
@@ -220,7 +220,10 @@ export class UserRepository {
         )
         .select("-password");
 
-      console.log(`Update result for user ${id}:`, user ? `Success - isVerified: ${user.isVerified}` : 'User not found');
+      console.log(
+        `Update result for user ${id}:`,
+        user ? `Success - isVerified: ${user.isVerified}` : "User not found"
+      );
       return user;
     } catch (error) {
       console.error(`Error in updateById for user ${id}:`, error);

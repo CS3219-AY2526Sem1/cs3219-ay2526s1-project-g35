@@ -1,24 +1,20 @@
 import jwt from "jsonwebtoken";
 import { UserRepository } from "../model/user-repository.js";
 import { redisService } from "../services/redis-service.js";
+import { AUTH_ERRORS, sendErrorResponse } from "../errors/index.js";
 
 /**
  * Middleware to verify JWT token and extract user information
  */
 export const verifyToken = (req, res, next) => {
-  // Get token from cookie instead of Authorization header
   const token = req.cookies.accessToken;
 
   if (!token) {
-    return res.status(401).json({
-      message: "No access token provided in cookie",
-      error: "MISSING_TOKEN",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.MISSING_TOKEN);
   }
 
   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
     if (err) {
-      // Clear the invalid cookie
       res.clearCookie("accessToken", {
         path: "/",
         httpOnly: true,
@@ -27,28 +23,23 @@ export const verifyToken = (req, res, next) => {
         domain: process.env.COOKIE_DOMAIN,
       });
 
-      let message = "Invalid token";
-      let error = "INVALID_TOKEN";
+      let errorToReturn = AUTH_ERRORS.INVALID_TOKEN;
 
       if (err.name === "TokenExpiredError") {
-        message = "Token has expired";
-        error = "TOKEN_EXPIRED";
+        errorToReturn = AUTH_ERRORS.TOKEN_EXPIRED;
       } else if (err.name === "JsonWebTokenError") {
-        message = "Invalid token signature";
-        error = "INVALID_SIGNATURE";
+        errorToReturn = AUTH_ERRORS.INVALID_SIGNATURE;
       }
 
-      return res.status(401).json({ message, error });
+      return sendErrorResponse(res, errorToReturn);
     }
 
     try {
-      // Check if token is whitelisted for this user
       const isWhitelisted = await redisService.isTokenWhitelisted(
         decoded.id,
         token
       );
       if (!isWhitelisted) {
-        // Clear the unauthorized cookie
         res.clearCookie("accessToken", {
           path: "/",
           httpOnly: true,
@@ -57,25 +48,16 @@ export const verifyToken = (req, res, next) => {
           domain: process.env.COOKIE_DOMAIN,
         });
 
-        return res.status(401).json({
-          message: "Token is not authorized. Please login again.",
-          error: "TOKEN_NOT_WHITELISTED",
-        });
+        return sendErrorResponse(res, AUTH_ERRORS.TOKEN_NOT_WHITELISTED);
       }
 
-      // Fetch the latest user data from database
       const user = await UserRepository.findById(decoded.id);
 
       if (!user) {
-        // Remove invalid token from whitelist
         await redisService.removeWhitelistToken(decoded.id);
-        return res.status(401).json({
-          message: "User not found",
-          error: "USER_NOT_FOUND",
-        });
+        return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND);
       }
 
-      // Set user information in request object
       req.userId = user.id;
       req.user = {
         id: user.id,
@@ -90,10 +72,7 @@ export const verifyToken = (req, res, next) => {
       next();
     } catch (dbError) {
       console.error("Database error in token verification:", dbError);
-      return res.status(500).json({
-        message: "Internal server error",
-        error: "DATABASE_ERROR",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.DATABASE_ERROR);
     }
   });
 };
@@ -103,17 +82,11 @@ export const verifyToken = (req, res, next) => {
  */
 export const isAdmin = (req, res, next) => {
   if (!req.user) {
-    return res.status(401).json({
-      message: "Authentication required",
-      error: "NOT_AUTHENTICATED",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.NOT_AUTHENTICATED);
   }
 
   if (!req.user.isAdmin) {
-    return res.status(403).json({
-      message: "Admin access required",
-      error: "NOT_ADMIN",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.NOT_ADMIN);
   }
 
   next();
@@ -130,7 +103,7 @@ export const generateToken = (user, sessionId = null) => {
       email: user.email,
       isAdmin: user.isAdmin,
       isVerified: user.isVerified,
-      sessionId: sessionId || Date.now().toString(), // Unique per login
+      sessionId: sessionId || Date.now().toString(),
     },
     process.env.JWT_SECRET,
     {
@@ -142,7 +115,7 @@ export const generateToken = (user, sessionId = null) => {
 };
 
 /**
- * Generate refresh token (longer expiry)
+ * Generate refresh token
  */
 export const generateRefreshToken = user => {
   return jwt.sign(

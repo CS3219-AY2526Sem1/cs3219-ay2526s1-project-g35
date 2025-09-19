@@ -6,6 +6,7 @@ import { generateToken, generateRefreshToken } from "../middleware/jwtAuth.js";
 import { redisService } from "../services/redis-service.js";
 import { otpService } from "../services/otp-service.js";
 import { emailService } from "../services/email-service.js";
+import { AUTH_ERRORS, sendErrorResponse } from "../errors/index.js";
 
 function secondsToMs(seconds) {
   return parseInt(seconds) * 1000;
@@ -16,21 +17,23 @@ function secondsToMs(seconds) {
  * Returns existing token if it has sufficient remaining time, null otherwise
  */
 async function shouldReuseToken(userId) {
-  const MINIMUM_REMAINING_TIME = 300; 
-  
+  const MINIMUM_REMAINING_TIME = 300;
+
   try {
     const existingToken = await redisService.getWhitelistToken(userId);
     if (!existingToken) {
-      return null; 
+      return null;
     }
 
     const remainingTTL = await redisService.getWhitelistTokenTTL(userId);
     if (remainingTTL > MINIMUM_REMAINING_TIME) {
-      console.log(`Reusing existing token for user ${userId} (${remainingTTL}s remaining)`);
+      console.log(
+        `Reusing existing token for user ${userId} (${remainingTTL}s remaining)`
+      );
       return existingToken;
     }
 
-    return null; 
+    return null;
   } catch (error) {
     console.error("Error checking token reuse:", error);
     return null;
@@ -41,48 +44,43 @@ export async function handleLogin(req, res) {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({
-      message: "Missing email and/or password",
-      error: "MISSING_CREDENTIALS",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.MISSING_CREDENTIALS);
   }
 
   try {
     const user = await UserRepository.findByEmail(email.toLowerCase());
     if (!user) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-        error: "INVALID_CREDENTIALS",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.INVALID_CREDENTIALS);
     }
 
     const match = await argon2.verify(user.password, password);
     if (!match) {
-      return res.status(401).json({
-        message: "Invalid email or password",
-        error: "INVALID_CREDENTIALS",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.INVALID_CREDENTIALS);
     }
 
     const updatedUser = await UserRepository.updateById(user.id, {
       lastLogin: new Date(),
     });
 
-    let accessToken = await shouldReuseToken((updatedUser || user).id);
+    let accessToken = await shouldReuseToken(
+      (updatedUser || user).id.toString()
+    );
     let tokenWasReused = !!accessToken;
 
     if (!accessToken) {
       accessToken = generateToken(updatedUser || user);
 
-      const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN || 900);
+      const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN);
       const whitelistStored = await redisService.storeWhitelistToken(
-        (updatedUser || user).id,
+        (updatedUser || user).id.toString(),
         accessToken,
         tokenTTL
       );
 
       if (!whitelistStored) {
-        console.warn("Failed to store token in whitelist - Redis may not be available");
+        console.warn(
+          "Failed to store token in whitelist - whitelist may not be available"
+        );
       }
     }
 
@@ -90,8 +88,8 @@ export async function handleLogin(req, res) {
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAME_SITE || "lax",
-      maxAge: secondsToMs(process.env.JWT_EXPIRES_IN || 900),
+      sameSite: process.env.COOKIE_SAME_SITE,
+      maxAge: secondsToMs(process.env.JWT_EXPIRES_IN),
       path: "/",
       domain: process.env.COOKIE_DOMAIN,
     });
@@ -99,27 +97,23 @@ export async function handleLogin(req, res) {
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAME_SITE || "lax",
-      maxAge: secondsToMs(process.env.JWT_REFRESH_EXPIRES_IN || 604800),
+      sameSite: process.env.COOKIE_SAME_SITE,
+      maxAge: secondsToMs(process.env.JWT_REFRESH_EXPIRES_IN),
       path: "/",
       domain: process.env.COOKIE_DOMAIN,
     });
 
-    // Return success response
     return res.status(200).json({
       message: "User logged in successfully",
       data: {
-        expiresIn: parseInt(process.env.JWT_EXPIRES_IN || 900),
+        expiresIn: parseInt(process.env.JWT_EXPIRES_IN),
         tokenReused: tokenWasReused,
         user: formatUserResponse(updatedUser || user),
       },
     });
   } catch (err) {
     console.error("Login error:", err);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }
 
@@ -132,10 +126,7 @@ export async function handleVerifyToken(req, res) {
     });
   } catch (err) {
     console.error("Token verification error:", err);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.TOKEN_VERIFICATION_ERROR);
   }
 }
 
@@ -144,10 +135,7 @@ export async function handleRefreshToken(req, res) {
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
-      return res.status(401).json({
-        message: "Refresh token not provided. Please login again.",
-        error: "MISSING_REFRESH_TOKEN",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.MISSING_REFRESH_TOKEN);
     }
     const decoded = jwt.verify(
       refreshToken,
@@ -155,40 +143,36 @@ export async function handleRefreshToken(req, res) {
     );
 
     if (decoded.type !== "refresh") {
-      return res.status(401).json({
-        message: "Invalid token type",
-        error: "INVALID_TOKEN_TYPE",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.INVALID_TOKEN_TYPE);
     }
 
     const user = await UserRepository.findById(decoded.id);
     if (!user) {
       res.clearCookie("refreshToken", { path: "/auth" });
-      return res.status(401).json({
-        message: "User not found. Please login again.",
-        error: "USER_NOT_FOUND",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND);
     }
 
     const newAccessToken = generateToken(user);
-    
-    const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN || 900);
+
+    const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN);
     const whitelistStored = await redisService.storeWhitelistToken(
-      user.id,
+      user.id.toString(),
       newAccessToken,
       tokenTTL
     );
 
     if (!whitelistStored) {
-      console.warn("Failed to store new token in whitelist - Redis may not be available");
+      console.warn(
+        "Failed to store new token in whitelist - whitelist may not be available"
+      );
     }
 
     const newRefreshToken = generateRefreshToken(user);
     res.cookie("accessToken", newAccessToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAME_SITE || "lax",
-      maxAge: secondsToMs(process.env.JWT_EXPIRES_IN || 900),
+      sameSite: process.env.COOKIE_SAME_SITE,
+      maxAge: secondsToMs(process.env.JWT_EXPIRES_IN),
       path: "/",
       domain: process.env.COOKIE_DOMAIN,
     });
@@ -196,8 +180,8 @@ export async function handleRefreshToken(req, res) {
     res.cookie("refreshToken", newRefreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAME_SITE || "lax",
-      maxAge: secondsToMs(process.env.JWT_REFRESH_EXPIRES_IN || 604800),
+      sameSite: process.env.COOKIE_SAME_SITE,
+      maxAge: secondsToMs(process.env.JWT_REFRESH_EXPIRES_IN),
       path: "/",
       domain: process.env.COOKIE_DOMAIN,
     });
@@ -205,7 +189,7 @@ export async function handleRefreshToken(req, res) {
     return res.status(200).json({
       message: "Token refreshed successfully",
       data: {
-        expiresIn: parseInt(process.env.JWT_EXPIRES_IN || 900),
+        expiresIn: parseInt(process.env.JWT_EXPIRES_IN),
         user: formatUserResponse(user),
       },
     });
@@ -215,16 +199,10 @@ export async function handleRefreshToken(req, res) {
     res.clearCookie("refreshToken", { path: "/auth" });
 
     if (err.name === "TokenExpiredError") {
-      return res.status(401).json({
-        message: "Refresh token expired. Please login again.",
-        error: "REFRESH_TOKEN_EXPIRED",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.REFRESH_TOKEN_EXPIRED);
     }
 
-    return res.status(401).json({
-      message: "Invalid refresh token. Please login again.",
-      error: "INVALID_REFRESH_TOKEN",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.INVALID_REFRESH_TOKEN);
   }
 }
 
@@ -241,12 +219,11 @@ export async function handleLogout(req, res) {
       }
     }
 
-
     res.clearCookie("accessToken", {
       path: "/",
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAME_SITE || "lax",
+      sameSite: process.env.COOKIE_SAME_SITE,
       domain: process.env.COOKIE_DOMAIN,
     });
 
@@ -254,22 +231,20 @@ export async function handleLogout(req, res) {
       path: "/",
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAME_SITE || "lax",
+      sameSite: process.env.COOKIE_SAME_SITE,
       domain: process.env.COOKIE_DOMAIN,
     });
 
     return res.status(200).json({
       message: "Logged out successfully",
       data: {
-        message: "Access token removed from whitelist. You have been logged out securely.",
+        message:
+          "Access token removed from whitelist. You have been logged out securely.",
       },
     });
   } catch (err) {
     console.error("Logout error:", err);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }
 
@@ -280,21 +255,15 @@ export async function handleLogout(req, res) {
 export async function handleResetTokenTTL(req, res) {
   try {
     const userId = req.userId;
-    const fullTTL = parseInt(process.env.JWT_EXPIRES_IN || 900);
+    const fullTTL = parseInt(process.env.JWT_EXPIRES_IN);
     const currentTTL = await redisService.getWhitelistTokenTTL(userId);
     if (currentTTL <= 0) {
-      return res.status(401).json({
-        message: "Token has expired or does not exist",
-        error: "TOKEN_EXPIRED",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.TOKEN_EXPIRED);
     }
     const reset = await redisService.resetWhitelistTokenTTL(userId, fullTTL);
-    
+
     if (!reset) {
-      return res.status(500).json({
-        message: "Failed to reset token TTL. Please try refreshing your session.",
-        error: "TTL_RESET_FAILED",
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.TTL_RESET_FAILED);
     }
 
     return res.status(200).json({
@@ -306,212 +275,178 @@ export async function handleResetTokenTTL(req, res) {
     });
   } catch (err) {
     console.error("Token TTL reset error:", err);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }
 
-// ===============================
-// OTP Management Functions (Cookie-based verification)
-// ===================================================
-
 /**
- * Generate and send OTP for user verification (called by logged-in user)
+ * Generate and send OTP for user verification
  * Uses access token from cookie to identify the user
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
  */
 export async function handleSendVerificationOTP(req, res) {
+  const otpPurpose = "verification";
   try {
-    // User must be logged in (access token verified by middleware)
     const userId = req.userId;
     const user = req.user;
 
-    // Check if user is already verified
     if (user.isVerified) {
-      return res.status(400).json({
-        message: "User is already verified",
-        error: "ALREADY_VERIFIED"
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.ALREADY_VERIFIED);
     }
 
     const normalizedEmail = user.email.toLowerCase();
-    
-    // Check if there's already an active OTP for this user
-    const existingOTP = await redisService.getOTP(userId, 'verification');
+
+    const existingOTP = await redisService.getOTP(userId, otpPurpose);
     if (existingOTP) {
       const remainingTTL = otpService.getRemainingTTL(existingOTP);
-      if (remainingTTL > 60) { // If more than 1 minute remaining
+      if (remainingTTL > 60) {
+        const minutes = Math.floor(remainingTTL / 60);
+        const seconds = remainingTTL % 60;
+        const timeString =
+          minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+
         return res.status(400).json({
-          message: `OTP already sent. Please wait ${Math.ceil(remainingTTL / 60)} more minute(s) before requesting a new one.`,
-          error: 'OTP_ALREADY_SENT',
-          retryAfterSeconds: remainingTTL
+          message: AUTH_ERRORS.OTP_ALREADY_SENT.message(timeString),
+          error: AUTH_ERRORS.OTP_ALREADY_SENT.code,
+          retryAfterSeconds: remainingTTL,
         });
       }
     }
-
-    // Generate new OTP (use userId as key instead of email)
-    const otpData = otpService.generateOTPData(normalizedEmail, 'verification');
-    
-    // Store OTP in Redis using userId as key
-    const storeResult = await redisService.storeOTP(userId, otpData, 'verification');
+    const otpData = otpService.generateOTPData(normalizedEmail, otpPurpose);
+    const storeResult = await redisService.storeOTP(
+      userId,
+      otpData,
+      otpPurpose
+    );
     if (!storeResult) {
-      console.error('Failed to store OTP in Redis');
-      return res.status(500).json({
-        message: 'Failed to generate OTP. Please try again later.',
-        error: 'STORAGE_ERROR'
-      });
+      console.error("Failed to store OTP in Cache");
+      return sendErrorResponse(res, AUTH_ERRORS.STORAGE_ERROR);
     }
+    const emailResult = await emailService.sendRegistrationOTP(
+      normalizedEmail,
+      otpData.otp,
+      { username: user.username }
+    );
 
-    // Send OTP via email
-    const emailResult = await emailService.sendRegistrationOTP(normalizedEmail, otpData.otp, { username: user.username });
-    
     if (!emailResult.success) {
-      console.error('Failed to send OTP email:', emailResult.error);
-      // Clean up stored OTP if email failed
-      await redisService.deleteOTP(userId, 'verification');
-      return res.status(500).json({
-        message: 'Failed to send OTP email. Please try again later.',
-        error: 'EMAIL_ERROR'
-      });
+      console.error("Failed to send OTP email:", emailResult.error);
+      await redisService.deleteOTP(userId, otpPurpose);
+      return sendErrorResponse(res, AUTH_ERRORS.EMAIL_ERROR);
     }
 
-    console.log(`Verification OTP generated and sent for user ${userId} (${normalizedEmail})`);
-    
+    console.log(
+      `Verification OTP generated and sent for user ${userId} (${normalizedEmail})`
+    );
+
     return res.status(200).json({
-      message: 'OTP sent successfully to your email address.',
+      message: "OTP sent successfully to your email address.",
       data: {
         email: normalizedEmail,
-        expiryMinutes: Math.floor(otpData.ttl / 60)
-      }
+        expiryMinutes: Math.floor(otpData.ttl / 60),
+      },
     });
-
   } catch (error) {
-    console.error('Error generating verification OTP:', error);
-    return res.status(500).json({
-      message: 'Internal server error. Please try again later.',
-      error: 'SERVER_ERROR'
-    });
+    console.error("Error generating verification OTP:", error);
+    return sendErrorResponse(res, AUTH_ERRORS.VERIFICATION_SERVER_ERROR);
   }
 }
 
 /**
- * Verify OTP for user verification (uses access token from cookie)
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * Verify OTP for user verification
  */
 export async function handleVerifyOTP(req, res) {
+  const otpPurpose = "verification";
   try {
     const { otp } = req.body;
-    
-    // User must be logged in (access token verified by middleware)
     const userId = req.userId;
     const user = req.user;
 
-    console.log(`Verifying OTP for user. userId: ${userId}, user._id: ${user._id}, user.id: ${user.id}`);
+    console.log(
+      `Verifying OTP for user. userId: ${userId}, user._id: ${user._id}, user.id: ${user.id}`
+    );
 
     if (!otp) {
-      return res.status(400).json({
-        message: "OTP is required",
-        error: "MISSING_OTP"
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.MISSING_OTP);
     }
 
-    // Check if user is already verified
     if (user.isVerified) {
-      return res.status(400).json({
-        message: "User is already verified",
-        error: "ALREADY_VERIFIED"
-      });
+      return sendErrorResponse(res, AUTH_ERRORS.ALREADY_VERIFIED);
     }
 
-    // Get stored OTP data using userId
-    const storedOTPData = await redisService.getOTP(userId, 'verification');
-    
-    // Validate OTP
-    const validationResult = otpService.validateOTP(storedOTPData, otp, user.email.toLowerCase(), 'verification');
-    
+    const storedOTPData = await redisService.getOTP(userId, otpPurpose);
+
+    const validationResult = otpService.validateOTP(
+      storedOTPData,
+      otp,
+      user.email.toLowerCase(),
+      otpPurpose
+    );
+
     if (!validationResult.isValid) {
-      // Increment attempt counter if OTP exists and wasn't expired
       if (storedOTPData && !validationResult.shouldDelete) {
-        await redisService.incrementOTPAttempts(userId, 'verification');
+        await redisService.incrementOTPAttempts(userId, otpPurpose);
       }
-      
-      // Delete OTP if it should be deleted (expired, max attempts, etc.)
       if (validationResult.shouldDelete) {
-        await redisService.deleteOTP(userId, 'verification');
+        await redisService.deleteOTP(userId, otpPurpose);
       }
 
       const errorMessage = otpService.getErrorMessage(validationResult);
       return res.status(400).json({
         message: errorMessage,
         error: validationResult.reason,
-        attemptsRemaining: validationResult.attemptsRemaining
+        attemptsRemaining: validationResult.attemptsRemaining,
       });
     }
-
-    // OTP is valid - mark user as verified
     try {
       console.log(`Attempting to update user ${user.id} with isVerified: true`);
-      const updatedUser = await UserRepository.updateById(user.id, { isVerified: true });
-      
+      const updatedUser = await UserRepository.updateById(user.id, {
+        isVerified: true,
+      });
+
       if (!updatedUser) {
-        console.error('Update returned null - user may not exist');
-        return res.status(500).json({
-          message: "Failed to update user - user not found",
-          error: "USER_NOT_FOUND"
-        });
+        console.error("Update returned null - user may not exist");
+        return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND_UPDATE);
       }
-      
-      console.log(`User update successful. isVerified is now: ${updatedUser.isVerified}`);
-      
-      // Delete OTP after successful verification
-      await redisService.deleteOTP(userId, 'verification');
-      
-      console.log(`User ${userId} (${user.email}) successfully verified via OTP`);
-      
+
+      console.log(
+        `User update successful. isVerified is now: ${updatedUser.isVerified}`
+      );
+      await redisService.deleteOTP(userId, "verification");
+
+      console.log(
+        `User ${userId} (${user.email}) successfully verified via OTP`
+      );
+
       return res.status(200).json({
         message: "Email verified successfully",
         data: {
           user: formatUserResponse(updatedUser),
-          verifiedAt: new Date().toISOString()
-        }
+          verifiedAt: new Date().toISOString(),
+        },
       });
-
     } catch (updateError) {
-      console.error('Error updating user verification status:', updateError);
-      return res.status(500).json({
-        message: "Verification completed but failed to update user status",
-        error: "UPDATE_ERROR"
-      });
+      console.error("Error updating user verification status:", updateError);
+      return sendErrorResponse(res, AUTH_ERRORS.UPDATE_ERROR);
     }
-
   } catch (error) {
-    console.error('OTP verification error:', error);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: "SERVER_ERROR"
-    });
+    console.error("OTP verification error:", error);
+    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }
 
 /**
- * Check current user's verification status (uses access token from cookie)
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
+ * Check current user's verification status
  */
 export async function handleCheckVerificationStatus(req, res) {
+  const otpPurpose = "verification";
   try {
-    // User must be logged in (access token verified by middleware)
     const userId = req.userId;
     const user = req.user;
 
-    // Check if there's a pending OTP
-    const hasOTP = await redisService.hasOTP(userId, 'verification');
-    const otpData = hasOTP ? await redisService.getOTP(userId, 'verification') : null;
-    
+    const hasOTP = await redisService.hasOTP(userId, otpPurpose);
+    const otpData = hasOTP
+      ? await redisService.getOTP(userId, otpPurpose)
+      : null;
+
     return res.status(200).json({
       message: "Verification status retrieved",
       data: {
@@ -520,15 +455,13 @@ export async function handleCheckVerificationStatus(req, res) {
         isVerified: user.isVerified,
         hasActivePendingOTP: hasOTP,
         otpExpiresIn: otpData ? otpService.getRemainingTTL(otpData) : 0,
-        canSendOTP: !user.isVerified && (!otpData || otpService.getRemainingTTL(otpData) <= 60)
-      }
+        canSendOTP:
+          !user.isVerified &&
+          (!otpData || otpService.getRemainingTTL(otpData) <= 60),
+      },
     });
-
   } catch (error) {
-    console.error('Check verification status error:', error);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: "SERVER_ERROR"
-    });
+    console.error("Check verification status error:", error);
+    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }

@@ -11,7 +11,11 @@ import {
   handleCheckVerificationStatus,
 } from "../controller/auth-controller.js";
 import { verifyToken } from "../middleware/jwtAuth.js";
-import { validate, userSchemas, normalizeEmail } from "../middleware/validation.js";
+import {
+  validate,
+  userSchemas,
+  normalizeEmail,
+} from "../middleware/validation.js";
 
 const router = express.Router();
 
@@ -30,9 +34,14 @@ router.post("/logout", verifyToken, handleLogout);
 // Reset token TTL to full duration
 router.post("/reset-ttl", verifyToken, handleResetTokenTTL);
 
-// OTP verification endpoints (require authentication via cookie)
+// OTP verification endpoints
 router.post("/send-otp", verifyToken, handleSendVerificationOTP);
-router.post("/verify-otp", verifyToken, validate(userSchemas.verifyOTPOnly), handleVerifyOTP);
+router.post(
+  "/verify-otp",
+  verifyToken,
+  validate(userSchemas.verifyOTPOnly),
+  handleVerifyOTP
+);
 router.get("/verification-status", verifyToken, handleCheckVerificationStatus);
 
 export default router;
