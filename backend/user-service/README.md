@@ -2,6 +2,16 @@
 
 ## User Service
 
+The User Service handles user registration, authentication, and email verification using OTP (One-Time Password) for enhanced security.
+
+### Key Features
+- User registration and authentication
+- Email verification with OTP system
+- JWT-based session management with Redis token whitelisting
+- Role-based access control (admin/user)
+- Rate limiting for authentication attempts
+- Secure password hashing with Argon2id
+
 ### Quick Start
 
 1. In the `user-service` directory, create a copy of the `.env.sample` file and name it `.env`.
@@ -52,6 +62,7 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
 ### Create User
 
 - This endpoint allows adding a new user to the database (i.e., user registration).
+- **Note**: Newly registered users must verify their email address using OTP before gaining full access to protected features.
 
 - HTTP Method: `POST`
 
@@ -72,7 +83,7 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
 
     | Response Code               | Explanation                                           |
     |-----------------------------|-------------------------------------------------------|
-    | 201 (Created)               | User created successfully, created user data returned |
+    | 201 (Created)               | User created successfully, created user data returned. **Note**: User must verify email before accessing protected features. |
     | 400 (Bad Request)           | Missing fields                                        |
     | 409 (Conflict)              | Duplicate username or email encountered               |
     | 500 (Internal Server Error) | Database or server error                              |
@@ -352,6 +363,110 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
     }
     ```
 
+## Email Verification (OTP)
+
+### Send Verification OTP
+
+- This endpoint generates and sends a 6-digit OTP (One-Time Password) to the authenticated user's email address for account verification. Users must verify their email before gaining full access to protected features.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/send-otp
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
+  - Note: User must be logged in but may not be verified yet
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | OTP sent successfully to user's email             |
+    | 400 (Bad Request)           | User already verified or OTP recently sent        |
+    | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
+    | 500 (Internal Server Error) | Email service error or server error               |
+
+- Example Response (200 OK):
+    ```json
+    {
+      "message": "OTP sent successfully to your email address.",
+      "data": {
+        "email": "user@example.com",
+        "expiryMinutes": 5
+      }
+    }
+    ```
+
+### Verify OTP
+
+- This endpoint verifies the 6-digit OTP sent to the user's email and marks their account as verified.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/verify-otp
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
+
+- Body
+  - Required: `otp` (string) - 6-digit verification code
+
+    ```json
+    {
+      "otp": "123456"
+    }
+    ```
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | Email verified successfully                        |
+    | 400 (Bad Request)           | Invalid/expired OTP or user already verified      |
+    | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+- Example Response (200 OK):
+    ```json
+    {
+      "message": "Email verified successfully",
+      "data": {
+        "user": {
+          "id": "user_id",
+          "username": "username",
+          "email": "user@example.com",
+          "isVerified": true
+        },
+        "verifiedAt": "2024-03-20T10:30:00.000Z"
+      }
+    }
+    ```
+
+### Check Verification Status
+
+- This endpoint allows authenticated users to check their current email verification status and OTP information.
+- HTTP Method: `GET`
+- Endpoint: http://localhost:3001/auth/verification-status
+- Authentication
+  - Required: Valid authentication cookies (automatically sent by browser)
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | Verification status retrieved successfully         |
+    | 401 (Unauthorized)          | Missing/invalid/expired JWT                        |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+- Example Response (200 OK):
+    ```json
+    {
+      "message": "Verification status retrieved",
+      "data": {
+        "email": "user@example.com",
+        "username": "username",
+        "isVerified": false,
+        "hasActivePendingOTP": true,
+        "otpExpiresIn": 240,
+        "canSendOTP": false
+      }
+    }
+    ```
+
 ### Get User Profile
 
 - This endpoint allows authenticated users to retrieve their own profile information.
@@ -408,6 +523,9 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
 - `POST /auth/refresh` - Refresh access token
 - `POST /auth/logout` - User logout
 - `POST /auth/reset-ttl` - Reset token TTL to full duration
+- `POST /auth/send-otp` - Send email verification OTP
+- `POST /auth/verify-otp` - Verify email with OTP code
+- `GET /auth/verification-status` - Check email verification status
 
 ### User Routes (`/users`)
 - `POST /users` - Create new user (registration)
@@ -419,6 +537,8 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
 
 ## Security Features
 
+- **Email Verification**: OTP-based email verification for account security
+- **OTP System**: 6-digit codes with 5-minute expiry and rate limiting
 - **Cookie-Based Authentication**: httpOnly cookies for secure token storage
 - **JWT Access Tokens**: 15-minute expiry with automatic refresh
 - **Refresh Tokens**: 7-day expiry stored in secure httpOnly cookies
@@ -428,6 +548,7 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
 - **Password Security**: Argon2id hashing with configurable parameters
 - **Input Validation**: Comprehensive validation middleware
 - **Admin Authorization**: Role-based access control
-- **Rate Limiting**: Configurable request rate limits
+- **Rate Limiting**: Configurable request rate limits (10 auth attempts per 15 minutes)
 - **XSS Protection**: httpOnly cookies prevent JavaScript access
 - **CSRF Protection**: SameSite cookie configuration
+- **Email Service**: Secure SMTP integration with timeout protection
