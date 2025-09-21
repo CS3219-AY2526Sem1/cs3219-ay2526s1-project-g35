@@ -18,8 +18,8 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
+  max: parseInt(process.env.RATE_LIMIT_MAX),
   message: {
     error: "Too many requests from this IP, please try again later.",
   },
@@ -28,8 +28,8 @@ const limiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 auth requests per windowMs
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX),
   message: {
     error: "Too many authentication attempts, please try again later.",
   },
@@ -104,16 +104,34 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "OK",
-    timestamp: new Date().toISOString(),
-    service: "user-service",
-    version: process.env.npm_package_version || "1.0.0",
-  });
-});
+// Email service debug endpoint (for development)
+app.get("/debug/email-status", async (req, res) => {
+  try {
+    const { emailService } = await import("./services/email-service.js");
+    const status = emailService.getStatus();
 
+    res.status(200).json({
+      message: "Email service status",
+      data: {
+        ...status,
+        environment: {
+          EMAIL_ENABLED: process.env.EMAIL_ENABLED,
+          EMAIL_PROVIDER: process.env.EMAIL_PROVIDER,
+          EMAIL_FROM: process.env.EMAIL_FROM,
+          MAILTRAP_HOST: process.env.MAILTRAP_HOST,
+          MAILTRAP_PORT: process.env.MAILTRAP_PORT,
+          MAILTRAP_USER: process.env.MAILTRAP_USER ? "SET" : "NOT_SET",
+          MAILTRAP_PASS: process.env.MAILTRAP_PASS ? "SET" : "NOT_SET",
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to get email service status",
+      error: error.message,
+    });
+  }
+});
 // Routes
 app.use("/users", userRoutes);
 app.use("/auth", authLimiter, authRoutes);

@@ -1,6 +1,11 @@
 import argon2 from "argon2";
 import { isValidObjectId } from "mongoose";
 import { UserRepository } from "../model/user-repository.js";
+import {
+  USER_ERRORS,
+  sendUserErrorResponse,
+  sendErrorResponse,
+} from "../errors/index.js";
 
 export async function createUser(req, res) {
   try {
@@ -9,22 +14,19 @@ export async function createUser(req, res) {
     if (existingUser) {
       const conflict =
         existingUser.username === username ? "username" : "email";
-      return res.status(409).json({
-        message: `User with this ${conflict} already exists`,
-        error: "USER_EXISTS",
+      return sendUserErrorResponse(res, USER_ERRORS.USER_EXISTS, conflict, {
         field: conflict,
       });
     }
     const hashedPassword = await argon2.hash(password, {
       type: argon2.argon2id,
-      memoryCost: parseInt(process.env.ARGON2_MEMORY_COST) || 65536, // 64 MB
-      timeCost: parseInt(process.env.ARGON2_TIME_COST) || 3,
-      parallelism: parseInt(process.env.ARGON2_PARALLELISM) || 4,
-      hashLength: parseInt(process.env.ARGON2_HASH_LENGTH) || 32,
-      saltLength: parseInt(process.env.ARGON2_SALT_LENGTH) || 16,
+      memoryCost: parseInt(process.env.ARGON2_MEMORY_COST),
+      timeCost: parseInt(process.env.ARGON2_TIME_COST),
+      parallelism: parseInt(process.env.ARGON2_PARALLELISM),
+      hashLength: parseInt(process.env.ARGON2_HASH_LENGTH),
+      saltLength: parseInt(process.env.ARGON2_SALT_LENGTH),
     });
 
-    // Create user data object
     const userData = {
       username,
       email: email.toLowerCase(),
@@ -39,25 +41,22 @@ export async function createUser(req, res) {
     );
 
     return res.status(201).json({
-      message: `User ${username} created successfully`,
-      data: formatUserResponse(createdUser),
+      message: `User ${username} created successfully. Please login to verify your email address.`,
+      data: {
+        user: formatUserResponse(createdUser),
+      },
     });
   } catch (err) {
     console.error("Create user error:", err);
 
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
-      return res.status(409).json({
-        message: `User with this ${field} already exists`,
-        error: "DUPLICATE_KEY",
+      return sendUserErrorResponse(res, USER_ERRORS.DUPLICATE_KEY, field, {
         field,
       });
     }
 
-    return res.status(500).json({
-      message: "Failed to create user",
-      error: "SERVER_ERROR",
-    });
+    return sendUserErrorResponse(res, USER_ERRORS.SERVER_ERROR);
   }
 }
 
@@ -67,10 +66,7 @@ export async function getUserProfile(req, res) {
 
     const user = await _findUserById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: `User not found`,
-        error: "USER_NOT_FOUND",
-      });
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
 
     return res.status(200).json({
@@ -79,10 +75,7 @@ export async function getUserProfile(req, res) {
     });
   } catch (err) {
     console.error("Error in getUserProfile:", err);
-    return res.status(500).json({
-      message: "Database or server error",
-      error: "INTERNAL_SERVER_ERROR",
-    });
+    return sendErrorResponse(res, USER_ERRORS.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -91,18 +84,12 @@ export async function getUser(req, res) {
     const userId = req.params.id;
     const tokenUserId = req.userId;
     if (userId !== tokenUserId) {
-      return res.status(403).json({
-        message: "Access denied. You can only access your own user data.",
-        error: "UNAUTHORIZED_ACCESS",
-      });
+      return sendErrorResponse(res, USER_ERRORS.UNAUTHORIZED_ACCESS);
     }
 
     const user = await _findUserById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: `User not found`,
-        error: "USER_NOT_FOUND",
-      });
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
 
     return res.status(200).json({
@@ -111,10 +98,7 @@ export async function getUser(req, res) {
     });
   } catch (err) {
     console.error("Get user error:", err);
-    return res.status(500).json({
-      message: "Failed to retrieve user",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, USER_ERRORS.RETRIEVE_SERVER_ERROR);
   }
 }
 
@@ -125,28 +109,19 @@ export async function updateUser(req, res) {
 
     const user = await _findUserById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        error: "USER_NOT_FOUND",
-      });
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
     if (username && username !== user.username) {
       const existingUser = await _findUserByUsername(username);
       if (existingUser && existingUser.id !== userId) {
-        return res.status(409).json({
-          message: "Username already exists",
-          error: "USERNAME_EXISTS",
-        });
+        return sendErrorResponse(res, USER_ERRORS.USERNAME_EXISTS);
       }
     }
 
     if (email && email !== user.email) {
       const existingUser = await _findUserByEmail(email);
       if (existingUser && existingUser.id !== userId) {
-        return res.status(409).json({
-          message: "Email already exists",
-          error: "EMAIL_EXISTS",
-        });
+        return sendErrorResponse(res, USER_ERRORS.EMAIL_EXISTS);
       }
     }
     const updateData = {};
@@ -160,11 +135,11 @@ export async function updateUser(req, res) {
     if (password) {
       const hashedPassword = await argon2.hash(password, {
         type: argon2.argon2id,
-        memoryCost: parseInt(process.env.ARGON2_MEMORY_COST) || 65536,
-        timeCost: parseInt(process.env.ARGON2_TIME_COST) || 3,
-        parallelism: parseInt(process.env.ARGON2_PARALLELISM) || 4,
-        hashLength: parseInt(process.env.ARGON2_HASH_LENGTH) || 32,
-        saltLength: parseInt(process.env.ARGON2_SALT_LENGTH) || 16,
+        memoryCost: parseInt(process.env.ARGON2_MEMORY_COST),
+        timeCost: parseInt(process.env.ARGON2_TIME_COST),
+        parallelism: parseInt(process.env.ARGON2_PARALLELISM),
+        hashLength: parseInt(process.env.ARGON2_HASH_LENGTH),
+        saltLength: parseInt(process.env.ARGON2_SALT_LENGTH),
       });
       updatedUser = await UserRepository.updatePassword(userId, hashedPassword);
       if (Object.keys(updateData).length > 0) {
@@ -180,10 +155,7 @@ export async function updateUser(req, res) {
     });
   } catch (err) {
     console.error("Update user error:", err);
-    return res.status(500).json({
-      message: "Failed to update user",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, USER_ERRORS.UPDATE_SERVER_ERROR);
   }
 }
 
@@ -194,10 +166,7 @@ export async function updateUserPrivilege(req, res) {
 
     const user = await _findUserById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        error: "USER_NOT_FOUND",
-      });
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
 
     const updatedUser = await UserRepository.updatePrivilege(userId, isAdmin);
@@ -208,10 +177,7 @@ export async function updateUserPrivilege(req, res) {
     });
   } catch (err) {
     console.error("Update user privilege error:", err);
-    return res.status(500).json({
-      message: "Failed to update user privilege",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, USER_ERRORS.PRIVILEGE_SERVER_ERROR);
   }
 }
 
@@ -221,10 +187,7 @@ export async function deleteUser(req, res) {
 
     const user = await _findUserById(userId);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-        error: "USER_NOT_FOUND",
-      });
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
     if (process.env.NODE_ENV === "production") {
       await UserRepository.softDelete(userId);
@@ -239,10 +202,7 @@ export async function deleteUser(req, res) {
     }
   } catch (err) {
     console.error("Delete user error:", err);
-    return res.status(500).json({
-      message: "Failed to delete user",
-      error: "SERVER_ERROR",
-    });
+    return sendErrorResponse(res, USER_ERRORS.DELETE_SERVER_ERROR);
   }
 }
 
@@ -255,6 +215,7 @@ export function formatUserResponse(user) {
     email: user.email,
     isAdmin: user.isAdmin,
     isActive: user.isActive,
+    isVerified: user.isVerified,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     lastLogin: user.lastLogin,
@@ -268,7 +229,6 @@ export function formatUserResponse(user) {
   };
 }
 
-// Helper functions for database operations
 async function _findUserByUsernameOrEmail(username, email) {
   return await UserRepository.findByUsernameOrEmail(username, email);
 }
