@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import CollaborationPage from './pages/CollaborationPage';
 import './App.css';
 
 function App() {
@@ -8,8 +9,9 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={<LoginPage />} />
+          <Route path="/" element={<CollaborationPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/collaborate" element={<CollaborationPage />} />
         </Routes>
       </div>
     </Router>
