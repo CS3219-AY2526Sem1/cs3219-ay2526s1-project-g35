@@ -17,7 +17,9 @@ function secondsToMs(seconds) {
  * Returns existing token if it has sufficient remaining time, null otherwise
  */
 async function shouldReuseToken(userId) {
-  const MINIMUM_REMAINING_TIME = 300;
+  const MINIMUM_REMAINING_TIME = parseInt(
+    process.env.MINIMUM_TOKEN_REUSE_TIME
+  );
 
   try {
     const existingToken = await redisService.getWhitelistToken(userId);
@@ -62,29 +64,39 @@ export async function handleLogin(req, res) {
       lastLogin: new Date(),
     });
 
-    let accessToken = await shouldReuseToken(
-      (updatedUser || user).id.toString()
+    const currentUser = updatedUser || user;
+    const userId = currentUser.id.toString();
+    const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN);
+
+    // Use atomic whitelist storage to prevent race conditions
+    const minReuseTime = parseInt(process.env.MINIMUM_TOKEN_REUSE_TIME);
+    
+    // Prepare user data for caching
+    const userData = {
+      id: currentUser.id,
+      username: currentUser.username,
+      email: currentUser.email,
+      isAdmin: currentUser.isAdmin,
+      isVerified: currentUser.isVerified,
+      createdAt: currentUser.createdAt,
+      lastLogin: currentUser.lastLogin,
+    };
+
+    const newToken = generateToken(currentUser);
+
+    // Atomically store or reuse token - prevents race conditions
+    const result = await redisService.storeOrReuseWhitelistToken(
+      userId,
+      newToken,
+      userData,
+      tokenTTL,
+      minReuseTime
     );
-    let tokenWasReused = !!accessToken;
 
-    if (!accessToken) {
-      accessToken = generateToken(updatedUser || user);
+    const accessToken = result.token;
+    const tokenWasReused = result.wasReused;
 
-      const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN);
-      const whitelistStored = await redisService.storeWhitelistToken(
-        (updatedUser || user).id.toString(),
-        accessToken,
-        tokenTTL
-      );
-
-      if (!whitelistStored) {
-        console.warn(
-          "Failed to store token in whitelist - whitelist may not be available"
-        );
-      }
-    }
-
-    const refreshToken = generateRefreshToken(updatedUser || user);
+    const refreshToken = generateRefreshToken(currentUser);
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === "true",
@@ -108,7 +120,7 @@ export async function handleLogin(req, res) {
       data: {
         expiresIn: parseInt(process.env.JWT_EXPIRES_IN),
         tokenReused: tokenWasReused,
-        user: formatUserResponse(updatedUser || user),
+        user: formatUserResponse(currentUser),
       },
     });
   } catch (err) {
@@ -153,19 +165,22 @@ export async function handleRefreshToken(req, res) {
     }
 
     const newAccessToken = generateToken(user);
-
     const tokenTTL = parseInt(process.env.JWT_EXPIRES_IN);
-    const whitelistStored = await redisService.storeWhitelistToken(
-      user.id.toString(),
-      newAccessToken,
-      tokenTTL
-    );
+    const userId = user.id.toString();
 
-    if (!whitelistStored) {
-      console.warn(
-        "Failed to store new token in whitelist - whitelist may not be available"
-      );
-    }
+    // Prepare user data for caching
+    const userData = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      isVerified: user.isVerified,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin,
+    };
+
+    // Store in whitelist with user data cache
+    await redisService.storeWhitelistToken(userId, newAccessToken, tokenTTL, userData);
 
     const newRefreshToken = generateRefreshToken(user);
     res.cookie("accessToken", newAccessToken, {

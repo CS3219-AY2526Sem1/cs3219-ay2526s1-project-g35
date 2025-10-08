@@ -16,7 +16,7 @@ class RedisService {
   async connect() {
     try {
       this.client = createClient({
-        url: process.env.REDIS_URL || "redis://localhost:6379",
+        url: process.env.REDIS_URL,
         retry_strategy: options => {
           if (options.error && options.error.code === "ECONNREFUSED") {
             return new Error("The server refused the connection");
@@ -57,12 +57,12 @@ class RedisService {
   }
 
   /**
-   * Store token in whitelist for a user
+   * Store token in whitelist for a user with cached user data
    * Key: whitelist:userId
-   * Value: current valid access token
+   * Value: JSON object { token, user }
    * TTL: matches JWT expiration time
    */
-  async storeWhitelistToken(userId, token, expiryInSeconds) {
+  async storeWhitelistToken(userId, token, expiryInSeconds, userData) {
     if (!this.isClientAvailable()) {
       console.warn(
         "Caching Service not available - token whitelisting disabled"
@@ -72,9 +72,11 @@ class RedisService {
 
     try {
       const key = this.whitelistKeyString(userId);
-      await this.client.setEx(key, expiryInSeconds, token);
+      const value = JSON.stringify({ token, user: userData });
+      
+      await this.client.setEx(key, expiryInSeconds, value);
       console.log(
-        `Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s`
+        `Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`
       );
       return true;
     } catch (error) {
@@ -95,11 +97,48 @@ class RedisService {
 
     try {
       const key = this.whitelistKeyString(userId);
-      const storedToken = await this.client.get(key);
-      return storedToken === token;
+      const storedValue = await this.client.get(key);
+      
+      if (!storedValue) {
+        return false;
+      }
+
+      const parsed = JSON.parse(storedValue);
+      return parsed.token === token;
     } catch (error) {
       console.error("Error checking token whitelist:", error);
       return false;
+    }
+  }
+
+  /**
+   * Get cached user data from whitelist if available
+   * Returns user data if token matches, null otherwise
+   */
+  async getCachedUserData(userId, token) {
+    if (!this.isClientAvailable()) {
+      return null;
+    }
+
+    try {
+      const key = this.whitelistKeyString(userId);
+      const storedValue = await this.client.get(key);
+      
+      if (!storedValue) {
+        return null;
+      }
+
+      const parsed = JSON.parse(storedValue);
+      
+      // Verify token matches before returning user data
+      if (parsed.token === token && parsed.user) {
+        return parsed.user;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error getting cached user data:", error);
+      return null;
     }
   }
 
@@ -149,7 +188,14 @@ class RedisService {
 
     try {
       const key = this.whitelistKeyString(userId);
-      return await this.client.get(key);
+      const storedValue = await this.client.get(key);
+      
+      if (!storedValue) {
+        return null;
+      }
+
+      const parsed = JSON.parse(storedValue);
+      return parsed.token;
     } catch (error) {
       console.error("Error getting whitelist token:", error);
       return null;
@@ -204,6 +250,121 @@ class RedisService {
     }
   }
 
+  /**
+   * Atomically store or reuse whitelisted token using Lua script
+   * Prevents race conditions during concurrent login attempts
+   * Returns: { token, user, wasStored, wasReused, ttl }
+   */
+  async storeOrReuseWhitelistToken(userId, newToken, userData, expiryInSeconds, minRemainingTime = 300) {
+    if (!this.isClientAvailable()) {
+      console.warn(
+        "Caching Service not available - token whitelisting disabled"
+      );
+      return {
+        token: newToken,
+        user: userData,
+        wasStored: false,
+        wasReused: false
+      };
+    }
+
+    try {
+      const key = this.whitelistKeyString(userId);
+      const newValue = JSON.stringify({ token: newToken, user: userData });
+      
+      // Lua script for atomic check-and-set operation
+      // This prevents race conditions in concurrent logins
+      const luaScript = `
+        local key = KEYS[1]
+        local newValue = ARGV[1]
+        local expiryInSeconds = tonumber(ARGV[2])
+        local minRemainingTime = tonumber(ARGV[3])
+        
+        local existingValue = redis.call('GET', key)
+        local ttl = redis.call('TTL', key)
+        
+        -- If no value exists or TTL is low, store new value
+        if not existingValue or ttl < minRemainingTime then
+          redis.call('SETEX', key, expiryInSeconds, newValue)
+          return {newValue, 'stored', ttl}
+        end
+        
+        -- Return existing value if it has enough time left
+        return {existingValue, 'reused', ttl}
+      `;
+      
+      const result = await this.client.eval(luaScript, {
+        keys: [key],
+        arguments: [newValue, expiryInSeconds.toString(), minRemainingTime.toString()]
+      });
+      
+      const [resultValue, action, ttl] = result;
+      const parsed = JSON.parse(resultValue);
+      const wasReused = action === 'reused';
+      
+      if (wasReused) {
+        console.log(`Reusing existing token for user ${userId} (${ttl}s remaining)`);
+      } else {
+        console.log(`Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`);
+      }
+      
+      return {
+        token: parsed.token,
+        user: parsed.user,
+        wasStored: !wasReused,
+        wasReused,
+        ttl
+      };
+    } catch (error) {
+      console.error("Error storing/reusing whitelist token:", error);
+      return {
+        token: newToken,
+        user: userData,
+        wasStored: false,
+        wasReused: false,
+        error
+      };
+    }
+  }
+
+  /**
+   * Update only the user data in whitelist (keep same token)
+   * Useful when user data changes but token should remain valid
+   */
+  async updateWhitelistUserData(userId, userData) {
+    if (!this.isClientAvailable()) {
+      return false;
+    }
+
+    try {
+      const key = this.whitelistKeyString(userId);
+      const storedValue = await this.client.get(key);
+      
+      if (!storedValue) {
+        console.warn(`No whitelisted token found for user ${userId} to update`);
+        return false;
+      }
+
+      const ttl = await this.client.ttl(key);
+      if (ttl <= 0) {
+        console.warn(`Whitelisted token expired for user ${userId}`);
+        return false;
+      }
+
+      // Parse existing value and extract token
+      const parsed = JSON.parse(storedValue);
+      const token = parsed.token;
+
+      // Store with updated user data
+      const newValue = JSON.stringify({ token, user: userData });
+      await this.client.setEx(key, ttl, newValue);
+      console.log(`Whitelist user data updated for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error("Error updating whitelist user data:", error);
+      return false;
+    }
+  }
   /**
    * Disconnect from Redis
    */

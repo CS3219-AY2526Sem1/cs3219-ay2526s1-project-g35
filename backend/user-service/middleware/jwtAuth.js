@@ -35,6 +35,22 @@ export const verifyToken = (req, res, next) => {
     }
 
     try {
+      const cachedUser = await redisService.getCachedUserData(decoded.id, token);
+      
+      if (cachedUser) {
+        req.userId = cachedUser.id;
+        req.user = {
+          id: cachedUser.id,
+          username: cachedUser.username,
+          email: cachedUser.email,
+          isAdmin: cachedUser.isAdmin,
+          isVerified: cachedUser.isVerified,
+          createdAt: cachedUser.createdAt,
+          lastLogin: cachedUser.lastLogin,
+        };
+        return next();
+      }
+
       const isWhitelisted = await redisService.isTokenWhitelisted(
         decoded.id,
         token
@@ -68,6 +84,11 @@ export const verifyToken = (req, res, next) => {
         createdAt: user.createdAt,
         lastLogin: user.lastLogin,
       };
+
+      const tokenTTL = decoded.exp - Math.floor(Date.now() / 1000);
+      if (tokenTTL > 0) {
+        await redisService.updateWhitelistUserData(user.id.toString(), req.user);
+      }
 
       next();
     } catch (dbError) {
