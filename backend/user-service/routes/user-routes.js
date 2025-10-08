@@ -36,25 +36,10 @@ router.get("/profile", verifyToken, getUserProfile);
 router.get("/:id", validateUserIdParam, verifyToken, getUser);
 
 // Update user (authenticated users only)
-router.patch(
-  "/:id",
-  validateUserIdParam,
-  verifyToken,
-  normalizeEmail,
-  normalizeUsername,
-  validateUpdateUser,
-  updateUser
-);
+router.patch( "/:id", validateUserIdParam, verifyToken, normalizeEmail, normalizeUsername, validateUpdateUser, updateUser );
 
 // Update user privilege (admin only)
-router.patch(
-  "/:id/privilege",
-  validateUserIdParam,
-  verifyToken,
-  isAdmin,
-  validateUpdatePrivilege,
-  updateUserPrivilege
-);
+router.patch( "/:id/privilege", validateUserIdParam, verifyToken, isAdmin, validateUpdatePrivilege, updateUserPrivilege );
 
 // Delete user (admin only)
 router.delete("/:id", validateUserIdParam, verifyToken, isAdmin, deleteUser);

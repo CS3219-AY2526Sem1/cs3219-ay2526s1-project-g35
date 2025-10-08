@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { UserRepository } from "../model/user-repository.js";
-import { redisService } from "../services/redis-service.js";
+import { whitelistRedisService } from "../services/redis/redis-whitelist-service.js";
 import { AUTH_ERRORS, sendErrorResponse } from "../errors/index.js";
 
 /**
@@ -35,7 +35,7 @@ export const verifyToken = (req, res, next) => {
     }
 
     try {
-      const cachedUser = await redisService.getCachedUserData(decoded.id, token);
+      const cachedUser = await whitelistRedisService.getCachedUserData(decoded.id, token);
       
       if (cachedUser) {
         req.userId = cachedUser.id;
@@ -51,7 +51,7 @@ export const verifyToken = (req, res, next) => {
         return next();
       }
 
-      const isWhitelisted = await redisService.isTokenWhitelisted(
+      const isWhitelisted = await whitelistRedisService.isTokenWhitelisted(
         decoded.id,
         token
       );
@@ -60,7 +60,7 @@ export const verifyToken = (req, res, next) => {
           path: "/",
           httpOnly: true,
           secure: process.env.COOKIE_SECURE === "true",
-          sameSite: process.env.COOKIE_SAME_SITE || "lax",
+          sameSite: process.env.COOKIE_SAME_SITE,
           domain: process.env.COOKIE_DOMAIN,
         });
 
@@ -70,7 +70,7 @@ export const verifyToken = (req, res, next) => {
       const user = await UserRepository.findById(decoded.id);
 
       if (!user) {
-        await redisService.removeWhitelistToken(decoded.id);
+        await whitelistRedisService.removeWhitelistToken(decoded.id);
         return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND);
       }
 
@@ -87,7 +87,7 @@ export const verifyToken = (req, res, next) => {
 
       const tokenTTL = decoded.exp - Math.floor(Date.now() / 1000);
       if (tokenTTL > 0) {
-        await redisService.updateWhitelistUserData(user.id.toString(), req.user);
+        await whitelistRedisService.updateWhitelistUserData(user.id.toString(), req.user);
       }
 
       next();

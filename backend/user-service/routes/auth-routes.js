@@ -36,12 +36,7 @@ router.post("/reset-ttl", verifyToken, handleResetTokenTTL);
 
 // OTP verification endpoints
 router.post("/send-otp", verifyToken, handleSendVerificationOTP);
-router.post(
-  "/verify-otp",
-  verifyToken,
-  validate(userSchemas.verifyOTPOnly),
-  handleVerifyOTP
-);
+router.post("/verify-otp", verifyToken, validate(userSchemas.verifyOTPOnly), handleVerifyOTP);
 router.get("/verification-status", verifyToken, handleCheckVerificationStatus);
 
 export default router;
