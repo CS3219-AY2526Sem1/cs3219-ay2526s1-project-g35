@@ -5,6 +5,7 @@ import {
   deleteUser,
   getUser,
   getUserProfile,
+  getUserIdByUsername,
   updateUser,
   updateUserPrivilege,
 } from "../controller/user-controller.js";
@@ -28,6 +29,9 @@ router.post(
   validateCreateUser,
   createUser
 );
+
+// Get userId by username (public endpoint - no auth required)
+router.get("/username/:username", getUserIdByUsername);
 
 // Get current user's profile (authenticated users)
 router.get("/profile", verifyToken, getUserProfile);

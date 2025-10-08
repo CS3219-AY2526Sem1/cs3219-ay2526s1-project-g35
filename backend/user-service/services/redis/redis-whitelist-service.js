@@ -16,7 +16,6 @@ class WhitelistRedisService {
   whitelistKeyString(userId) {
     return `whitelist:${String(userId)}`;
   }
-
   /**
    * Check if Redis client is available
    */
@@ -46,7 +45,7 @@ class WhitelistRedisService {
       const key = this.whitelistKeyString(userId);
       const value = JSON.stringify({ token, user: userData });
       const client = this.getClient();
-      
+
       await client.setEx(key, expiryInSeconds, value);
       console.log(
         `Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`
@@ -72,7 +71,7 @@ class WhitelistRedisService {
       const key = this.whitelistKeyString(userId);
       const client = this.getClient();
       const storedValue = await client.get(key);
-      
+
       if (!storedValue) {
         return false;
       }
@@ -98,7 +97,7 @@ class WhitelistRedisService {
       const key = this.whitelistKeyString(userId);
       const client = this.getClient();
       const storedValue = await client.get(key);
-      
+
       if (!storedValue) {
         return null;
       }
@@ -165,7 +164,7 @@ class WhitelistRedisService {
       const key = this.whitelistKeyString(userId);
       const client = this.getClient();
       const storedValue = await client.get(key);
-      
+
       if (!storedValue) {
         return null;
       }
@@ -216,15 +215,66 @@ class WhitelistRedisService {
     }
     try {
       const client = this.getClient();
-      const keys = await client.keys("whitelist:*");
-      if (keys.length > 0) {
-        await client.del(keys);
-        console.log(`Cleared ${keys.length} whitelisted tokens`);
-      }
+      let cursor = 0;
+      let totalDeleted = 0;
+      do {
+        const result = await client.scan(cursor, {
+          MATCH: "whitelist:*",
+          COUNT: 100 
+        });
+        
+        cursor = result.cursor;
+        const keys = result.keys;
+        
+        if (keys.length > 0) {
+          const deleted = await client.del(keys);
+          totalDeleted += deleted;
+        }
+      } while (cursor !== 0);
+      
+      console.log(`Cleared ${totalDeleted} whitelisted tokens using SCAN`);
       return true;
     } catch (error) {
       console.error("Error clearing whitelist:", error);
       return false;
+    }
+  }
+
+  /**
+   * Clear all sessions for a specific user
+   */
+  async clearUserSessions(userId) {
+    if (!(await this.isClientAvailable())) {
+      console.warn("Caching Service not available - session clearing disabled");
+      return 0;
+    }
+    
+    try {
+      const client = this.getClient();
+      const pattern = `whitelist:${String(userId)}*`; 
+      let cursor = 0;
+      let totalDeleted = 0;
+      
+      do {
+        const result = await client.scan(cursor, {
+          MATCH: pattern,
+          COUNT: 100
+        });
+        
+        cursor = result.cursor;
+        const keys = result.keys;
+        
+        if (keys.length > 0) {
+          const deleted = await client.del(keys);
+          totalDeleted += deleted;
+        }
+      } while (cursor !== 0);
+      
+      console.log(`Cleared ${totalDeleted} session(s) for user ${userId}`);
+      return totalDeleted;
+    } catch (error) {
+      console.error("Error clearing user sessions:", error);
+      return 0;
     }
   }
 
@@ -249,22 +299,22 @@ class WhitelistRedisService {
       const key = this.whitelistKeyString(userId);
       const newValue = JSON.stringify({ token: newToken, user: userData });
       const client = this.getClient();
-      
+
       const result = await client.eval(TOKEN_CHECK_AND_REUSE_SCRIPT, {
         keys: [key],
         arguments: [newValue, expiryInSeconds.toString(), minRemainingTime.toString()]
       });
-      
+
       const [resultValue, action, ttl] = result;
       const parsed = JSON.parse(resultValue);
       const wasReused = action === 'reused';
-      
+
       if (wasReused) {
         console.log(`Reusing existing token for user ${userId} (${ttl}s remaining)`);
       } else {
         console.log(`Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`);
       }
-      
+
       return {
         token: parsed.token,
         user: parsed.user,
@@ -297,7 +347,7 @@ class WhitelistRedisService {
       const key = this.whitelistKeyString(userId);
       const client = this.getClient();
       const storedValue = await client.get(key);
-      
+
       if (!storedValue) {
         console.warn(`No whitelisted token found for user ${userId} to update`);
         return false;
@@ -322,5 +372,4 @@ class WhitelistRedisService {
   }
 }
 
-// Export singleton instance
 export const whitelistRedisService = new WhitelistRedisService(baseRedisService);

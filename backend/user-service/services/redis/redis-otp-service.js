@@ -171,36 +171,6 @@ class OTPRedisService {
     }
   }
 
-  /**
-   * Clean up expired OTPs 
-   * This is automatically handled by Redis TTL, but can be called manually
-   */
-  async cleanupExpiredOTPs(purpose = null) {
-    if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - OTP cleanup disabled");
-      return 0;
-    }
-
-    try {
-      const pattern = purpose ? `otp:${purpose}:*` : "otp:*";
-      const client = this.getClient();
-      const keys = await client.keys(pattern);
-
-      let cleanedCount = 0;
-      for (const key of keys) {
-        const ttl = await client.ttl(key);
-        if (ttl === -2) {
-          cleanedCount++;
-        }
-      }
-
-      console.log(`OTP cleanup completed: ${cleanedCount} expired keys found`);
-      return cleanedCount;
-    } catch (error) {
-      console.error("Error during OTP cleanup:", error);
-      return 0;
-    }
-  }
 }
 
 export const otpRedisService = new OTPRedisService(baseRedisService);
