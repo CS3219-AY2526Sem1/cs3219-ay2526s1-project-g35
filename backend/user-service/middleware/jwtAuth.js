@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { UserRepository } from "../model/user-repository.js";
-import { redisService } from "../services/redis-service.js";
+import { whitelistRedisService } from "../services/redis/redis-whitelist-service.js";
 import { AUTH_ERRORS, sendErrorResponse } from "../errors/index.js";
 
 /**
@@ -35,7 +35,23 @@ export const verifyToken = (req, res, next) => {
     }
 
     try {
-      const isWhitelisted = await redisService.isTokenWhitelisted(
+      const cachedUser = await whitelistRedisService.getCachedUserData(decoded.id, token);
+      
+      if (cachedUser) {
+        req.userId = cachedUser.id;
+        req.user = {
+          id: cachedUser.id,
+          username: cachedUser.username,
+          email: cachedUser.email,
+          isAdmin: cachedUser.isAdmin,
+          isVerified: cachedUser.isVerified,
+          createdAt: cachedUser.createdAt,
+          lastLogin: cachedUser.lastLogin,
+        };
+        return next();
+      }
+
+      const isWhitelisted = await whitelistRedisService.isTokenWhitelisted(
         decoded.id,
         token
       );
@@ -44,7 +60,7 @@ export const verifyToken = (req, res, next) => {
           path: "/",
           httpOnly: true,
           secure: process.env.COOKIE_SECURE === "true",
-          sameSite: process.env.COOKIE_SAME_SITE || "lax",
+          sameSite: process.env.COOKIE_SAME_SITE,
           domain: process.env.COOKIE_DOMAIN,
         });
 
@@ -54,7 +70,7 @@ export const verifyToken = (req, res, next) => {
       const user = await UserRepository.findById(decoded.id);
 
       if (!user) {
-        await redisService.removeWhitelistToken(decoded.id);
+        await whitelistRedisService.removeWhitelistToken(decoded.id);
         return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND);
       }
 
@@ -68,6 +84,11 @@ export const verifyToken = (req, res, next) => {
         createdAt: user.createdAt,
         lastLogin: user.lastLogin,
       };
+
+      const tokenTTL = decoded.exp - Math.floor(Date.now() / 1000);
+      if (tokenTTL > 0) {
+        await whitelistRedisService.updateWhitelistUserData(user.id.toString(), req.user);
+      }
 
       next();
     } catch (dbError) {

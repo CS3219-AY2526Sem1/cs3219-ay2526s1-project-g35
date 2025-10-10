@@ -5,6 +5,7 @@ import {
   deleteUser,
   getUser,
   getUserProfile,
+  getUserIdByUsername,
   updateUser,
   updateUserPrivilege,
 } from "../controller/user-controller.js";
@@ -29,6 +30,9 @@ router.post(
   createUser
 );
 
+// Get userId by username (public endpoint - no auth required)
+router.get("/username/:username", getUserIdByUsername);
+
 // Get current user's profile (authenticated users)
 router.get("/profile", verifyToken, getUserProfile);
 
@@ -36,25 +40,10 @@ router.get("/profile", verifyToken, getUserProfile);
 router.get("/:id", validateUserIdParam, verifyToken, getUser);
 
 // Update user (authenticated users only)
-router.patch(
-  "/:id",
-  validateUserIdParam,
-  verifyToken,
-  normalizeEmail,
-  normalizeUsername,
-  validateUpdateUser,
-  updateUser
-);
+router.patch( "/:id", validateUserIdParam, verifyToken, normalizeEmail, normalizeUsername, validateUpdateUser, updateUser );
 
 // Update user privilege (admin only)
-router.patch(
-  "/:id/privilege",
-  validateUserIdParam,
-  verifyToken,
-  isAdmin,
-  validateUpdatePrivilege,
-  updateUserPrivilege
-);
+router.patch( "/:id/privilege", validateUserIdParam, verifyToken, isAdmin, validateUpdatePrivilege, updateUserPrivilege );
 
 // Delete user (admin only)
 router.delete("/:id", validateUserIdParam, verifyToken, isAdmin, deleteUser);

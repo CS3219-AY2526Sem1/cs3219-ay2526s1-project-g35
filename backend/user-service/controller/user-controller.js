@@ -79,6 +79,32 @@ export async function getUserProfile(req, res) {
   }
 }
 
+export async function getUserIdByUsername(req, res) {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return sendErrorResponse(res, USER_ERRORS.MISSING_USERNAME);
+    }
+
+    const user = await _findUserByUsername(username);
+    if (!user) {
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
+    }
+
+    return res.status(200).json({
+      message: "User ID retrieved successfully",
+      data: {
+        id: user.id || user._id,
+        username: user.username,
+      },
+    });
+  } catch (err) {
+    console.error("Get userId by username error:", err);
+    return sendErrorResponse(res, USER_ERRORS.INTERNAL_SERVER_ERROR);
+  }
+}
+
 export async function getUser(req, res) {
   try {
     const userId = req.params.id;

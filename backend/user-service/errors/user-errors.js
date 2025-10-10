@@ -25,6 +25,11 @@ export const USER_ERRORS = {
     message: "User not found",
     status: 404,
   },
+  MISSING_USERNAME: {
+    code: "MISSING_USERNAME",
+    message: "Username is required",
+    status: 400,
+  },
   UNAUTHORIZED_ACCESS: {
     code: "UNAUTHORIZED_ACCESS",
     message: "Access denied. You can only access your own user data.",
