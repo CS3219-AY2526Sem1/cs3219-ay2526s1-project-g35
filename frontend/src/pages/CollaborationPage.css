@@ -17,11 +17,25 @@
   height: 60px;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .header-left .brand {
   font-size: 20px;
   font-weight: 600;
   color: #2d3748;
   margin: 0;
+}
+
+.header-left .session-id {
+  font-size: 12px;
+  color: #718096;
+  background-color: #edf2f7;
+  padding: 4px 12px;
+  border-radius: 12px;
 }
 
 .header-right {
@@ -41,8 +55,17 @@
 .status-indicator {
   width: 8px;
   height: 8px;
-  background-color: #48bb78;
+  background-color: #cbd5e0;
   border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.status-indicator.connected {
+  background-color: #48bb78;
+}
+
+.status-indicator.disconnected {
+  background-color: #f56565;
 }
 
 .leave-session-btn {
@@ -215,6 +238,41 @@
   background-color: #4299e1;
   color: white;
   align-self: flex-start;
+}
+
+.message.system {
+  align-self: center;
+  background-color: transparent;
+  padding: 4px 8px;
+  max-width: 100%;
+  text-align: center;
+}
+
+.system-message {
+  color: #718096;
+  font-size: 13px;
+}
+
+.message-username {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.typing-indicator {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #718096;
+  font-style: italic;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .chat-input-form {
