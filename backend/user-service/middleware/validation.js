@@ -65,7 +65,6 @@ export const userSchemas = {
     isAdmin: Joi.boolean().required(),
   }),
 
-  // Login validation
   login: Joi.object({
     email: Joi.string().email().required().messages({
       "string.email": "Please provide a valid email address",

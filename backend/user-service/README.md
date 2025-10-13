@@ -88,6 +88,41 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
     | 409 (Conflict)              | Duplicate username or email encountered               |
     | 500 (Internal Server Error) | Database or server error                              |
 
+### Get User ID by Username
+
+- This endpoint allows retrieval of a user's ID using their username. This is a public endpoint that does not require authentication.
+
+- HTTP Method: `GET`
+
+- Endpoint: http://localhost:3001/users/username/{username}
+
+- Parameters
+    - Required: `username` path parameter
+    - Example: `http://localhost:3001/users/username/johndoe`
+
+- Authentication
+    - Not required (public endpoint)
+
+- Responses:
+
+    | Response Code               | Explanation                                              |
+    |-----------------------------|----------------------------------------------------------|
+    | 200 (OK)                    | Success, user ID and username returned                   |
+    | 400 (Bad Request)           | Missing username parameter                               |
+    | 404 (Not Found)             | User with the specified username not found               |
+    | 500 (Internal Server Error) | Database or server error                                 |
+
+- Example Response (200 OK):
+    ```json
+    {
+      "message": "User ID retrieved successfully",
+      "data": {
+        "id": "60c72b2f9b1d4c3a2e5f8b4c",
+        "username": "johndoe"
+      }
+    }
+    ```
+
 ### Get User
 
 - This endpoint allows retrieval of a single user's data from the database using the user's ID.

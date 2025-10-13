@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { getOTPErrorMessage } from "../errors/otp-errors.js";
 
 /**
  * OTP Service for handling One-Time Password generation, validation, and management
@@ -125,23 +126,10 @@ class OTPService {
 
   /**
    * Get user-friendly error message for validation result
+
    */
   getErrorMessage(validationResult) {
-    const errorMessages = {
-      OTP_NOT_FOUND: "OTP not found or has expired. Please request a new OTP.",
-      OTP_EXPIRED: "OTP has expired. Please request a new OTP.",
-      MAX_ATTEMPTS_EXCEEDED:
-        "Maximum verification attempts exceeded. Please request a new OTP.",
-      PURPOSE_MISMATCH:
-        "Invalid OTP type. Please use the correct verification link.",
-      INVALID_FORMAT: `Invalid OTP format. Please enter a ${this.defaultOTPLength}-digit number.`,
-      OTP_MISMATCH: `Incorrect OTP. ${validationResult.attemptsRemaining} attempt(s) remaining.`,
-    };
-
-    return (
-      errorMessages[validationResult.reason] ||
-      "OTP validation failed. Please try again."
-    );
+    return getOTPErrorMessage(validationResult, this.defaultOTPLength);
   }
 
   /**
