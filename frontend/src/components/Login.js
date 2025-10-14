@@ -4,14 +4,14 @@ import './Login.css';
 const Login = ({ onLogin, onResetPassword, onSignUp }) => {
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -23,10 +23,12 @@ const Login = ({ onLogin, onResetPassword, onSignUp }) => {
   return (
     <div className="login-container">
       <h1 className="login-title">Login</h1>
-      
+
       <form className="login-form" onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="email" className="form-label">Email</label>
+          <label htmlFor="email" className="form-label">
+            Email
+          </label>
           <input
             type="email"
             id="email"
@@ -40,7 +42,9 @@ const Login = ({ onLogin, onResetPassword, onSignUp }) => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="password" className="form-label">Password</label>
+          <label htmlFor="password" className="form-label">
+            Password
+          </label>
           <input
             type="password"
             id="password"
@@ -56,11 +60,7 @@ const Login = ({ onLogin, onResetPassword, onSignUp }) => {
           <button type="submit" className="login-button">
             Login
           </button>
-          <button 
-            type="button" 
-            className="reset-password-link"
-            onClick={onResetPassword}
-          >
+          <button type="button" className="reset-password-link" onClick={onResetPassword}>
             Reset your password
           </button>
         </div>
@@ -68,12 +68,8 @@ const Login = ({ onLogin, onResetPassword, onSignUp }) => {
 
       <div className="signup-section">
         <span className="signup-text">
-          Don't have an account? 
-          <button 
-            type="button"
-            className="signup-link"
-            onClick={onSignUp}
-          >
+          Don't have an account?
+          <button type="button" className="signup-link" onClick={onSignUp}>
             Sign up here now!
           </button>
         </span>

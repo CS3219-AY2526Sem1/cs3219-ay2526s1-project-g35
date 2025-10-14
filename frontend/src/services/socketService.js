@@ -17,22 +17,22 @@ class SocketService {
    */
   connect(token, userId) {
     const serverUrl = process.env.REACT_APP_COLLABORATION_SERVICE_URL || 'http://localhost:8000';
-    
+
     this.userId = userId;
 
     this.socket = io(serverUrl, {
       auth: {
         token: token || '',
-        userId: userId
+        userId: userId,
       },
       query: {
         token: token || '',
-        userId: userId
+        userId: userId,
       },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
     });
 
     this.setupConnectionHandlers();
@@ -76,18 +76,15 @@ class SocketService {
       this.sessionId = sessionId;
       this.userId = userId;
 
-      this.socket.emit('join-session', 
-        { sessionId, userId, userInfo },
-        (response) => {
-          if (response.success) {
-            console.log('✅ Joined session:', sessionId);
-            resolve(response);
-          } else {
-            console.error('❌ Failed to join session:', response.error);
-            reject(new Error(response.error));
-          }
+      this.socket.emit('join-session', { sessionId, userId, userInfo }, (response) => {
+        if (response.success) {
+          console.log('✅ Joined session:', sessionId);
+          resolve(response);
+        } else {
+          console.error('❌ Failed to join session:', response.error);
+          reject(new Error(response.error));
         }
-      );
+      });
     });
   }
 
@@ -100,13 +97,10 @@ class SocketService {
         return resolve({ success: false });
       }
 
-      this.socket.emit('leave-session', 
-        { sessionId: this.sessionId },
-        (response) => {
-          this.sessionId = null;
-          resolve(response);
-        }
-      );
+      this.socket.emit('leave-session', { sessionId: this.sessionId }, (response) => {
+        this.sessionId = null;
+        resolve(response);
+      });
     });
   }
 
@@ -120,7 +114,7 @@ class SocketService {
       sessionId: this.sessionId,
       userId: this.userId,
       code,
-      cursorPosition
+      cursorPosition,
     });
   }
 
@@ -133,7 +127,7 @@ class SocketService {
     this.socket.emit('cursor-position', {
       sessionId: this.sessionId,
       userId: this.userId,
-      position
+      position,
     });
   }
 
@@ -146,7 +140,8 @@ class SocketService {
         return reject(new Error('Not connected to session'));
       }
 
-      this.socket.emit('language-change',
+      this.socket.emit(
+        'language-change',
         { sessionId: this.sessionId, userId: this.userId, language },
         (response) => {
           if (response.success) {
@@ -154,7 +149,7 @@ class SocketService {
           } else {
             reject(new Error(response.error));
           }
-        }
+        },
       );
     });
   }
@@ -169,7 +164,7 @@ class SocketService {
       sessionId: this.sessionId,
       userId: this.userId,
       username,
-      message
+      message,
     });
   }
 
@@ -181,7 +176,7 @@ class SocketService {
     this.socket.emit('typing-start', {
       sessionId: this.sessionId,
       userId: this.userId,
-      username
+      username,
     });
   }
 
@@ -189,7 +184,7 @@ class SocketService {
     if (!this.socket || !this.sessionId) return;
     this.socket.emit('typing-stop', {
       sessionId: this.sessionId,
-      userId: this.userId
+      userId: this.userId,
     });
   }
 
@@ -200,7 +195,7 @@ class SocketService {
     if (!this.socket || !this.sessionId) return;
     this.socket.emit('run-code', {
       sessionId: this.sessionId,
-      userId: this.userId
+      userId: this.userId,
     });
   }
 
@@ -213,16 +208,13 @@ class SocketService {
         return reject(new Error('Not connected to session'));
       }
 
-      this.socket.emit('request-sync',
-        { sessionId: this.sessionId },
-        (response) => {
-          if (response.success) {
-            resolve(response.session);
-          } else {
-            reject(new Error(response.error));
-          }
+      this.socket.emit('request-sync', { sessionId: this.sessionId }, (response) => {
+        if (response.success) {
+          resolve(response.session);
+        } else {
+          reject(new Error(response.error));
         }
-      );
+      });
     });
   }
 
@@ -302,5 +294,3 @@ class SocketService {
 // Export singleton instance
 const socketService = new SocketService();
 export default socketService;
-
-

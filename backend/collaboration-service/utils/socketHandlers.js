@@ -14,9 +14,9 @@ const setupSocketHandlers = (io, sessionManager) => {
         const { sessionId, userId, userInfo } = data;
 
         if (!sessionId || !userId) {
-          return callback?.({ 
-            success: false, 
-            error: 'Session ID and User ID are required' 
+          return callback?.({
+            success: false,
+            error: 'Session ID and User ID are required',
           });
         }
 
@@ -38,17 +38,19 @@ const setupSocketHandlers = (io, sessionManager) => {
           userId,
           username: userInfo?.username || `User${userId}`,
           userCount: sessionData.userCount,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
 
         // Send current session state to the joining user
         callback?.({
           success: true,
           session: sessionData,
-          message: `Joined session ${sessionId}`
+          message: `Joined session ${sessionId}`,
         });
 
-        console.log(`✅ User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})`);
+        console.log(
+          `✅ User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})`,
+        );
       } catch (error) {
         console.error('Error in join-session:', error);
         callback?.({ success: false, error: error.message });
@@ -76,7 +78,7 @@ const setupSocketHandlers = (io, sessionManager) => {
           code,
           cursorPosition,
           userId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } catch (error) {
         console.error('Error in code-change:', error);
@@ -99,7 +101,7 @@ const setupSocketHandlers = (io, sessionManager) => {
         socket.to(sessionId).emit('cursor-update', {
           userId,
           position,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } catch (error) {
         console.error('Error in cursor-position:', error);
@@ -126,7 +128,7 @@ const setupSocketHandlers = (io, sessionManager) => {
           io.to(sessionId).emit('language-update', {
             language,
             userId,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         }
 
@@ -154,7 +156,7 @@ const setupSocketHandlers = (io, sessionManager) => {
           userId,
           username,
           message,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } catch (error) {
         console.error('Error in chat-message:', error);
@@ -207,7 +209,7 @@ const setupSocketHandlers = (io, sessionManager) => {
     socket.on('leave-session', (data, callback) => {
       try {
         const { sessionId } = data;
-        
+
         // Leave the socket.io room
         socket.leave(sessionId);
 
@@ -220,7 +222,7 @@ const setupSocketHandlers = (io, sessionManager) => {
             userId: result.removedUser?.userId,
             username: result.removedUser?.username,
             remainingUsers: result.remainingUsers,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         }
 
@@ -238,11 +240,11 @@ const setupSocketHandlers = (io, sessionManager) => {
     socket.on('run-code', (data) => {
       try {
         const { sessionId, userId } = data;
-        
+
         // Notify other user that code is being executed
         socket.to(sessionId).emit('code-running', {
           userId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } catch (error) {
         console.error('Error in run-code:', error);
@@ -255,20 +257,22 @@ const setupSocketHandlers = (io, sessionManager) => {
     socket.on('disconnect', () => {
       try {
         const sessionId = sessionManager.getSessionBySocketId(socket.id);
-        
+
         if (sessionId) {
           const result = sessionManager.leaveSession(socket.id);
-          
+
           if (result.success && result.removedUser) {
             // Notify others that user disconnected
             socket.to(sessionId).emit('user-disconnected', {
               userId: result.removedUser.userId,
               username: result.removedUser.username,
               remainingUsers: result.remainingUsers,
-              timestamp: Date.now()
+              timestamp: Date.now(),
             });
 
-            console.log(`🔌 User ${result.removedUser.userId} disconnected from session ${sessionId}`);
+            console.log(
+              `🔌 User ${result.removedUser.userId} disconnected from session ${sessionId}`,
+            );
           }
         }
 
@@ -290,11 +294,11 @@ const setupSocketHandlers = (io, sessionManager) => {
   setInterval(() => {
     const stats = sessionManager.getStats();
     if (stats.totalSessions > 0) {
-      console.log(`📊 Sessions: ${stats.activeSessions}/${stats.totalSessions} active | Users: ${stats.totalUsers}`);
+      console.log(
+        `📊 Sessions: ${stats.activeSessions}/${stats.totalSessions} active | Users: ${stats.totalUsers}`,
+      );
     }
   }, 60000); // Every minute
 };
 
 module.exports = { setupSocketHandlers };
-
-

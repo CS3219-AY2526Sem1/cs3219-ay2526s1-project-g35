@@ -16,4 +16,3 @@ export const TOKEN_CHECK_AND_REUSE_SCRIPT = `
   -- Return existing value if it has enough time left
   return {existingValue, 'reused', ttl}
 `;
-

@@ -27,7 +27,12 @@
     "jest": "^29.6.2",
     "supertest": "^6.3.3"
   },
-  "keywords": ["microservice", "collaboration", "websocket", "peerprep"],
+  "keywords": [
+    "microservice",
+    "collaboration",
+    "websocket",
+    "peerprep"
+  ],
   "author": "Your Name",
   "license": "MIT"
 }

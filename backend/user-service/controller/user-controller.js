@@ -1,19 +1,14 @@
-import argon2 from "argon2";
-import { isValidObjectId } from "mongoose";
-import { UserRepository } from "../model/user-repository.js";
-import {
-  USER_ERRORS,
-  sendUserErrorResponse,
-  sendErrorResponse,
-} from "../errors/index.js";
+import argon2 from 'argon2';
+import { isValidObjectId } from 'mongoose';
+import { UserRepository } from '../model/user-repository.js';
+import { USER_ERRORS, sendUserErrorResponse, sendErrorResponse } from '../errors/index.js';
 
 export async function createUser(req, res) {
   try {
     const { username, email, password, profile } = req.body;
     const existingUser = await _findUserByUsernameOrEmail(username, email);
     if (existingUser) {
-      const conflict =
-        existingUser.username === username ? "username" : "email";
+      const conflict = existingUser.username === username ? 'username' : 'email';
       return sendUserErrorResponse(res, USER_ERRORS.USER_EXISTS, conflict, {
         field: conflict,
       });
@@ -34,11 +29,7 @@ export async function createUser(req, res) {
       profile: profile || {},
     };
 
-    const createdUser = await _createUser(
-      userData.username,
-      userData.email,
-      userData.password
-    );
+    const createdUser = await _createUser(userData.username, userData.email, userData.password);
 
     return res.status(201).json({
       message: `User ${username} created successfully. Please login to verify your email address.`,
@@ -47,7 +38,7 @@ export async function createUser(req, res) {
       },
     });
   } catch (err) {
-    console.error("Create user error:", err);
+    console.error('Create user error:', err);
 
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
@@ -70,11 +61,11 @@ export async function getUserProfile(req, res) {
     }
 
     return res.status(200).json({
-      message: "Profile retrieved successfully",
+      message: 'Profile retrieved successfully',
       data: formatUserResponse(user),
     });
   } catch (err) {
-    console.error("Error in getUserProfile:", err);
+    console.error('Error in getUserProfile:', err);
     return sendErrorResponse(res, USER_ERRORS.INTERNAL_SERVER_ERROR);
   }
 }
@@ -93,14 +84,14 @@ export async function getUserIdByUsername(req, res) {
     }
 
     return res.status(200).json({
-      message: "User ID retrieved successfully",
+      message: 'User ID retrieved successfully',
       data: {
         id: user.id || user._id,
         username: user.username,
       },
     });
   } catch (err) {
-    console.error("Get userId by username error:", err);
+    console.error('Get userId by username error:', err);
     return sendErrorResponse(res, USER_ERRORS.INTERNAL_SERVER_ERROR);
   }
 }
@@ -119,11 +110,11 @@ export async function getUser(req, res) {
     }
 
     return res.status(200).json({
-      message: "User found",
+      message: 'User found',
       data: formatUserResponse(user),
     });
   } catch (err) {
-    console.error("Get user error:", err);
+    console.error('Get user error:', err);
     return sendErrorResponse(res, USER_ERRORS.RETRIEVE_SERVER_ERROR);
   }
 }
@@ -154,8 +145,7 @@ export async function updateUser(req, res) {
     if (username) updateData.username = username;
     if (email) updateData.email = email.toLowerCase();
     if (profile) updateData.profile = { ...user.profile, ...profile };
-    if (preferences)
-      updateData.preferences = { ...user.preferences, ...preferences };
+    if (preferences) updateData.preferences = { ...user.preferences, ...preferences };
 
     let updatedUser;
     if (password) {
@@ -176,11 +166,11 @@ export async function updateUser(req, res) {
     }
 
     return res.status(200).json({
-      message: "User updated successfully",
+      message: 'User updated successfully',
       data: formatUserResponse(updatedUser),
     });
   } catch (err) {
-    console.error("Update user error:", err);
+    console.error('Update user error:', err);
     return sendErrorResponse(res, USER_ERRORS.UPDATE_SERVER_ERROR);
   }
 }
@@ -198,11 +188,11 @@ export async function updateUserPrivilege(req, res) {
     const updatedUser = await UserRepository.updatePrivilege(userId, isAdmin);
 
     return res.status(200).json({
-      message: `User privilege ${isAdmin ? "granted" : "revoked"} successfully`,
+      message: `User privilege ${isAdmin ? 'granted' : 'revoked'} successfully`,
       data: formatUserResponse(updatedUser),
     });
   } catch (err) {
-    console.error("Update user privilege error:", err);
+    console.error('Update user privilege error:', err);
     return sendErrorResponse(res, USER_ERRORS.PRIVILEGE_SERVER_ERROR);
   }
 }
@@ -215,19 +205,19 @@ export async function deleteUser(req, res) {
     if (!user) {
       return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === 'production') {
       await UserRepository.softDelete(userId);
       return res.status(200).json({
-        message: "User deactivated successfully",
+        message: 'User deactivated successfully',
       });
     } else {
       await _deleteUserById(userId);
       return res.status(200).json({
-        message: "User deleted successfully",
+        message: 'User deleted successfully',
       });
     }
   } catch (err) {
-    console.error("Delete user error:", err);
+    console.error('Delete user error:', err);
     return sendErrorResponse(res, USER_ERRORS.DELETE_SERVER_ERROR);
   }
 }

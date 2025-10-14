@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
-import { generateToken, generateRefreshToken } from "../middleware/jwtAuth.js";
-import { whitelistRedisService } from "./redis/redis-whitelist-service.js";
+import jwt from 'jsonwebtoken';
+import { generateToken, generateRefreshToken } from '../middleware/jwtAuth.js';
+import { whitelistRedisService } from './redis/redis-whitelist-service.js';
 
 /**
  * Prepare user data for caching
@@ -21,7 +21,7 @@ export function prepareUserDataForCache(user) {
 /**
  * Create and store a new token pair (access + refresh)
  * Uses atomic operation to handle concurrent logins and token reuse
- * 
+ *
  * @param {Object} user - User object
  * @returns {Object} { accessToken, refreshToken, wasReused }
  */
@@ -39,7 +39,7 @@ export async function createAndStoreTokenPair(user) {
     newToken,
     userData,
     tokenTTL,
-    minReuseTime
+    minReuseTime,
   );
 
   return {
@@ -52,19 +52,16 @@ export async function createAndStoreTokenPair(user) {
 
 /**
  * Refresh access token using refresh token
- * 
+ *
  * @param {string} refreshToken - Refresh token from cookie
  * @param {Object} user - User object
  * @returns {Object} { accessToken, refreshToken }
  */
 export async function refreshAccessToken(refreshToken, user) {
-  const decoded = jwt.verify(
-    refreshToken,
-    process.env.JWT_REFRESH_SECRET
-  );
+  const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-  if (decoded.type !== "refresh") {
-    throw new Error("INVALID_TOKEN_TYPE");
+  if (decoded.type !== 'refresh') {
+    throw new Error('INVALID_TOKEN_TYPE');
   }
 
   const newAccessToken = generateToken(user);
@@ -85,41 +82,41 @@ export async function refreshAccessToken(refreshToken, user) {
 
 /**
  * Invalidate user's token (logout)
- * 
+ *
  * @param {string} userId - User ID
  * @returns {boolean} Whether token was removed
  */
 export async function invalidateToken(userId) {
   const removed = await whitelistRedisService.removeWhitelistToken(userId);
-  
+
   if (removed) {
     console.log(`Token removed from whitelist for user ${userId}`);
   } else {
     console.warn(`Failed to remove token from whitelist for user ${userId}`);
   }
-  
+
   return removed;
 }
 
 /**
  * Reset token TTL to full duration
  * Keeps very active users logged in
- * 
+ *
  * @param {string} userId - User ID
  * @returns {Object} { success, newExpiryInSeconds }
  */
 export async function resetTokenTTL(userId) {
-  const fullTTL = parseInt(process.env.JWT_EXPIRES_IN || "900");
+  const fullTTL = parseInt(process.env.JWT_EXPIRES_IN || '900');
   const currentTTL = await whitelistRedisService.getWhitelistTokenTTL(userId);
 
   if (currentTTL <= 0) {
-    throw new Error("TOKEN_EXPIRED");
+    throw new Error('TOKEN_EXPIRED');
   }
 
   const reset = await whitelistRedisService.resetWhitelistTokenTTL(userId, fullTTL);
 
   if (!reset) {
-    throw new Error("TTL_RESET_FAILED");
+    throw new Error('TTL_RESET_FAILED');
   }
 
   return {

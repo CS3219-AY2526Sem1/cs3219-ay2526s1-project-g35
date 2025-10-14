@@ -5,7 +5,7 @@ const QuestionController = require('../controllers/question-controller');
 /**
  * Question Routes
  * RESTful API endpoints for question management
- * 
+ *
  * Supports Functional Requirements:
  * - CRUD operations on questions
  * - Filter by difficulty and topic

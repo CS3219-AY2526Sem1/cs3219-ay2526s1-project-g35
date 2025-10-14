@@ -88,12 +88,7 @@ This is an automated email. Please do not reply to this message.
 /**
  * Generate HTML template for generic OTP email
  */
-export function generateGenericOTPTemplate(
-  otp,
-  purpose,
-  username,
-  expiryMinutes
-) {
+export function generateGenericOTPTemplate(otp, purpose, username, expiryMinutes) {
   return `
 <!DOCTYPE html>
 <html>
@@ -149,12 +144,7 @@ export function generateGenericOTPTemplate(
  * Generate text template for generic OTP email
  *
  */
-export function generateGenericOTPTextTemplate(
-  otp,
-  purpose,
-  username,
-  expiryMinutes
-) {
+export function generateGenericOTPTextTemplate(otp, purpose, username, expiryMinutes) {
   return `
 PeerPrep ${purpose}
 

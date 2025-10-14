@@ -71,7 +71,5 @@ const socketAuthMiddlewareDev = (socket, next) => {
 
 module.exports = {
   socketAuthMiddleware,
-  socketAuthMiddlewareDev
+  socketAuthMiddlewareDev,
 };
-
-

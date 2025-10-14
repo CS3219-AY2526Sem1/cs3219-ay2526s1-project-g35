@@ -1,8 +1,5 @@
-import Joi from "joi";
-import {
-  VALIDATION_ERRORS,
-  sendValidationErrorResponse,
-} from "../errors/index.js";
+import Joi from 'joi';
+import { VALIDATION_ERRORS, sendValidationErrorResponse } from '../errors/index.js';
 
 /**
  * Validation schemas for user service
@@ -10,30 +7,26 @@ import {
 export const userSchemas = {
   createUser: Joi.object({
     username: Joi.string().alphanum().min(3).max(30).required().messages({
-      "string.alphanum": "Username must only contain alphanumeric characters",
-      "string.min": "Username must be at least 3 characters long",
-      "string.max": "Username cannot exceed 30 characters",
-      "any.required": "Username is required",
+      'string.alphanum': 'Username must only contain alphanumeric characters',
+      'string.min': 'Username must be at least 3 characters long',
+      'string.max': 'Username cannot exceed 30 characters',
+      'any.required': 'Username is required',
     }),
     email: Joi.string().email().required().messages({
-      "string.email": "Please provide a valid email address",
-      "any.required": "Email is required",
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
     }),
     password: Joi.string()
       .min(6)
       .max(128)
-      .pattern(
-        new RegExp(
-          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]"
-        )
-      )
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
       .required()
       .messages({
-        "string.min": "Password must be at least 6 characters long",
-        "string.max": "Password cannot exceed 128 characters",
-        "string.pattern.base":
-          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
-        "any.required": "Password is required",
+        'string.min': 'Password must be at least 6 characters long',
+        'string.max': 'Password cannot exceed 128 characters',
+        'string.pattern.base':
+          'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+        'any.required': 'Password is required',
       }),
     profile: Joi.object({
       firstName: Joi.string().max(50).optional(),
@@ -48,11 +41,7 @@ export const userSchemas = {
     password: Joi.string()
       .min(6)
       .max(128)
-      .pattern(
-        new RegExp(
-          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]"
-        )
-      )
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
       .optional(),
     profile: Joi.object({
       firstName: Joi.string().max(50).optional(),
@@ -67,20 +56,18 @@ export const userSchemas = {
 
   login: Joi.object({
     email: Joi.string().email().required().messages({
-      "string.email": "Please provide a valid email address",
-      "any.required": "Email is required",
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
     }),
     password: Joi.string().required().messages({
-      "any.required": "Password is required",
+      'any.required': 'Password is required',
     }),
   }),
   getUsersQuery: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(10),
-    sortBy: Joi.string()
-      .valid("createdAt", "username", "email", "updatedAt")
-      .default("createdAt"),
-    sortOrder: Joi.string().valid("asc", "desc").default("desc"),
+    sortBy: Joi.string().valid('createdAt', 'username', 'email', 'updatedAt').default('createdAt'),
+    sortOrder: Joi.string().valid('asc', 'desc').default('desc'),
     search: Joi.string().max(100).optional(),
     isAdmin: Joi.boolean().optional(),
   }),
@@ -88,7 +75,7 @@ export const userSchemas = {
     .pattern(/^[0-9a-fA-F]{24}$/)
     .required()
     .messages({
-      "string.pattern.base": "Invalid user ID format",
+      'string.pattern.base': 'Invalid user ID format',
     }),
 
   // OTP validation schemas
@@ -97,8 +84,8 @@ export const userSchemas = {
       .pattern(/^\d{6}$/)
       .required()
       .messages({
-        "string.pattern.base": "OTP must be a 6-digit number",
-        "any.required": "OTP is required",
+        'string.pattern.base': 'OTP must be a 6-digit number',
+        'any.required': 'OTP is required',
       }),
   }),
 };
@@ -106,7 +93,7 @@ export const userSchemas = {
 /**
  * Validation middleware factory
  */
-export const validate = (schema, property = "body") => {
+export const validate = (schema, property = 'body') => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req[property], {
       abortEarly: false,
@@ -115,17 +102,13 @@ export const validate = (schema, property = "body") => {
     });
 
     if (error) {
-      const errors = error.details.map(detail => ({
-        field: detail.path.join("."),
+      const errors = error.details.map((detail) => ({
+        field: detail.path.join('.'),
         message: detail.message,
         value: detail.context?.value,
       }));
 
-      return sendValidationErrorResponse(
-        res,
-        VALIDATION_ERRORS.VALIDATION_ERROR,
-        errors
-      );
+      return sendValidationErrorResponse(res, VALIDATION_ERRORS.VALIDATION_ERROR, errors);
     }
     req[property] = value;
     next();
@@ -139,8 +122,8 @@ export const validateCreateUser = validate(userSchemas.createUser);
 export const validateUpdateUser = validate(userSchemas.updateUser);
 export const validateUpdatePrivilege = validate(userSchemas.updatePrivilege);
 export const validateLogin = validate(userSchemas.login);
-export const validateUsersQuery = validate(userSchemas.getUsersQuery, "query");
-export const validateMongoId = validate(userSchemas.mongoId, "params");
+export const validateUsersQuery = validate(userSchemas.getUsersQuery, 'query');
+export const validateMongoId = validate(userSchemas.mongoId, 'params');
 
 /**
  * Custom validation for user ID parameter

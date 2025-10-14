@@ -20,18 +20,17 @@ const sessionManager = new SessionManager();
 // Socket.IO setup with CORS
 const io = socketIo(server, {
   cors: {
-    origin: "*", // Allow all origins for development/testing
-    methods: ["GET", "POST"],
-    credentials: false
+    origin: '*', // Allow all origins for development/testing
+    methods: ['GET', 'POST'],
+    credentials: false,
   },
   pingTimeout: 60000,
-  pingInterval: 25000
+  pingInterval: 25000,
 });
 
 // Use authentication middleware for socket connections
 // Use dev mode if NODE_ENV is not production
-if (process.env.NODE_ENV === 'production') 
-  io.use(socketAuthMiddleware);
+if (process.env.NODE_ENV === 'production') io.use(socketAuthMiddleware);
 // } else {
 //   io.use(socketAuthMiddlewareDev);
 // }
@@ -43,22 +42,24 @@ const PORT = process.env.PORT || 8000;
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: "*", // Allow all origins for development/testing
-  credentials: false
-}));
+app.use(
+  cors({
+    origin: '*', // Allow all origins for development/testing
+    credentials: false,
+  }),
+);
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
+  res.status(200).json({
+    status: 'OK',
     service: 'CollaborationService',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    stats: sessionManager.getStats()
+    stats: sessionManager.getStats(),
   });
 });
 
@@ -67,7 +68,7 @@ app.get('/api/sessions/:sessionId', (req, res) => {
   try {
     const { sessionId } = req.params;
     const sessionData = sessionManager.getSessionData(sessionId);
-    
+
     if (!sessionData) {
       return res.status(404).json({ error: 'Session not found' });
     }
@@ -92,7 +93,7 @@ app.get('/api/sessions', (req, res) => {
 app.post('/api/sessions', (req, res) => {
   try {
     const { sessionId, code, language, problem } = req.body;
-    
+
     if (!sessionId) {
       return res.status(400).json({ error: 'Session ID is required' });
     }
@@ -100,7 +101,7 @@ app.post('/api/sessions', (req, res) => {
     const result = sessionManager.createSession(sessionId, {
       code,
       language,
-      problem
+      problem,
     });
 
     if (!result.success) {
@@ -116,9 +117,9 @@ app.post('/api/sessions', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
   });
 });
 
@@ -154,7 +155,7 @@ const startServer = async () => {
 // Graceful shutdown
 const gracefulShutdown = async () => {
   console.log('\n🔴 Shutting down gracefully...');
-  
+
   // Close socket connections
   io.close(() => {
     console.log('Socket.IO closed');

@@ -1,5 +1,5 @@
-import { baseRedisService } from "./redis-base-service.js";
-import { TOKEN_CHECK_AND_REUSE_SCRIPT } from "./redis-lua-scripts.js";
+import { baseRedisService } from './redis-base-service.js';
+import { TOKEN_CHECK_AND_REUSE_SCRIPT } from './redis-lua-scripts.js';
 
 /**
  * Whitelist Redis Service
@@ -35,9 +35,7 @@ class WhitelistRedisService {
    */
   async storeWhitelistToken(userId, token, expiryInSeconds, userData) {
     if (!(await this.isClientAvailable())) {
-      console.warn(
-        "Caching Service not available - token whitelisting disabled"
-      );
+      console.warn('Caching Service not available - token whitelisting disabled');
       return false;
     }
 
@@ -48,11 +46,11 @@ class WhitelistRedisService {
 
       await client.setEx(key, expiryInSeconds, value);
       console.log(
-        `Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`
+        `Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`,
       );
       return true;
     } catch (error) {
-      console.error("Error storing whitelist token:", error);
+      console.error('Error storing whitelist token:', error);
       return false;
     }
   }
@@ -63,7 +61,7 @@ class WhitelistRedisService {
    */
   async isTokenWhitelisted(userId, token) {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available");
+      console.warn('Caching Service not available');
       return true;
     }
 
@@ -79,7 +77,7 @@ class WhitelistRedisService {
       const parsed = JSON.parse(storedValue);
       return parsed.token === token;
     } catch (error) {
-      console.error("Error checking token whitelist:", error);
+      console.error('Error checking token whitelist:', error);
       return false;
     }
   }
@@ -109,7 +107,7 @@ class WhitelistRedisService {
 
       return null;
     } catch (error) {
-      console.error("Error getting cached user data:", error);
+      console.error('Error getting cached user data:', error);
       return null;
     }
   }
@@ -119,7 +117,7 @@ class WhitelistRedisService {
    */
   async removeWhitelistToken(userId) {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - token removal disabled");
+      console.warn('Caching Service not available - token removal disabled');
       return false;
     }
 
@@ -130,7 +128,7 @@ class WhitelistRedisService {
       console.log(`Token removed from whitelist for user ${userId}`);
       return result > 0;
     } catch (error) {
-      console.error("Error removing whitelist token:", error);
+      console.error('Error removing whitelist token:', error);
       return false;
     }
   }
@@ -147,7 +145,7 @@ class WhitelistRedisService {
       const client = this.getClient();
       return await client.ttl(key);
     } catch (error) {
-      console.error("Error getting whitelist token TTL:", error);
+      console.error('Error getting whitelist token TTL:', error);
       return -1;
     }
   }
@@ -172,7 +170,7 @@ class WhitelistRedisService {
       const parsed = JSON.parse(storedValue);
       return parsed.token;
     } catch (error) {
-      console.error("Error getting whitelist token:", error);
+      console.error('Error getting whitelist token:', error);
       return null;
     }
   }
@@ -182,7 +180,7 @@ class WhitelistRedisService {
    */
   async resetWhitelistTokenTTL(userId, newTTLSeconds) {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - token TTL reset disabled");
+      console.warn('Caching Service not available - token TTL reset disabled');
       return false;
     }
     try {
@@ -201,7 +199,7 @@ class WhitelistRedisService {
 
       return result === 1;
     } catch (error) {
-      console.error("Error resetting whitelist token TTL:", error);
+      console.error('Error resetting whitelist token TTL:', error);
       return false;
     }
   }
@@ -219,23 +217,23 @@ class WhitelistRedisService {
       let totalDeleted = 0;
       do {
         const result = await client.scan(cursor, {
-          MATCH: "whitelist:*",
-          COUNT: 100 
+          MATCH: 'whitelist:*',
+          COUNT: 100,
         });
-        
+
         cursor = result.cursor;
         const keys = result.keys;
-        
+
         if (keys.length > 0) {
           const deleted = await client.del(keys);
           totalDeleted += deleted;
         }
       } while (cursor !== 0);
-      
+
       console.log(`Cleared ${totalDeleted} whitelisted tokens using SCAN`);
       return true;
     } catch (error) {
-      console.error("Error clearing whitelist:", error);
+      console.error('Error clearing whitelist:', error);
       return false;
     }
   }
@@ -245,35 +243,35 @@ class WhitelistRedisService {
    */
   async clearUserSessions(userId) {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - session clearing disabled");
+      console.warn('Caching Service not available - session clearing disabled');
       return 0;
     }
-    
+
     try {
       const client = this.getClient();
-      const pattern = `whitelist:${String(userId)}*`; 
+      const pattern = `whitelist:${String(userId)}*`;
       let cursor = 0;
       let totalDeleted = 0;
-      
+
       do {
         const result = await client.scan(cursor, {
           MATCH: pattern,
-          COUNT: 100
+          COUNT: 100,
         });
-        
+
         cursor = result.cursor;
         const keys = result.keys;
-        
+
         if (keys.length > 0) {
           const deleted = await client.del(keys);
           totalDeleted += deleted;
         }
       } while (cursor !== 0);
-      
+
       console.log(`Cleared ${totalDeleted} session(s) for user ${userId}`);
       return totalDeleted;
     } catch (error) {
-      console.error("Error clearing user sessions:", error);
+      console.error('Error clearing user sessions:', error);
       return 0;
     }
   }
@@ -282,16 +280,20 @@ class WhitelistRedisService {
    * Atomically store or reuse whitelisted token using Lua script
    * Prevents race conditions during concurrent login attempts
    */
-  async storeOrReuseWhitelistToken(userId, newToken, userData, expiryInSeconds, minRemainingTime = 300) {
+  async storeOrReuseWhitelistToken(
+    userId,
+    newToken,
+    userData,
+    expiryInSeconds,
+    minRemainingTime = 300,
+  ) {
     if (!(await this.isClientAvailable())) {
-      console.warn(
-        "Caching Service not available - token whitelisting disabled"
-      );
+      console.warn('Caching Service not available - token whitelisting disabled');
       return {
         token: newToken,
         user: userData,
         wasStored: false,
-        wasReused: false
+        wasReused: false,
       };
     }
 
@@ -302,7 +304,7 @@ class WhitelistRedisService {
 
       const result = await client.eval(TOKEN_CHECK_AND_REUSE_SCRIPT, {
         keys: [key],
-        arguments: [newValue, expiryInSeconds.toString(), minRemainingTime.toString()]
+        arguments: [newValue, expiryInSeconds.toString(), minRemainingTime.toString()],
       });
 
       const [resultValue, action, ttl] = result;
@@ -312,7 +314,9 @@ class WhitelistRedisService {
       if (wasReused) {
         console.log(`Reusing existing token for user ${userId} (${ttl}s remaining)`);
       } else {
-        console.log(`Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`);
+        console.log(
+          `Token whitelisted for user ${userId} with TTL ${expiryInSeconds}s (with user data cache)`,
+        );
       }
 
       return {
@@ -320,16 +324,16 @@ class WhitelistRedisService {
         user: parsed.user,
         wasStored: !wasReused,
         wasReused,
-        ttl
+        ttl,
       };
     } catch (error) {
-      console.error("Error storing/reusing whitelist token:", error);
+      console.error('Error storing/reusing whitelist token:', error);
       return {
         token: newToken,
         user: userData,
         wasStored: false,
         wasReused: false,
-        error
+        error,
       };
     }
   }
@@ -366,7 +370,7 @@ class WhitelistRedisService {
       console.log(`Whitelist user data updated for user ${userId}`);
       return true;
     } catch (error) {
-      console.error("Error updating whitelist user data:", error);
+      console.error('Error updating whitelist user data:', error);
       return false;
     }
   }

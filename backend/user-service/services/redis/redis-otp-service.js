@@ -1,4 +1,4 @@
-import { baseRedisService } from "./redis-base-service.js";
+import { baseRedisService } from './redis-base-service.js';
 
 class OTPRedisService {
   constructor(baseService) {
@@ -29,9 +29,9 @@ class OTPRedisService {
   /**
    * Store OTP data in Redis with TTL
    */
-  async storeOTP(identifier, otpData, purpose = "verification") {
+  async storeOTP(identifier, otpData, purpose = 'verification') {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - OTP storage disabled");
+      console.warn('Caching Service not available - OTP storage disabled');
       return false;
     }
     try {
@@ -39,14 +39,12 @@ class OTPRedisService {
       const serializedData = JSON.stringify(otpData);
       const ttl = otpData.ttl;
       const client = this.getClient();
-      
+
       await client.setEx(key, ttl, serializedData);
-      console.log(
-        `OTP stored for ${identifier} with purpose ${purpose}, TTL: ${ttl}s`
-      );
+      console.log(`OTP stored for ${identifier} with purpose ${purpose}, TTL: ${ttl}s`);
       return true;
     } catch (error) {
-      console.error("Error storing OTP:", error);
+      console.error('Error storing OTP:', error);
       return false;
     }
   }
@@ -54,23 +52,23 @@ class OTPRedisService {
   /**
    * Retrieve OTP data from Redis
    */
-  async getOTP(identifier, purpose = "verification") {
+  async getOTP(identifier, purpose = 'verification') {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - OTP retrieval disabled");
+      console.warn('Caching Service not available - OTP retrieval disabled');
       return null;
     }
     try {
       const key = this.otpKeyString(identifier, purpose);
       const client = this.getClient();
       const serializedData = await client.get(key);
-      
+
       if (!serializedData) {
         return null;
       }
 
       return JSON.parse(serializedData);
     } catch (error) {
-      console.error("Error retrieving OTP:", error);
+      console.error('Error retrieving OTP:', error);
       return null;
     }
   }
@@ -78,9 +76,9 @@ class OTPRedisService {
   /**
    * Delete OTP from Redis
    */
-  async deleteOTP(identifier, purpose = "verification") {
+  async deleteOTP(identifier, purpose = 'verification') {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - OTP deletion disabled");
+      console.warn('Caching Service not available - OTP deletion disabled');
       return false;
     }
 
@@ -92,7 +90,7 @@ class OTPRedisService {
       console.log(`OTP deleted for ${identifier} with purpose ${purpose}`);
       return result > 0;
     } catch (error) {
-      console.error("Error deleting OTP:", error);
+      console.error('Error deleting OTP:', error);
       return false;
     }
   }
@@ -100,11 +98,9 @@ class OTPRedisService {
   /**
    * Increment OTP attempt counter
    */
-  async incrementOTPAttempts(identifier, purpose = "verification") {
+  async incrementOTPAttempts(identifier, purpose = 'verification') {
     if (!(await this.isClientAvailable())) {
-      console.warn(
-        "Caching Service not available - OTP attempt increment disabled"
-      );
+      console.warn('Caching Service not available - OTP attempt increment disabled');
       return null;
     }
     try {
@@ -123,12 +119,10 @@ class OTPRedisService {
       if (ttl > 0) {
         await client.setEx(key, ttl, JSON.stringify(otpData));
       }
-      console.log(
-        `OTP attempts incremented for ${identifier}, now: ${otpData.attempts}`
-      );
+      console.log(`OTP attempts incremented for ${identifier}, now: ${otpData.attempts}`);
       return otpData;
     } catch (error) {
-      console.error("Error incrementing OTP attempts:", error);
+      console.error('Error incrementing OTP attempts:', error);
       return null;
     }
   }
@@ -136,9 +130,9 @@ class OTPRedisService {
   /**
    * Get remaining TTL for OTP
    */
-  async getOTPTTL(identifier, purpose = "verification") {
+  async getOTPTTL(identifier, purpose = 'verification') {
     if (!(await this.isClientAvailable())) {
-      console.warn("Caching Service not available - OTP TTL check disabled");
+      console.warn('Caching Service not available - OTP TTL check disabled');
       return -1;
     }
 
@@ -147,7 +141,7 @@ class OTPRedisService {
       const client = this.getClient();
       return await client.ttl(key);
     } catch (error) {
-      console.error("Error getting OTP TTL:", error);
+      console.error('Error getting OTP TTL:', error);
       return -1;
     }
   }
@@ -155,7 +149,7 @@ class OTPRedisService {
   /**
    * Check if OTP exists for identifier and purpose
    */
-  async hasOTP(identifier, purpose = "verification") {
+  async hasOTP(identifier, purpose = 'verification') {
     if (!(await this.isClientAvailable())) {
       return false;
     }
@@ -166,11 +160,10 @@ class OTPRedisService {
       const exists = await client.exists(key);
       return exists === 1;
     } catch (error) {
-      console.error("Error checking OTP existence:", error);
+      console.error('Error checking OTP existence:', error);
       return false;
     }
   }
-
 }
 
 export const otpRedisService = new OTPRedisService(baseRedisService);

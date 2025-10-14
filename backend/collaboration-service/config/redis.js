@@ -26,8 +26,8 @@ const initRedis = async () => {
             return new Error('Redis reconnection limit reached');
           }
           return retries * 100; // Exponential backoff
-        }
-      }
+        },
+      },
     });
 
     redisClient.on('error', (err) => {
@@ -151,7 +151,5 @@ module.exports = {
   deleteSession,
   getAllSessions,
   closeRedis,
-  getRedisClient
+  getRedisClient,
 };
-
-

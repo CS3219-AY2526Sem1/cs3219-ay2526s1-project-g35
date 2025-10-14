@@ -16,13 +16,13 @@ const QuestionController = {
       res.status(200).json({
         success: true,
         count: questions.length,
-        data: questions
+        data: questions,
       });
     } catch (error) {
       console.error('Error getting all questions:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to retrieve questions'
+        error: 'Failed to retrieve questions',
       });
     }
   },
@@ -39,13 +39,13 @@ const QuestionController = {
       if (!question) {
         return res.status(404).json({
           success: false,
-          error: `Question with id ${id} not found`
+          error: `Question with id ${id} not found`,
         });
       }
 
       res.status(200).json({
         success: true,
-        data: question
+        data: question,
       });
     } catch (error) {
       // Pass error to error handler middleware
@@ -66,7 +66,7 @@ const QuestionController = {
       if (!title || !description || !difficulty || !topics || !testCases) {
         return res.status(400).json({
           success: false,
-          error: 'Please provide title, description, difficulty, topics, and testCases'
+          error: 'Please provide title, description, difficulty, topics, and testCases',
         });
       }
 
@@ -74,7 +74,7 @@ const QuestionController = {
       if (!Array.isArray(topics) || topics.length === 0) {
         return res.status(400).json({
           success: false,
-          error: 'Topics must be a non-empty array'
+          error: 'Topics must be a non-empty array',
         });
       }
 
@@ -82,7 +82,7 @@ const QuestionController = {
       if (!Array.isArray(testCases) || testCases.length === 0) {
         return res.status(400).json({
           success: false,
-          error: 'Test cases must be a non-empty array'
+          error: 'Test cases must be a non-empty array',
         });
       }
 
@@ -93,13 +93,13 @@ const QuestionController = {
         topics,
         tags: tags || [],
         testCases,
-        constraints: constraints || []
+        constraints: constraints || [],
       });
 
       res.status(201).json({
         success: true,
         message: 'Question created successfully',
-        data: newQuestion
+        data: newQuestion,
       });
     } catch (error) {
       console.error('Error creating question:', error);
@@ -108,13 +108,13 @@ const QuestionController = {
       if (error.name === 'ValidationError') {
         return res.status(400).json({
           success: false,
-          error: error.message
+          error: error.message,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: 'Failed to create question'
+        error: 'Failed to create question',
       });
     }
   },
@@ -135,20 +135,20 @@ const QuestionController = {
         topics,
         tags,
         testCases,
-        constraints
+        constraints,
       });
 
       if (!updatedQuestion) {
         return res.status(404).json({
           success: false,
-          error: `Question with id ${id} not found`
+          error: `Question with id ${id} not found`,
         });
       }
 
       res.status(200).json({
         success: true,
         message: 'Question updated successfully',
-        data: updatedQuestion
+        data: updatedQuestion,
       });
     } catch (error) {
       console.error('Error updating question:', error);
@@ -157,13 +157,13 @@ const QuestionController = {
       if (error.name === 'ValidationError') {
         return res.status(400).json({
           success: false,
-          error: error.message
+          error: error.message,
         });
       }
 
       res.status(500).json({
         success: false,
-        error: 'Failed to update question'
+        error: 'Failed to update question',
       });
     }
   },
@@ -180,19 +180,19 @@ const QuestionController = {
       if (!deleted) {
         return res.status(404).json({
           success: false,
-          error: `Question with id ${id} not found`
+          error: `Question with id ${id} not found`,
         });
       }
 
       res.status(200).json({
         success: true,
-        message: `Question with id ${id} deleted successfully`
+        message: `Question with id ${id} deleted successfully`,
       });
     } catch (error) {
       console.error('Error deleting question:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to delete question'
+        error: 'Failed to delete question',
       });
     }
   },
@@ -210,7 +210,7 @@ const QuestionController = {
       if (!validDifficulties.includes(difficulty)) {
         return res.status(400).json({
           success: false,
-          error: 'Difficulty must be Easy, Medium, or Hard'
+          error: 'Difficulty must be Easy, Medium, or Hard',
         });
       }
 
@@ -219,13 +219,13 @@ const QuestionController = {
       res.status(200).json({
         success: true,
         count: questions.length,
-        data: questions
+        data: questions,
       });
     } catch (error) {
       console.error('Error getting questions by difficulty:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to retrieve questions by difficulty'
+        error: 'Failed to retrieve questions by difficulty',
       });
     }
   },
@@ -242,13 +242,13 @@ const QuestionController = {
       res.status(200).json({
         success: true,
         count: questions.length,
-        data: questions
+        data: questions,
       });
     } catch (error) {
       console.error('Error getting questions by topic:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to retrieve questions by topic'
+        error: 'Failed to retrieve questions by topic',
       });
     }
   },
@@ -266,7 +266,7 @@ const QuestionController = {
       if (!validDifficulties.includes(difficulty)) {
         return res.status(400).json({
           success: false,
-          error: 'Difficulty must be Easy, Medium, or Hard'
+          error: 'Difficulty must be Easy, Medium, or Hard',
         });
       }
 
@@ -275,19 +275,19 @@ const QuestionController = {
       if (!question) {
         return res.status(404).json({
           success: false,
-          error: `No questions found with difficulty ${difficulty}`
+          error: `No questions found with difficulty ${difficulty}`,
         });
       }
 
       res.status(200).json({
         success: true,
-        data: question
+        data: question,
       });
     } catch (error) {
       console.error('Error getting random question by difficulty:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to retrieve random question'
+        error: 'Failed to retrieve random question',
       });
     }
   },
@@ -303,7 +303,7 @@ const QuestionController = {
       if (!topic || !difficulty) {
         return res.status(400).json({
           success: false,
-          error: 'Please provide both topic and difficulty as query parameters'
+          error: 'Please provide both topic and difficulty as query parameters',
         });
       }
 
@@ -312,7 +312,7 @@ const QuestionController = {
       if (!validDifficulties.includes(difficulty)) {
         return res.status(400).json({
           success: false,
-          error: 'Difficulty must be Easy, Medium, or Hard'
+          error: 'Difficulty must be Easy, Medium, or Hard',
         });
       }
 
@@ -321,22 +321,22 @@ const QuestionController = {
       if (!question) {
         return res.status(404).json({
           success: false,
-          error: `No questions found with topic "${topic}" and difficulty "${difficulty}"`
+          error: `No questions found with topic "${topic}" and difficulty "${difficulty}"`,
         });
       }
 
       res.status(200).json({
         success: true,
-        data: question
+        data: question,
       });
     } catch (error) {
       console.error('Error getting random question:', error);
       res.status(500).json({
         success: false,
-        error: 'Failed to retrieve random question'
+        error: 'Failed to retrieve random question',
       });
     }
-  }
+  },
 };
 
 module.exports = QuestionController;

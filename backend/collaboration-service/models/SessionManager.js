@@ -26,7 +26,7 @@ class SessionManager {
       language: initialData.language || 'javascript',
       problem: initialData.problem || null,
       createdAt: Date.now(),
-      lastActivity: Date.now()
+      lastActivity: Date.now(),
     });
 
     console.log(`✅ Session created: ${sessionId}`);
@@ -46,15 +46,15 @@ class SessionManager {
 
     // Check if session is full
     if (session.users.length >= this.MAX_USERS_PER_SESSION) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: 'Session is full',
-        maxUsers: this.MAX_USERS_PER_SESSION 
+        maxUsers: this.MAX_USERS_PER_SESSION,
       };
     }
 
     // Check if user is already in this session
-    const existingUser = session.users.find(u => u.userId === userId);
+    const existingUser = session.users.find((u) => u.userId === userId);
     if (existingUser) {
       // Update socket ID (user reconnecting)
       existingUser.socketId = socketId;
@@ -66,7 +66,7 @@ class SessionManager {
         userId,
         socketId,
         username: userInfo.username || `User${userId}`,
-        joinedAt: Date.now()
+        joinedAt: Date.now(),
       });
       console.log(`👤 User joined: ${userId} to session ${sessionId}`);
     }
@@ -75,10 +75,10 @@ class SessionManager {
     this.userToSession.set(socketId, sessionId);
     session.lastActivity = Date.now();
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       session: this.getSessionData(sessionId),
-      userCount: session.users.length
+      userCount: session.users.length,
     };
   }
 
@@ -98,9 +98,9 @@ class SessionManager {
     }
 
     // Remove user from session
-    const userIndex = session.users.findIndex(u => u.socketId === socketId);
+    const userIndex = session.users.findIndex((u) => u.socketId === socketId);
     let removedUser = null;
-    
+
     if (userIndex !== -1) {
       removedUser = session.users.splice(userIndex, 1)[0];
       console.log(`👋 User left: ${removedUser.userId} from session ${sessionId}`);
@@ -111,20 +111,23 @@ class SessionManager {
 
     // Clean up empty sessions after 5 minutes of inactivity
     if (session.users.length === 0) {
-      setTimeout(() => {
-        const currentSession = this.sessions.get(sessionId);
-        if (currentSession && currentSession.users.length === 0) {
-          this.sessions.delete(sessionId);
-          console.log(`🗑️  Empty session deleted: ${sessionId}`);
-        }
-      }, 5 * 60 * 1000); // 5 minutes
+      setTimeout(
+        () => {
+          const currentSession = this.sessions.get(sessionId);
+          if (currentSession && currentSession.users.length === 0) {
+            this.sessions.delete(sessionId);
+            console.log(`🗑️  Empty session deleted: ${sessionId}`);
+          }
+        },
+        5 * 60 * 1000,
+      ); // 5 minutes
     }
 
-    return { 
-      success: true, 
-      sessionId, 
+    return {
+      success: true,
+      sessionId,
       removedUser,
-      remainingUsers: session.users.length 
+      remainingUsers: session.users.length,
     };
   }
 
@@ -139,7 +142,7 @@ class SessionManager {
 
     session.code = code;
     session.lastActivity = Date.now();
-    
+
     if (cursorPosition) {
       session.lastCursorPosition = cursorPosition;
     }
@@ -173,17 +176,17 @@ class SessionManager {
 
     return {
       id: session.id,
-      users: session.users.map(u => ({
+      users: session.users.map((u) => ({
         userId: u.userId,
         username: u.username,
-        joinedAt: u.joinedAt
+        joinedAt: u.joinedAt,
       })),
       code: session.code,
       language: session.language,
       problem: session.problem,
       userCount: session.users.length,
       maxUsers: this.MAX_USERS_PER_SESSION,
-      isFull: session.users.length >= this.MAX_USERS_PER_SESSION
+      isFull: session.users.length >= this.MAX_USERS_PER_SESSION,
     };
   }
 
@@ -215,12 +218,10 @@ class SessionManager {
   getStats() {
     return {
       totalSessions: this.sessions.size,
-      activeSessions: Array.from(this.sessions.values()).filter(s => s.users.length > 0).length,
-      totalUsers: Array.from(this.sessions.values()).reduce((sum, s) => sum + s.users.length, 0)
+      activeSessions: Array.from(this.sessions.values()).filter((s) => s.users.length > 0).length,
+      totalUsers: Array.from(this.sessions.values()).reduce((sum, s) => sum + s.users.length, 0),
     };
   }
 }
 
 module.exports = SessionManager;
-
-

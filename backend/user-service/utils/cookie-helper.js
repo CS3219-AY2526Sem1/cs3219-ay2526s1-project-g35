@@ -13,9 +13,9 @@ function secondsToMs(seconds) {
 export function getCookieOptions() {
   return {
     httpOnly: true,
-    secure: process.env.COOKIE_SECURE === "true",
+    secure: process.env.COOKIE_SECURE === 'true',
     sameSite: process.env.COOKIE_SAME_SITE,
-    path: "/",
+    path: '/',
     domain: process.env.COOKIE_DOMAIN,
   };
 }
@@ -44,14 +44,14 @@ export function getRefreshTokenCookieOptions() {
  * Set access token cookie
  */
 export function setAccessTokenCookie(res, token) {
-  res.cookie("accessToken", token, getAccessTokenCookieOptions());
+  res.cookie('accessToken', token, getAccessTokenCookieOptions());
 }
 
 /**
  * Set refresh token cookie
  */
 export function setRefreshTokenCookie(res, token) {
-  res.cookie("refreshToken", token, getRefreshTokenCookieOptions());
+  res.cookie('refreshToken', token, getRefreshTokenCookieOptions());
 }
 
 /**
@@ -59,9 +59,9 @@ export function setRefreshTokenCookie(res, token) {
  */
 export function clearAuthCookies(res) {
   const baseOptions = getCookieOptions();
-  
-  res.clearCookie("accessToken", baseOptions);
-  res.clearCookie("refreshToken", baseOptions);
+
+  res.clearCookie('accessToken', baseOptions);
+  res.clearCookie('refreshToken', baseOptions);
 }
 
 /**

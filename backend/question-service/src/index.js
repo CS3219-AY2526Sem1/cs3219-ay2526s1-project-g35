@@ -19,11 +19,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check route
 app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'OK',
-        service: 'QuestionService',
-        timestamp: new Date().toISOString()
-    });
+  res.status(200).json({
+    status: 'OK',
+    service: 'QuestionService',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Mount question routes
@@ -36,4 +36,3 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 module.exports = app;
-

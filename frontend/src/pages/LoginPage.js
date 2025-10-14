@@ -5,7 +5,7 @@ import './LoginPage.css';
 const LoginPage = () => {
   const [loginData, setLoginData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
 
   const handleLogin = (formData) => {
@@ -31,9 +31,9 @@ const LoginPage = () => {
           <span className="logo-text">PeerPrep</span>
         </div>
       </header>
-      
+
       <main className="login-main">
-        <Login 
+        <Login
           onLogin={handleLogin}
           onResetPassword={handleResetPassword}
           onSignUp={handleSignUp}
