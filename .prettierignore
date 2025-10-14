@@ -1,0 +1,16 @@
+# Root level ignores
+node_modules/
+.git/
+.github/
+*.md
+*.log
+package-lock.json
+yarn.lock
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment
+.env*
