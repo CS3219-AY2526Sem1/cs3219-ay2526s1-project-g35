@@ -1,24 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import socketService from '../services/socketService';
 import './CollaborationPage.css';
 
 const CollaborationPage = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState('C++');
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Get session ID from URL params or generate one
+  const sessionId = searchParams.get('sessionId') || `session-${Date.now()}`;
+  const userId = searchParams.get('userId') || `user-${Math.random().toString(36).substr(2, 9)}`;
+  const username = searchParams.get('username') || 'Anonymous';
+
+  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
   const [activeTab, setActiveTab] = useState('testCases');
   const [selectedTestCase, setSelectedTestCase] = useState('Case 1');
-  const [code, setCode] = useState(`class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-
-    }
-};`);
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! Nice to meet you!", sender: 'me' },
-    { id: 2, text: "Hi! Let's get started! I'm thinking that we can probably use a HashMap for this question, what do you think?", sender: 'partner' },
-    { id: 3, text: "Yeah I think that's a good idea, let's try it! So I guess the next step for us would be to see how we can minimise the number of times we have to look through the array.", sender: 'me' }
-  ]);
+  const [code, setCode] = useState(`function twoSum(nums, target) {
+    // Your code here
+    
+}`);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
+  const [partnerInfo, setPartnerInfo] = useState(null);
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  
+  const codeChangeDebounce = useRef(null);
+  const typingTimeout = useRef(null);
 
-  const languages = ['C++', 'Java', 'Python', 'JavaScript'];
+  const languages = ['javascript', 'python', 'java', 'cpp'];
+  const languageLabels = {
+    'javascript': 'JavaScript',
+    'python': 'Python',
+    'java': 'Java',
+    'cpp': 'C++'
+  };
+
   const testCases = [
     {
       id: 'Case 1',
@@ -40,15 +58,196 @@ public:
     }
   ];
 
+  // Initialize socket connection on mount
+  useEffect(() => {
+    const initializeSocket = async () => {
+      try {
+        // Connect to socket service
+        const token = localStorage.getItem('authToken') || '';
+        socketService.connect(token, userId);
+
+        // Join the collaboration session
+        const result = await socketService.joinSession(sessionId, userId, { username });
+        
+        setIsConnected(true);
+        setConnectionStatus('Connected');
+        
+        // Load initial session data
+        if (result.session) {
+          if (result.session.code) setCode(result.session.code);
+          if (result.session.language) setSelectedLanguage(result.session.language);
+          
+          // Set partner info if there's another user
+          const partner = result.session.users?.find(u => u.userId !== userId);
+          if (partner) {
+            setPartnerInfo(partner);
+          }
+        }
+
+        console.log('Joined session:', result);
+      } catch (error) {
+        console.error('Failed to join session:', error);
+        setConnectionStatus('Connection failed');
+      }
+    };
+
+    initializeSocket();
+
+    // Setup socket event listeners
+    setupSocketListeners();
+
+    // Cleanup on unmount
+    return () => {
+      socketService.leaveSession();
+      removeSocketListeners();
+    };
+  }, [sessionId, userId, username]);
+
+  // Setup socket event listeners
+  const setupSocketListeners = () => {
+    // Code updates from partner
+    socketService.onCodeUpdate((data) => {
+      if (data.userId !== userId) {
+        setCode(data.code);
+      }
+    });
+
+    // Language changes
+    socketService.onLanguageUpdate((data) => {
+      if (data.userId !== userId) {
+        setSelectedLanguage(data.language);
+      }
+    });
+
+    // Chat messages
+    socketService.onChatMessage((data) => {
+      setMessages(prev => [...prev, {
+        id: Date.now(),
+        text: data.message,
+        sender: data.userId === userId ? 'me' : 'partner',
+        username: data.username,
+        timestamp: data.timestamp
+      }]);
+    });
+
+    // User joined
+    socketService.onUserJoined((data) => {
+      if (data.userId !== userId) {
+        setPartnerInfo({ userId: data.userId, username: data.username });
+        setConnectionStatus(`Connected with ${data.username}`);
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: `${data.username} joined the session`,
+          sender: 'system',
+          timestamp: data.timestamp
+        }]);
+      }
+    });
+
+    // User left
+    socketService.onUserLeft((data) => {
+      if (data.userId !== userId) {
+        setPartnerInfo(null);
+        setConnectionStatus('Partner left');
+        setMessages(prev => [...prev, {
+          id: Date.now(),
+          text: `${data.username} left the session`,
+          sender: 'system',
+          timestamp: data.timestamp
+        }]);
+      }
+    });
+
+    // User disconnected
+    socketService.onUserDisconnected((data) => {
+      if (data.userId !== userId) {
+        setPartnerInfo(null);
+        setConnectionStatus('Partner disconnected');
+      }
+    });
+
+    // Typing indicator
+    socketService.onUserTyping((data) => {
+      if (data.userId !== userId) {
+        setIsPartnerTyping(data.isTyping);
+      }
+    });
+  };
+
+  // Remove socket listeners
+  const removeSocketListeners = () => {
+    socketService.off('code-update');
+    socketService.off('language-update');
+    socketService.off('chat-message');
+    socketService.off('user-joined');
+    socketService.off('user-left');
+    socketService.off('user-disconnected');
+    socketService.off('user-typing');
+  };
+
+  // Handle code changes with debouncing
+  const handleCodeChange = (newCode) => {
+    setCode(newCode);
+
+    // Debounce code changes to avoid sending too many updates
+    if (codeChangeDebounce.current) {
+      clearTimeout(codeChangeDebounce.current);
+    }
+
+    codeChangeDebounce.current = setTimeout(() => {
+      socketService.sendCodeChange(newCode);
+    }, 300);
+  };
+
+  // Handle language change
+  const handleLanguageChange = async (newLanguage) => {
+    setSelectedLanguage(newLanguage);
+    try {
+      await socketService.changeLanguage(newLanguage);
+    } catch (error) {
+      console.error('Failed to change language:', error);
+    }
+  };
+
+  // Handle sending chat message
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      setMessages([...messages, { 
-        id: messages.length + 1, 
-        text: newMessage, 
-        sender: 'me' 
-      }]);
+      socketService.sendChatMessage(newMessage, username);
       setNewMessage('');
+      
+      // Stop typing indicator
+      socketService.sendTypingStop();
+      if (typingTimeout.current) {
+        clearTimeout(typingTimeout.current);
+      }
+    }
+  };
+
+  // Handle typing in chat
+  const handleChatInputChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    // Send typing indicator
+    socketService.sendTypingStart(username);
+    
+    // Clear existing timeout
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current);
+    }
+    
+    // Stop typing indicator after 2 seconds of no input
+    typingTimeout.current = setTimeout(() => {
+      socketService.sendTypingStop();
+    }, 2000);
+  };
+
+  // Handle leaving session
+  const handleLeaveSession = async () => {
+    if (window.confirm('Are you sure you want to leave this session?')) {
+      await socketService.leaveSession();
+      socketService.disconnect();
+      navigate('/');
     }
   };
 
@@ -60,13 +259,14 @@ public:
       <header className="header">
         <div className="header-left">
           <h1 className="brand">PeerPrep</h1>
+          <span className="session-id">Session: {sessionId.substring(0, 8)}...</span>
         </div>
         <div className="header-right">
           <div className="partner-status">
-            <div className="status-indicator"></div>
-            <span>Partner 1</span>
+            <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}></div>
+            <span>{partnerInfo ? partnerInfo.username : connectionStatus}</span>
           </div>
-          <button className="leave-session-btn">Leave Session</button>
+          <button className="leave-session-btn" onClick={handleLeaveSession}>Leave Session</button>
         </div>
       </header>
 
@@ -116,15 +316,27 @@ public:
             <div className="chat-messages">
               {messages.map(message => (
                 <div key={message.id} className={`message ${message.sender}`}>
-                  {message.text}
+                  {message.sender === 'system' ? (
+                    <em className="system-message">{message.text}</em>
+                  ) : (
+                    <>
+                      <span className="message-username">{message.username || 'You'}: </span>
+                      {message.text}
+                    </>
+                  )}
                 </div>
               ))}
+              {isPartnerTyping && (
+                <div className="typing-indicator">
+                  <em>{partnerInfo?.username || 'Partner'} is typing...</em>
+                </div>
+              )}
             </div>
             <form onSubmit={handleSendMessage} className="chat-input-form">
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleChatInputChange}
                 placeholder="Type a message..."
                 className="chat-input"
               />
@@ -139,11 +351,11 @@ public:
             <div className="language-selector">
               <select 
                 value={selectedLanguage} 
-                onChange={(e) => setSelectedLanguage(e.target.value)}
+                onChange={(e) => handleLanguageChange(e.target.value)}
                 className="language-dropdown"
               >
                 {languages.map(lang => (
-                  <option key={lang} value={lang}>{lang}</option>
+                  <option key={lang} value={lang}>{languageLabels[lang]}</option>
                 ))}
               </select>
             </div>
@@ -151,9 +363,10 @@ public:
           <div className="code-editor">
             <textarea
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => handleCodeChange(e.target.value)}
               className="code-textarea"
               spellCheck={false}
+              placeholder="Start typing your code here... Changes will be synced in real-time!"
             />
           </div>
         </div>
