@@ -34,6 +34,13 @@
     "socket.io-client": "^4.7.2",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.4.0",
+    "react-router-dom": "^6.14.2",
+    "react-scripts": "5.0.1",
+    "socket.io-client": "^4.7.2",
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
@@ -47,6 +54,23 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "_comment_react_duplicate_18_2_0": "react: ^18.2.0 (duplicate - retained as comment per request)",
-  "_comment_react_dom_duplicate_18_2_0": "react-dom: ^18.2.0 (duplicate - retained as comment per request)"
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:8000"
 }
