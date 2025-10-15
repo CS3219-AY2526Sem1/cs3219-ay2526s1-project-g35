@@ -1,3 +1,4 @@
+import MainNavbar from "@/components/ui/MainNavbar";
 import Navbar from "@/components/ui/Navbar";
 import type { Metadata } from "next";
 import "../globals.css";
@@ -13,7 +14,7 @@ export default function MainLayout({
 }) {
   return (
     <>
-      <Navbar />
+      <Navbar buttons={<MainNavbar />} />
       <main>{children}</main>
     </>
   );

@@ -84,9 +84,15 @@ function DesktopNavbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-44" align="end" sideOffset={10}>
-              <DropdownMenuItem>Manage Profile</DropdownMenuItem>
-              <DropdownMenuItem>History</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/profile">Manage Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/history">History</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/settings">Settings</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </>

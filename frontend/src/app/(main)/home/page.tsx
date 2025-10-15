@@ -9,10 +9,35 @@ import {
   CarouselPrevious,
 } from "@/components/ui/Carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function HomePage() {
+  const router = useRouter();
+
+  const [selectedTopic, setSelectedTopic] = useState<number | null>(0);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
+    null
+  );
+
+  const topics = [
+    "Two Pointers",
+    "Sliding Window",
+    "Sorting",
+    "Binary Search",
+    "Dynamic Programming",
+    "Greedy Algorithms",
+  ];
+
+  const difficulties = ["Easy", "Medium", "Hard"];
+
+  const goWaiting = () => router.push("/waitingroom");
+
+  const onSelectTopic = (index: number) => setSelectedTopic(index);
+  const onSelectDifficulty = (d: string) => setSelectedDifficulty(d);
+
   return (
-    <div className="h-(--hscreen) w-full py-4 px-3 flex flex-col items-center justify-center gap-28">
+    <div className="min-h-(--hscreen) w-full py-4 px-3 flex flex-col items-center justify-center gap-28">
       <header>
         <h1 className="text-5xl text-center">
           Welcome to <b className="tracking-widest">PeerPrep</b>!
@@ -35,48 +60,28 @@ export default function HomePage() {
             }),
           ]}
         >
-          {/* TODO: Convert to a map function using database data */}
+          {/* topics mapped from array */}
           <CarouselContent className="-ml-6">
-            <CarouselItem className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
-              <div className="shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1 focus:shadow-attention/15 focus:outline-none">
-                <label className="text-2xl block text-center">
-                  Two Pointers
-                </label>
-              </div>
-            </CarouselItem>
-            <CarouselItem className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
-              <div className="shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1">
-                <label className="text-2xl block text-center">
-                  Sliding Window
-                </label>
-              </div>
-            </CarouselItem>
-            <CarouselItem className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
-              <div className="shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1">
-                <label className="text-2xl block text-center">Sorting</label>
-              </div>
-            </CarouselItem>
-            <CarouselItem className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
-              <div className="shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1">
-                <label className="text-2xl block text-center">
-                  Binary Search
-                </label>
-              </div>
-            </CarouselItem>
-            <CarouselItem className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
-              <div className="shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1">
-                <label className="text-2xl block text-center">
-                  Dynamic Programming
-                </label>
-              </div>
-            </CarouselItem>
-            <CarouselItem className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
-              <div className="shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1">
-                <label className="text-2xl block text-center">
-                  Greedy Algorithms
-                </label>
-              </div>
-            </CarouselItem>
+            {topics.map((t, i) => (
+              <CarouselItem
+                key={t}
+                className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50"
+              >
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectTopic(i)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") onSelectTopic(i);
+                  }}
+                  className={`shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    selectedTopic === i ? "ring-2 ring-ring scale-105" : ""
+                  }`}
+                >
+                  <label className="text-2xl block text-center">{t}</label>
+                </div>
+              </CarouselItem>
+            ))}
           </CarouselContent>
           <CarouselPrevious />
           <CarouselNext />
@@ -86,20 +91,34 @@ export default function HomePage() {
         <h2 className="text-3xl text-center">
           Select your desired difficulty level for the questions
         </h2>
-        {/* TODO: Convert to a map function using database data */}
+        {/* difficulties mapped from array */}
         <div className="w-3/4 mt-14 max-w-[1050px] mx-auto flex justify-center h-50 py-2">
-          <div className="basis-1/3 mx-3 h-full shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center rounded-2xl border-1">
-            <label className="text-2xl block text-center">Easy</label>
-          </div>
-          <div className="basis-1/3 mx-3 h-full shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center rounded-2xl border-1">
-            <label className="text-2xl block text-center">Medium</label>
-          </div>
-          <div className="basis-1/3 mx-3 h-full shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center rounded-2xl border-1">
-            <label className="text-2xl block text-center">Hard</label>
-          </div>
+          {difficulties.map((d) => (
+            <div
+              key={d}
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectDifficulty(d)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onSelectDifficulty(d);
+              }}
+              className={`basis-1/3 mx-3 h-full shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center rounded-2xl border-1 cursor-pointer transition ${
+                selectedDifficulty === d
+                  ? "ring-2 ring-ring scale-105"
+                  : "hover:shadow-lg"
+              }`}
+            >
+              <label className="text-2xl block text-center">{d}</label>
+            </div>
+          ))}
         </div>
       </section>
-      <Button className="block mx-auto" variant="attention" size="lg">
+      <Button
+        onClick={goWaiting}
+        className="block mx-auto"
+        variant="attention"
+        size="lg"
+      >
         Find a match!
       </Button>
     </div>

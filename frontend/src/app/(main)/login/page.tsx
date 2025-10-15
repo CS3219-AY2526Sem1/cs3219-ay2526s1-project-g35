@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import Header from "@/components/ui/Header";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -11,17 +12,7 @@ interface LoginForm {
   password: string;
 }
 
-interface LoginProps {
-  //onLogin: (data: LoginForm) => void | Promise<void>;
-  onResetPassword?: () => void;
-  onSignUp?: () => void;
-}
-
-const Login: React.FC<LoginProps> = ({
-  //onLogin,
-  onResetPassword,
-  onSignUp,
-}) => {
+const Login: React.FC = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<LoginForm>({
     email: "",
@@ -57,10 +48,18 @@ const Login: React.FC<LoginProps> = ({
     void onLogin(formData);
   };
 
+  const onSignUp = () => {
+    router.push("/signup");
+  };
+
+  const onResetPassword = () => {
+    router.push("/resetpassword");
+  };
+
   return (
     <div className="min-h-(--hscreen) flex items-center justify-center">
       <div className="w-full max-w-[500px] p-10 bg-(--card) rounded-lg shadow-[0_0_16px_rgba(0,0,0,0.12)]">
-        <h1 className="text-[32px] font-bold mb-8 text-left">Login</h1>
+        <Header>Login</Header>
 
         <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-2">
