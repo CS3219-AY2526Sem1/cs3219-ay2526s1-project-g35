@@ -2,10 +2,10 @@
 
 import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthError } from '@/services/auth.service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-
-//Original React Code made by Basil
 
 interface LoginForm {
   email: string;
@@ -14,26 +14,11 @@ interface LoginForm {
 
 const Login: React.FC = () => {
   const router = useRouter();
+  const { login, error, isLoading, clearError } = useAuth();
   const [formData, setFormData] = useState<LoginForm>({
     email: '',
     password: '',
   });
-
-  // mock onLogin: save to localStorage and redirect
-  const onLogin = async (data: LoginForm) => {
-    // store minimal mock user data
-    if (typeof window !== 'undefined') {
-      const mockUser = {
-        email: data.email.toLowerCase(),
-        username: data.email.split('@')[0],
-      };
-      sessionStorage.setItem('mockUser', JSON.stringify(mockUser));
-      window.dispatchEvent(new Event('mockUserChanged'));
-    }
-
-    // navigate to Home page (adjust path if your home URL differs)
-    router.push('/home');
-  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -41,11 +26,20 @@ const Login: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+    if (error) clearError();
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    void onLogin(formData);
+    clearError();
+
+    try {
+      await login(formData);
+      router.push('/home');
+    } catch (err) {
+      console.error('Login failed:', err);
+      // Form data is preserved automatically for validation errors
+    }
   };
 
   const onSignUp = () => {
@@ -62,6 +56,12 @@ const Login: React.FC = () => {
         <Header>Login</Header>
 
         <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+              {error}
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-sm font-medium text-left">
               Email
@@ -75,6 +75,7 @@ const Login: React.FC = () => {
               placeholder="eg. peerprepforlife@gmail.com"
               className="py-3 px-4 border rounded-md text-base placeholder-muted-foreground transition-colors duration-200 focus:outline-none focus:border-attention"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -90,17 +91,25 @@ const Login: React.FC = () => {
               onChange={handleInputChange}
               className="py-3 px-4 border rounded-md text-base placeholder-muted-foreground transition-colors duration-200 focus:outline-none focus:border-attention"
               required
+              disabled={isLoading}
             />
           </div>
 
           <div className="flex items-center justify-between mt-2.5">
-            <Button className="text-md" type="submit" variant="attention" size="lg">
-              Login
+            <Button
+              className="text-md"
+              type="submit"
+              variant="attention"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Logging in...' : 'Login'}
             </Button>
             <button
               type="button"
-              className="bg-transparent border-0 text-sm underline p-0 cursor-pointer hover:text-attention"
+              className="bg-transparent border-0 text-sm underline p-0 cursor-pointer hover:text-attention disabled:opacity-50"
               onClick={onResetPassword}
+              disabled={isLoading}
             >
               Reset your password
             </button>
@@ -112,8 +121,9 @@ const Login: React.FC = () => {
             Don&apos;t have an account?
             <button
               type="button"
-              className="bg-transparent border-0 text-sm text-attention underline p-0 ml-1 cursor-pointer hover:text-attention/90"
+              className="bg-transparent border-0 text-sm text-attention underline p-0 ml-1 cursor-pointer hover:text-attention/90 disabled:opacity-50"
               onClick={onSignUp}
+              disabled={isLoading}
             >
               Sign up here now!
             </button>

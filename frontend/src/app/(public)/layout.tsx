@@ -1,19 +1,16 @@
 'use client';
 
-import MainNavbar from '@/components/ui/MainNavbar';
-import Navbar from '@/components/ui/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import '../globals.css';
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+    if (!isLoading && isAuthenticated) {
+      router.push('/home');
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -28,14 +25,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     );
   }
 
-  if (!isAuthenticated) {
+  if (isAuthenticated) {
     return null;
   }
 
-  return (
-    <>
-      <Navbar buttons={<MainNavbar />} />
-      <main>{children}</main>
-    </>
-  );
+  return <>{children}</>;
 }
