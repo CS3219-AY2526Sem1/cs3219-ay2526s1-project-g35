@@ -1,0 +1,45 @@
+name: Code Style Check
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+  push:
+    branches: [master, main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  prettier-check:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service:
+          - backend/user-service
+          - backend/question-service
+          - backend/collaboration-service
+          - backend/matching-service
+          - frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        working-directory: ${{ matrix.service }}
+        run: npm install
+      
+      - name: Install Prettier
+        working-directory: ${{ matrix.service }}
+        run: npm install --save-dev prettier
+      
+      - name: Check code formatting
+        working-directory: ${{ matrix.service }}
+        run: npm run format:check

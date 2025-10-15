@@ -7,10 +7,9 @@ const baseErrors = require('./base-errors');
 const questionErrors = require('./question-errors');
 
 module.exports = {
-    // Base errors
-    ...baseErrors,
+  // Base errors
+  ...baseErrors,
 
-    // Question-specific errors
-    ...questionErrors
+  // Question-specific errors
+  ...questionErrors,
 };
-

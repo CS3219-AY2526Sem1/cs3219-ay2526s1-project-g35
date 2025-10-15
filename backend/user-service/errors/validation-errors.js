@@ -1,12 +1,12 @@
 export const VALIDATION_ERRORS = {
   VALIDATION_ERROR: {
-    code: "VALIDATION_ERROR",
-    message: "Validation error",
+    code: 'VALIDATION_ERROR',
+    message: 'Validation error',
     status: 400,
   },
   INVALID_USER_ID: {
-    code: "INVALID_USER_ID",
-    message: "Invalid user ID format",
+    code: 'INVALID_USER_ID',
+    message: 'Invalid user ID format',
     status: 400,
   },
 };
@@ -14,11 +14,7 @@ export const VALIDATION_ERRORS = {
 /**
  * Helper function to create validation error response
  */
-export function createValidationErrorResponse(
-  error,
-  details = null,
-  additionalData = {}
-) {
+export function createValidationErrorResponse(error, details = null, additionalData = {}) {
   const response = {
     message: error.message,
     error: error.code,
@@ -35,16 +31,7 @@ export function createValidationErrorResponse(
 /**
  * Helper function to send validation error response
  */
-export function sendValidationErrorResponse(
-  res,
-  error,
-  details = null,
-  additionalData = {}
-) {
-  const errorResponse = createValidationErrorResponse(
-    error,
-    details,
-    additionalData
-  );
+export function sendValidationErrorResponse(res, error, details = null, additionalData = {}) {
+  const errorResponse = createValidationErrorResponse(error, details, additionalData);
   return res.status(error.status).json(errorResponse);
 }

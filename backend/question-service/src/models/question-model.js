@@ -10,76 +10,81 @@ const mongoose = require('mongoose');
  * - Support random question selection
  */
 
-const questionSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, 'Question title is required'],
-    trim: true,
-    minlength: [5, 'Title must be at least 5 characters long'],
-    maxlength: [200, 'Title cannot exceed 200 characters']
-  },
-  description: {
-    type: String,
-    required: [true, 'Question description is required'],
-    trim: true,
-    minlength: [10, 'Description must be at least 10 characters long']
-  },
-  difficulty: {
-    type: String,
-    required: [true, 'Difficulty level is required'],
-    enum: {
-      values: ['Easy', 'Medium', 'Hard'],
-      message: '{VALUE} is not a valid difficulty level'
-    }
-  },
-  topics: {
-    type: [String],
-    required: [true, 'At least one topic is required'],
-    validate: {
-      validator: function (topics) {
-        return topics && topics.length > 0;
+const questionSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: [true, 'Question title is required'],
+      trim: true,
+      minlength: [5, 'Title must be at least 5 characters long'],
+      maxlength: [200, 'Title cannot exceed 200 characters'],
+    },
+    description: {
+      type: String,
+      required: [true, 'Question description is required'],
+      trim: true,
+      minlength: [10, 'Description must be at least 10 characters long'],
+    },
+    difficulty: {
+      type: String,
+      required: [true, 'Difficulty level is required'],
+      enum: {
+        values: ['Easy', 'Medium', 'Hard'],
+        message: '{VALUE} is not a valid difficulty level',
       },
-      message: 'Question must have at least one topic'
-    }
+    },
+    topics: {
+      type: [String],
+      required: [true, 'At least one topic is required'],
+      validate: {
+        validator: function (topics) {
+          return topics && topics.length > 0;
+        },
+        message: 'Question must have at least one topic',
+      },
+    },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    testCases: {
+      type: [
+        {
+          input: {
+            type: String,
+            required: [true, 'Test case input is required'],
+          },
+          expectedOutput: {
+            type: String,
+            required: [true, 'Test case expected output is required'],
+          },
+          explanation: {
+            type: String,
+            default: '',
+          },
+          type: {
+            type: String,
+            enum: ['Sample', 'Hidden'],
+            default: 'Sample',
+          },
+        },
+      ],
+      validate: {
+        validator: function (testCases) {
+          return testCases && testCases.length > 0;
+        },
+        message: 'Question must have at least one test case',
+      },
+    },
+    constraints: {
+      type: [String],
+      default: [],
+    },
   },
-  tags: {
-    type: [String],
-    default: []
+  {
+    timestamps: true, // Automatically adds createdAt and updatedAt
   },
-  testCases: {
-    type: [{
-      input: {
-        type: String,
-        required: [true, 'Test case input is required']
-      },
-      expectedOutput: {
-        type: String,
-        required: [true, 'Test case expected output is required']
-      },
-      explanation: {
-        type: String,
-        default: ''
-      },
-      type: {
-        type: String,
-        enum: ['Sample', 'Hidden'],
-        default: 'Sample'
-      }
-    }],
-    validate: {
-      validator: function (testCases) {
-        return testCases && testCases.length > 0;
-      },
-      message: 'Question must have at least one test case'
-    }
-  },
-  constraints: {
-    type: [String],
-    default: []
-  }
-}, {
-  timestamps: true // Automatically adds createdAt and updatedAt
-});
+);
 
 // Indexes for efficient querying
 questionSchema.index({ difficulty: 1 });
@@ -108,11 +113,7 @@ questionSchema.statics.createQuestion = async function (questionData) {
 
 // Update a question
 questionSchema.statics.updateQuestion = async function (id, questionData) {
-  return await this.findByIdAndUpdate(
-    id,
-    questionData,
-    { new: true, runValidators: true }
-  );
+  return await this.findByIdAndUpdate(id, questionData, { new: true, runValidators: true });
 };
 
 // Delete a question
@@ -133,10 +134,7 @@ questionSchema.statics.getByTopic = async function (topic) {
 
 // Get random question by difficulty
 questionSchema.statics.getRandomByDifficulty = async function (difficulty) {
-  const questions = await this.aggregate([
-    { $match: { difficulty } },
-    { $sample: { size: 1 } }
-  ]);
+  const questions = await this.aggregate([{ $match: { difficulty } }, { $sample: { size: 1 } }]);
   return questions.length > 0 ? questions[0] : null;
 };
 
@@ -144,7 +142,7 @@ questionSchema.statics.getRandomByDifficulty = async function (difficulty) {
 questionSchema.statics.getRandomByTopicAndDifficulty = async function (topic, difficulty) {
   const questions = await this.aggregate([
     { $match: { topics: topic, difficulty } },
-    { $sample: { size: 1 } }
+    { $sample: { size: 1 } },
   ]);
   return questions.length > 0 ? questions[0] : null;
 };

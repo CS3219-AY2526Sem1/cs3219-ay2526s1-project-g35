@@ -1,9 +1,9 @@
-import { otpRedisService } from "./redis/redis-otp-service.js";
-import { otpService } from "./otp-service.js";
-import { emailService } from "./email-service.js";
-import { UserRepository } from "../model/user-repository.js";
+import { otpRedisService } from './redis/redis-otp-service.js';
+import { otpService } from './otp-service.js';
+import { emailService } from './email-service.js';
+import { UserRepository } from '../model/user-repository.js';
 
-const OTP_PURPOSE = "verification";
+const OTP_PURPOSE = 'verification';
 
 /**
  * Check if user can send a new OTP
@@ -15,7 +15,7 @@ function checkOTPCooldown(otpData) {
   }
 
   const remainingTTL = otpService.getRemainingTTL(otpData);
-  
+
   if (remainingTTL > 60) {
     const minutes = Math.floor(remainingTTL / 60);
     const seconds = remainingTTL % 60;
@@ -33,7 +33,7 @@ function checkOTPCooldown(otpData) {
 
 /**
  * Generate and send verification OTP to user's email
- * 
+ *
  * @param {string} userId - User ID
  * @param {Object} user - User object
  * @returns {Object} { success, email, expiryMinutes }
@@ -41,15 +41,15 @@ function checkOTPCooldown(otpData) {
  */
 export async function sendVerificationOTP(userId, user) {
   if (user.isVerified) {
-    throw new Error("ALREADY_VERIFIED");
+    throw new Error('ALREADY_VERIFIED');
   }
 
   const normalizedEmail = user.email.toLowerCase();
   const existingOTP = await otpRedisService.getOTP(userId, OTP_PURPOSE);
   const cooldownCheck = checkOTPCooldown(existingOTP);
-  
+
   if (cooldownCheck && !cooldownCheck.canSend) {
-    const error = new Error("OTP_COOLDOWN");
+    const error = new Error('OTP_COOLDOWN');
     error.cooldownInfo = cooldownCheck;
     throw error;
   }
@@ -57,25 +57,21 @@ export async function sendVerificationOTP(userId, user) {
   const otpData = otpService.generateOTPData(normalizedEmail, OTP_PURPOSE);
   const storeResult = await otpRedisService.storeOTP(userId, otpData, OTP_PURPOSE);
   if (!storeResult) {
-    console.error("Failed to store OTP in Cache");
-    throw new Error("STORAGE_ERROR");
+    console.error('Failed to store OTP in Cache');
+    throw new Error('STORAGE_ERROR');
   }
 
-  const emailResult = await emailService.sendRegistrationOTP(
-    normalizedEmail,
-    otpData.otp,
-    { username: user.username }
-  );
+  const emailResult = await emailService.sendRegistrationOTP(normalizedEmail, otpData.otp, {
+    username: user.username,
+  });
 
   if (!emailResult.success) {
-    console.error("Failed to send OTP email:", emailResult.error);
+    console.error('Failed to send OTP email:', emailResult.error);
     await otpRedisService.deleteOTP(userId, OTP_PURPOSE);
-    throw new Error("EMAIL_ERROR");
+    throw new Error('EMAIL_ERROR');
   }
 
-  console.log(
-    `Verification OTP generated and sent for user ${userId} (${normalizedEmail})`
-  );
+  console.log(`Verification OTP generated and sent for user ${userId} (${normalizedEmail})`);
 
   return {
     success: true,
@@ -86,7 +82,7 @@ export async function sendVerificationOTP(userId, user) {
 
 /**
  * Verify OTP and mark user as verified
- * 
+ *
  * @param {string} userId - User ID
  * @param {Object} user - User object
  * @param {string} otp - OTP code to verify
@@ -95,11 +91,11 @@ export async function sendVerificationOTP(userId, user) {
  */
 export async function verifyOTP(userId, user, otp) {
   if (!otp) {
-    throw new Error("MISSING_OTP");
+    throw new Error('MISSING_OTP');
   }
 
   if (user.isVerified) {
-    throw new Error("ALREADY_VERIFIED");
+    throw new Error('ALREADY_VERIFIED');
   }
 
   const storedOTPData = await otpRedisService.getOTP(userId, OTP_PURPOSE);
@@ -107,7 +103,7 @@ export async function verifyOTP(userId, user, otp) {
     storedOTPData,
     otp,
     user.email.toLowerCase(),
-    OTP_PURPOSE
+    OTP_PURPOSE,
   );
 
   if (!validationResult.isValid) {
@@ -118,24 +114,22 @@ export async function verifyOTP(userId, user, otp) {
       await otpRedisService.deleteOTP(userId, OTP_PURPOSE);
     }
 
-    const error = new Error("INVALID_OTP");
+    const error = new Error('INVALID_OTP');
     error.validationResult = validationResult;
     throw error;
   }
   console.log(`Attempting to update user ${user.id} with isVerified: true`);
-  
+
   const updatedUser = await UserRepository.updateById(user.id, {
     isVerified: true,
   });
 
   if (!updatedUser) {
-    console.error("Update returned null - user may not exist");
-    throw new Error("USER_NOT_FOUND_UPDATE");
+    console.error('Update returned null - user may not exist');
+    throw new Error('USER_NOT_FOUND_UPDATE');
   }
 
-  console.log(
-    `User update successful. isVerified is now: ${updatedUser.isVerified}`
-  );
+  console.log(`User update successful. isVerified is now: ${updatedUser.isVerified}`);
   await otpRedisService.deleteOTP(userId, OTP_PURPOSE);
 
   console.log(`User ${userId} (${user.email}) successfully verified via OTP`);
@@ -160,8 +154,6 @@ export async function getVerificationStatus(userId, user) {
     isVerified: user.isVerified,
     hasActivePendingOTP: hasOTP,
     otpExpiresIn: otpData ? otpService.getRemainingTTL(otpData) : 0,
-    canSendOTP:
-      !user.isVerified &&
-      (!otpData || otpService.getRemainingTTL(otpData) <= 60),
+    canSendOTP: !user.isVerified && (!otpData || otpService.getRemainingTTL(otpData) <= 60),
   };
 }

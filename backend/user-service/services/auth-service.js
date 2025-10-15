@@ -1,24 +1,24 @@
-import argon2 from "argon2";
-import { UserRepository } from "../model/user-repository.js";
+import argon2 from 'argon2';
+import { UserRepository } from '../model/user-repository.js';
 
 /**
  * Authenticate user with email and password
  */
 export async function authenticateUser(email, password) {
   if (!email || !password) {
-    throw new Error("MISSING_CREDENTIALS");
+    throw new Error('MISSING_CREDENTIALS');
   }
 
   const user = await UserRepository.findByEmail(email.toLowerCase());
-  
+
   if (!user) {
-    throw new Error("INVALID_CREDENTIALS");
+    throw new Error('INVALID_CREDENTIALS');
   }
 
   const match = await argon2.verify(user.password, password);
-  
+
   if (!match) {
-    throw new Error("INVALID_CREDENTIALS");
+    throw new Error('INVALID_CREDENTIALS');
   }
 
   return user;
@@ -40,6 +40,6 @@ export async function updateLastLogin(userId) {
 export async function performLogin(email, password) {
   const user = await authenticateUser(email, password);
   const updatedUser = await updateLastLogin(user.id);
-  
+
   return updatedUser || user;
 }

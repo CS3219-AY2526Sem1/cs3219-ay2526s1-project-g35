@@ -1,4 +1,4 @@
-import express from "express";
+import express from 'express';
 
 import {
   createUser,
@@ -8,8 +8,8 @@ import {
   getUserIdByUsername,
   updateUser,
   updateUserPrivilege,
-} from "../controller/user-controller.js";
-import { verifyToken, isAdmin } from "../middleware/jwtAuth.js";
+} from '../controller/user-controller.js';
+import { verifyToken, isAdmin } from '../middleware/jwtAuth.js';
 import {
   validateCreateUser,
   validateUpdateUser,
@@ -17,35 +17,44 @@ import {
   validateUserIdParam,
   normalizeEmail,
   normalizeUsername,
-} from "../middleware/validation.js";
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
 // Create new user
-router.post(
-  "/",
-  normalizeEmail,
-  normalizeUsername,
-  validateCreateUser,
-  createUser
-);
+router.post('/', normalizeEmail, normalizeUsername, validateCreateUser, createUser);
 
 // Get userId by username (public endpoint - no auth required)
-router.get("/username/:username", getUserIdByUsername);
+router.get('/username/:username', getUserIdByUsername);
 
 // Get current user's profile (authenticated users)
-router.get("/profile", verifyToken, getUserProfile);
+router.get('/profile', verifyToken, getUserProfile);
 
 // Get specific user (authenticated users & only access own data)
-router.get("/:id", validateUserIdParam, verifyToken, getUser);
+router.get('/:id', validateUserIdParam, verifyToken, getUser);
 
 // Update user (authenticated users only)
-router.patch( "/:id", validateUserIdParam, verifyToken, normalizeEmail, normalizeUsername, validateUpdateUser, updateUser );
+router.patch(
+  '/:id',
+  validateUserIdParam,
+  verifyToken,
+  normalizeEmail,
+  normalizeUsername,
+  validateUpdateUser,
+  updateUser,
+);
 
 // Update user privilege (admin only)
-router.patch( "/:id/privilege", validateUserIdParam, verifyToken, isAdmin, validateUpdatePrivilege, updateUserPrivilege );
+router.patch(
+  '/:id/privilege',
+  validateUserIdParam,
+  verifyToken,
+  isAdmin,
+  validateUpdatePrivilege,
+  updateUserPrivilege,
+);
 
 // Delete user (admin only)
-router.delete("/:id", validateUserIdParam, verifyToken, isAdmin, deleteUser);
+router.delete('/:id', validateUserIdParam, verifyToken, isAdmin, deleteUser);
 
 export default router;

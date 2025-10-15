@@ -35,11 +35,7 @@ class SessionCache {
 
     try {
       const key = `session:${sessionId}`;
-      await this.redis.setEx(
-        key,
-        this.SESSION_TTL,
-        JSON.stringify(sessionData)
-      );
+      await this.redis.setEx(key, this.SESSION_TTL, JSON.stringify(sessionData));
       return true;
     } catch (error) {
       console.error('Error caching session:', error);
@@ -72,11 +68,11 @@ class SessionCache {
     try {
       const key = `session:${sessionId}`;
       await this.redis.del(key);
-      
+
       // Also delete related data
       await this.redis.del(`session:${sessionId}:users`);
       await this.redis.del(`session:${sessionId}:history`);
-      
+
       return true;
     } catch (error) {
       console.error('Error deleting cached session:', error);
@@ -93,23 +89,20 @@ class SessionCache {
     try {
       // Add to session's user set
       await this.redis.sAdd(`session:${sessionId}:users`, userId);
-      
+
       // Store user metadata
-      await this.redis.hSet(
-        `session:${sessionId}:user:${userId}`,
-        {
-          username,
-          joinedAt: Date.now().toString()
-        }
-      );
-      
+      await this.redis.hSet(`session:${sessionId}:user:${userId}`, {
+        username,
+        joinedAt: Date.now().toString(),
+      });
+
       // Set expiration
       await this.redis.expire(`session:${sessionId}:users`, this.SESSION_TTL);
       await this.redis.expire(`session:${sessionId}:user:${userId}`, this.SESSION_TTL);
-      
+
       // Map user to session
       await this.redis.setEx(`user:${userId}:session`, this.SESSION_TTL, sessionId);
-      
+
       return true;
     } catch (error) {
       console.error('Error adding user to session:', error);
@@ -179,18 +172,18 @@ class SessionCache {
     try {
       const snapshot = JSON.stringify({
         code,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       // Add to history list (newest first)
       await this.redis.lPush(`session:${sessionId}:history`, snapshot);
-      
+
       // Keep only last N versions
       await this.redis.lTrim(`session:${sessionId}:history`, 0, this.CODE_HISTORY_LIMIT - 1);
-      
+
       // Set expiration
       await this.redis.expire(`session:${sessionId}:history`, this.SESSION_TTL);
-      
+
       return true;
     } catch (error) {
       console.error('Error caching code history:', error);
@@ -206,7 +199,7 @@ class SessionCache {
 
     try {
       const snapshots = await this.redis.lRange(`session:${sessionId}:history`, 0, limit - 1);
-      return snapshots.map(s => JSON.parse(s));
+      return snapshots.map((s) => JSON.parse(s));
     } catch (error) {
       console.error('Error getting code history:', error);
       return [];
@@ -223,8 +216,10 @@ class SessionCache {
       const keys = await this.redis.keys('session:*');
       // Filter out user keys and history keys
       return keys
-        .filter(key => !key.includes(':users') && !key.includes(':history') && !key.includes(':user:'))
-        .map(key => key.replace('session:', ''));
+        .filter(
+          (key) => !key.includes(':users') && !key.includes(':history') && !key.includes(':user:'),
+        )
+        .map((key) => key.replace('session:', ''));
     } catch (error) {
       console.error('Error getting active sessions:', error);
       return [];
@@ -258,12 +253,12 @@ class SessionCache {
     try {
       const sessions = await this.getAllActiveSessions();
       const totalUsers = await this.redis.dbSize();
-      
+
       return {
         available: true,
         totalSessions: sessions.length,
         totalKeys: totalUsers,
-        uptime: 'N/A' // Can add Redis uptime if needed
+        uptime: 'N/A', // Can add Redis uptime if needed
       };
     } catch (error) {
       console.error('Error getting cache stats:', error);
@@ -276,6 +271,3 @@ class SessionCache {
 const sessionCache = new SessionCache();
 
 module.exports = sessionCache;
-
-
-

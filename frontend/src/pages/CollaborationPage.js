@@ -6,7 +6,7 @@ import './CollaborationPage.css';
 const CollaborationPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
+
   // Get session ID from URL params or generate one
   const sessionId = searchParams.get('sessionId') || `session-${Date.now()}`;
   const userId = searchParams.get('userId') || `user-${Math.random().toString(36).substr(2, 9)}`;
@@ -25,16 +25,16 @@ const CollaborationPage = () => {
   const [partnerInfo, setPartnerInfo] = useState(null);
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Connecting...');
-  
+
   const codeChangeDebounce = useRef(null);
   const typingTimeout = useRef(null);
 
   const languages = ['javascript', 'python', 'java', 'cpp'];
   const languageLabels = {
-    'javascript': 'JavaScript',
-    'python': 'Python',
-    'java': 'Java',
-    'cpp': 'C++'
+    javascript: 'JavaScript',
+    python: 'Python',
+    java: 'Java',
+    cpp: 'C++',
   };
 
   const testCases = [
@@ -42,20 +42,20 @@ const CollaborationPage = () => {
       id: 'Case 1',
       nums: '[2,7,11,15]',
       target: '9',
-      expected: '[0,1]'
+      expected: '[0,1]',
     },
     {
       id: 'Case 2',
       nums: '[3,2,4]',
       target: '6',
-      expected: '[1,2]'
+      expected: '[1,2]',
     },
     {
       id: 'Case 3',
       nums: '[3,3]',
       target: '6',
-      expected: '[0,1]'
-    }
+      expected: '[0,1]',
+    },
   ];
 
   // Initialize socket connection on mount
@@ -68,17 +68,17 @@ const CollaborationPage = () => {
 
         // Join the collaboration session
         const result = await socketService.joinSession(sessionId, userId, { username });
-        
+
         setIsConnected(true);
         setConnectionStatus('Connected');
-        
+
         // Load initial session data
         if (result.session) {
           if (result.session.code) setCode(result.session.code);
           if (result.session.language) setSelectedLanguage(result.session.language);
-          
+
           // Set partner info if there's another user
-          const partner = result.session.users?.find(u => u.userId !== userId);
+          const partner = result.session.users?.find((u) => u.userId !== userId);
           if (partner) {
             setPartnerInfo(partner);
           }
@@ -121,13 +121,16 @@ const CollaborationPage = () => {
 
     // Chat messages
     socketService.onChatMessage((data) => {
-      setMessages(prev => [...prev, {
-        id: Date.now(),
-        text: data.message,
-        sender: data.userId === userId ? 'me' : 'partner',
-        username: data.username,
-        timestamp: data.timestamp
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: data.message,
+          sender: data.userId === userId ? 'me' : 'partner',
+          username: data.username,
+          timestamp: data.timestamp,
+        },
+      ]);
     });
 
     // User joined
@@ -135,12 +138,15 @@ const CollaborationPage = () => {
       if (data.userId !== userId) {
         setPartnerInfo({ userId: data.userId, username: data.username });
         setConnectionStatus(`Connected with ${data.username}`);
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          text: `${data.username} joined the session`,
-          sender: 'system',
-          timestamp: data.timestamp
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text: `${data.username} joined the session`,
+            sender: 'system',
+            timestamp: data.timestamp,
+          },
+        ]);
       }
     });
 
@@ -149,12 +155,15 @@ const CollaborationPage = () => {
       if (data.userId !== userId) {
         setPartnerInfo(null);
         setConnectionStatus('Partner left');
-        setMessages(prev => [...prev, {
-          id: Date.now(),
-          text: `${data.username} left the session`,
-          sender: 'system',
-          timestamp: data.timestamp
-        }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            text: `${data.username} left the session`,
+            sender: 'system',
+            timestamp: data.timestamp,
+          },
+        ]);
       }
     });
 
@@ -215,7 +224,7 @@ const CollaborationPage = () => {
     if (newMessage.trim()) {
       socketService.sendChatMessage(newMessage, username);
       setNewMessage('');
-      
+
       // Stop typing indicator
       socketService.sendTypingStop();
       if (typingTimeout.current) {
@@ -227,15 +236,15 @@ const CollaborationPage = () => {
   // Handle typing in chat
   const handleChatInputChange = (e) => {
     setNewMessage(e.target.value);
-    
+
     // Send typing indicator
     socketService.sendTypingStart(username);
-    
+
     // Clear existing timeout
     if (typingTimeout.current) {
       clearTimeout(typingTimeout.current);
     }
-    
+
     // Stop typing indicator after 2 seconds of no input
     typingTimeout.current = setTimeout(() => {
       socketService.sendTypingStop();
@@ -251,7 +260,7 @@ const CollaborationPage = () => {
     }
   };
 
-  const currentTestCase = testCases.find(tc => tc.id === selectedTestCase);
+  const currentTestCase = testCases.find((tc) => tc.id === selectedTestCase);
 
   return (
     <div className="collaboration-page">
@@ -266,7 +275,9 @@ const CollaborationPage = () => {
             <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}></div>
             <span>{partnerInfo ? partnerInfo.username : connectionStatus}</span>
           </div>
-          <button className="leave-session-btn" onClick={handleLeaveSession}>Leave Session</button>
+          <button className="leave-session-btn" onClick={handleLeaveSession}>
+            Leave Session
+          </button>
         </div>
       </header>
 
@@ -283,23 +294,36 @@ const CollaborationPage = () => {
             <div className="problem-content">
               <h2 className="problem-title">Two Sum</h2>
               <p className="problem-statement">
-                Given an an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.
+                Given an an array of integers nums and an integer target, return indices of the two
+                numbers such that they add up to target. You may assume that each input would have
+                exactly one solution, and you may not use the same element twice. You can return the
+                answer in any order.
               </p>
-              
+
               <div className="example">
                 <h4>Example 1:</h4>
                 <div className="example-content">
-                  <p><strong>Input:</strong> nums = [2,7,11,15], target = 9</p>
-                  <p><strong>Output:</strong> [0,1]</p>
-                  <p><strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].</p>
+                  <p>
+                    <strong>Input:</strong> nums = [2,7,11,15], target = 9
+                  </p>
+                  <p>
+                    <strong>Output:</strong> [0,1]
+                  </p>
+                  <p>
+                    <strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].
+                  </p>
                 </div>
               </div>
 
               <div className="example">
                 <h4>Example 2:</h4>
                 <div className="example-content">
-                  <p><strong>Input:</strong> nums = [3,2,4], target = 6</p>
-                  <p><strong>Output:</strong> [1,2]</p>
+                  <p>
+                    <strong>Input:</strong> nums = [3,2,4], target = 6
+                  </p>
+                  <p>
+                    <strong>Output:</strong> [1,2]
+                  </p>
                 </div>
               </div>
             </div>
@@ -314,7 +338,7 @@ const CollaborationPage = () => {
               </div>
             </div>
             <div className="chat-messages">
-              {messages.map(message => (
+              {messages.map((message) => (
                 <div key={message.id} className={`message ${message.sender}`}>
                   {message.sender === 'system' ? (
                     <em className="system-message">{message.text}</em>
@@ -349,13 +373,15 @@ const CollaborationPage = () => {
           <div className="section-header">
             <h3>Code</h3>
             <div className="language-selector">
-              <select 
-                value={selectedLanguage} 
+              <select
+                value={selectedLanguage}
                 onChange={(e) => handleLanguageChange(e.target.value)}
                 className="language-dropdown"
               >
-                {languages.map(lang => (
-                  <option key={lang} value={lang}>{languageLabels[lang]}</option>
+                {languages.map((lang) => (
+                  <option key={lang} value={lang}>
+                    {languageLabels[lang]}
+                  </option>
                 ))}
               </select>
             </div>
@@ -375,13 +401,13 @@ const CollaborationPage = () => {
         <div className="right-panel">
           <div className="section-header">
             <div className="tabs">
-              <button 
+              <button
                 className={`tab ${activeTab === 'testCases' ? 'active' : ''}`}
                 onClick={() => setActiveTab('testCases')}
               >
                 Test Cases
               </button>
-              <button 
+              <button
                 className={`tab ${activeTab === 'testResults' ? 'active' : ''}`}
                 onClick={() => setActiveTab('testResults')}
               >
@@ -393,10 +419,10 @@ const CollaborationPage = () => {
               Run
             </button>
           </div>
-          
+
           <div className="test-cases">
             <div className="test-case-selector">
-              {testCases.map(testCase => (
+              {testCases.map((testCase) => (
                 <button
                   key={testCase.id}
                   className={`test-case-btn ${selectedTestCase === testCase.id ? 'active' : ''}`}
@@ -406,7 +432,7 @@ const CollaborationPage = () => {
                 </button>
               ))}
             </div>
-            
+
             {currentTestCase && (
               <div className="test-case-details">
                 <div className="input-field">

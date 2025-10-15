@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const Schema = mongoose.Schema;
 
@@ -18,10 +18,7 @@ const UserModelSchema = new Schema({
     trim: true,
     minlength: 5,
     lowercase: true,
-    match: [
-      /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
-      "Please enter a valid email",
-    ],
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email'],
   },
   password: {
     type: String,
@@ -76,25 +73,22 @@ const UserModelSchema = new Schema({
     },
   },
 });
-UserModelSchema.pre("save", function (next) {
+UserModelSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });
 
-UserModelSchema.pre(
-  ["findOneAndUpdate", "updateOne", "updateMany"],
-  function (next) {
-    this.set({ updatedAt: Date.now() });
-    next();
-  }
-);
-UserModelSchema.virtual("profile.fullName").get(function () {
+UserModelSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function (next) {
+  this.set({ updatedAt: Date.now() });
+  next();
+});
+UserModelSchema.virtual('profile.fullName').get(function () {
   if (this.profile.firstName && this.profile.lastName) {
     return `${this.profile.firstName} ${this.profile.lastName}`;
   }
   return this.profile.firstName || this.profile.lastName || this.username;
 });
-UserModelSchema.set("toJSON", {
+UserModelSchema.set('toJSON', {
   virtuals: true,
   transform: function (doc, ret) {
     delete ret.password;
@@ -103,4 +97,4 @@ UserModelSchema.set("toJSON", {
   },
 });
 
-export default mongoose.model("UserModel", UserModelSchema);
+export default mongoose.model('UserModel', UserModelSchema);

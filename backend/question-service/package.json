@@ -8,7 +8,9 @@
     "dev": "nodemon src/server.js",
     "seed": "node src/scripts/seed-questions.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "express": "^4.18.2",
