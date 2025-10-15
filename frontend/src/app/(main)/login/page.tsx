@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import Header from "@/components/ui/Header";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Button } from '@/components/ui/button';
+import Header from '@/components/ui/Header';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 //Original React Code made by Basil
 
@@ -15,24 +15,24 @@ interface LoginForm {
 const Login: React.FC = () => {
   const router = useRouter();
   const [formData, setFormData] = useState<LoginForm>({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
   });
 
   // mock onLogin: save to localStorage and redirect
   const onLogin = async (data: LoginForm) => {
     // store minimal mock user data
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const mockUser = {
         email: data.email.toLowerCase(),
-        username: data.email.split("@")[0],
+        username: data.email.split('@')[0],
       };
-      sessionStorage.setItem("mockUser", JSON.stringify(mockUser));
-      window.dispatchEvent(new Event("mockUserChanged"));
+      sessionStorage.setItem('mockUser', JSON.stringify(mockUser));
+      window.dispatchEvent(new Event('mockUserChanged'));
     }
 
     // navigate to Home page (adjust path if your home URL differs)
-    router.push("/home");
+    router.push('/home');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,11 +49,11 @@ const Login: React.FC = () => {
   };
 
   const onSignUp = () => {
-    router.push("/signup");
+    router.push('/signup');
   };
 
   const onResetPassword = () => {
-    router.push("/resetpassword");
+    router.push('/resetpassword');
   };
 
   return (
@@ -94,12 +94,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between mt-2.5">
-            <Button
-              className="text-md"
-              type="submit"
-              variant="attention"
-              size="lg"
-            >
+            <Button className="text-md" type="submit" variant="attention" size="lg">
               Login
             </Button>
             <button

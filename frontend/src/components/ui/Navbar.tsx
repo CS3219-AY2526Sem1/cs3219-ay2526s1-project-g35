@@ -1,6 +1,6 @@
-import { MessagesSquare } from "lucide-react";
-import Link from "next/link";
-import { ReactNode } from "react";
+import { MessagesSquare } from 'lucide-react';
+import Link from 'next/link';
+import { ReactNode } from 'react';
 
 function Navbar({ buttons }: { buttons?: ReactNode }) {
   return (

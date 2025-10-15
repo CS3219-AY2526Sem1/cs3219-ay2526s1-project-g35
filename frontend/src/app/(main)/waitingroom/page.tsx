@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   AlertDialog,
@@ -10,11 +10,11 @@ import {
   AlertDialogOverlay,
   AlertDialogPortal,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function WaitingRoomPage(): React.ReactElement {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function WaitingRoomPage(): React.ReactElement {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    router.push("/home");
+    router.push('/home');
   };
 
   return (
@@ -56,12 +56,8 @@ export default function WaitingRoomPage(): React.ReactElement {
       `}</style>
 
       <div className="w-full max-w-4xl text-center">
-        <h1 className="text-4xl font-bold text-foreground">
-          Finding you a match
-        </h1>
-        <p className="text-lg text-muted-foreground mt-2">
-          This might take a while...
-        </p>
+        <h1 className="text-4xl font-bold text-foreground">Finding you a match</h1>
+        <p className="text-lg text-muted-foreground mt-2">This might take a while...</p>
 
         <div className="mt-12 flex flex-col items-center gap-8">
           <div className="relative w-56 h-56 flex items-center justify-center">
@@ -71,10 +67,7 @@ export default function WaitingRoomPage(): React.ReactElement {
             <div className="absolute w-22 h-22 rounded-full border-8 border-muted-foreground/30 ring-anim"></div>
           </div>
 
-          <Link
-            href="/home"
-            className="text-sm underline text-muted-foreground"
-          >
+          <Link href="/home" className="text-sm underline text-muted-foreground">
             Cancel
           </Link>
         </div>
@@ -91,12 +84,8 @@ export default function WaitingRoomPage(): React.ReactElement {
           <AlertDialogOverlay />
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>
-                Unfortunately, we couldn’t find a match :(
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Try again shortly!
-              </AlertDialogDescription>
+              <AlertDialogTitle>Unfortunately, we couldn’t find a match :(</AlertDialogTitle>
+              <AlertDialogDescription>Try again shortly!</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogAction asChild>

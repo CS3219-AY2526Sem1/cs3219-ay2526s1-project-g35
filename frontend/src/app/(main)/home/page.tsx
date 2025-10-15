@@ -1,37 +1,35 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/Carousel";
-import Autoplay from "embla-carousel-autoplay";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+} from '@/components/ui/Carousel';
+import Autoplay from 'embla-carousel-autoplay';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function HomePage() {
   const router = useRouter();
 
   const [selectedTopic, setSelectedTopic] = useState<number | null>(0);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
-    null
-  );
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
 
   const topics = [
-    "Two Pointers",
-    "Sliding Window",
-    "Sorting",
-    "Binary Search",
-    "Dynamic Programming",
-    "Greedy Algorithms",
+    'Two Pointers',
+    'Sliding Window',
+    'Sorting',
+    'Binary Search',
+    'Dynamic Programming',
+    'Greedy Algorithms',
   ];
 
-  const difficulties = ["Easy", "Medium", "Hard"];
+  const difficulties = ['Easy', 'Medium', 'Hard'];
 
-  const goWaiting = () => router.push("/waitingroom");
+  const goWaiting = () => router.push('/waitingroom');
 
   const onSelectTopic = (index: number) => setSelectedTopic(index);
   const onSelectDifficulty = (d: string) => setSelectedDifficulty(d);
@@ -47,9 +45,7 @@ export default function HomePage() {
         </p>
       </header>
       <section id="topics" className="w-full">
-        <h2 className="text-3xl text-center">
-          Which topic(s) would you like to practice today?
-        </h2>
+        <h2 className="text-3xl text-center">Which topic(s) would you like to practice today?</h2>
         <Carousel
           orientation="horizontal"
           opts={{ loop: true }}
@@ -63,19 +59,16 @@ export default function HomePage() {
           {/* topics mapped from array */}
           <CarouselContent className="-ml-6">
             {topics.map((t, i) => (
-              <CarouselItem
-                key={t}
-                className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50"
-              >
+              <CarouselItem key={t} className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
                 <div
                   role="button"
                   tabIndex={0}
                   onClick={() => onSelectTopic(i)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") onSelectTopic(i);
+                    if (e.key === 'Enter' || e.key === ' ') onSelectTopic(i);
                   }}
                   className={`shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                    selectedTopic === i ? "ring-2 ring-ring scale-105" : ""
+                    selectedTopic === i ? 'ring-2 ring-ring scale-105' : ''
                   }`}
                 >
                   <label className="text-2xl block text-center">{t}</label>
@@ -100,12 +93,10 @@ export default function HomePage() {
               tabIndex={0}
               onClick={() => onSelectDifficulty(d)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") onSelectDifficulty(d);
+                if (e.key === 'Enter' || e.key === ' ') onSelectDifficulty(d);
               }}
               className={`basis-1/3 mx-3 h-full shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center rounded-2xl border-1 cursor-pointer transition ${
-                selectedDifficulty === d
-                  ? "ring-2 ring-ring scale-105"
-                  : "hover:shadow-lg"
+                selectedDifficulty === d ? 'ring-2 ring-ring scale-105' : 'hover:shadow-lg'
               }`}
             >
               <label className="text-2xl block text-center">{d}</label>
@@ -113,12 +104,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      <Button
-        onClick={goWaiting}
-        className="block mx-auto"
-        variant="attention"
-        size="lg"
-      >
+      <Button onClick={goWaiting} className="block mx-auto" variant="attention" size="lg">
         Find a match!
       </Button>
     </div>

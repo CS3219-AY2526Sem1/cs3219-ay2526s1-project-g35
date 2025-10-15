@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/DropdownMenu";
-import { UserIcon } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import ModeToggle from "./ModeToggle";
+} from '@/components/ui/DropdownMenu';
+import { UserIcon } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import ModeToggle from './ModeToggle';
 
 function DesktopNavbar() {
   const [user, setMockUser] = useState<{
@@ -25,14 +25,14 @@ function DesktopNavbar() {
   useEffect(() => {
     const loadUser = () => {
       try {
-        const raw = sessionStorage.getItem("mockUser"); // <-- use sessionStorage
+        const raw = sessionStorage.getItem('mockUser'); // <-- use sessionStorage
         if (raw) {
           setMockUser(JSON.parse(raw));
         } else {
           setMockUser(null);
         }
       } catch {
-        sessionStorage.removeItem("mockUser");
+        sessionStorage.removeItem('mockUser');
         setMockUser(null);
       }
     };
@@ -40,30 +40,30 @@ function DesktopNavbar() {
     loadUser();
 
     // same-window custom event from login
-    window.addEventListener("mockUserChanged", loadUser);
+    window.addEventListener('mockUserChanged', loadUser);
 
     // storage event for changes from other tabs/windows
     const onStorage = (e: StorageEvent) => {
-      if (e.key === "mockUser") loadUser();
+      if (e.key === 'mockUser') loadUser();
     };
-    window.addEventListener("storage", onStorage);
+    window.addEventListener('storage', onStorage);
 
     // clear session key on unload (helps keep storage clean during dev)
     const onBeforeUnload = () => {
-      sessionStorage.removeItem("mockUser");
+      sessionStorage.removeItem('mockUser');
     };
-    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener('beforeunload', onBeforeUnload);
 
     return () => {
-      window.removeEventListener("mockUserChanged", loadUser);
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener('mockUserChanged', loadUser);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('beforeunload', onBeforeUnload);
     };
   }, []);
 
   return (
     <div className="hidden md:flex items-center gap-4">
-      {pathName === "/session" && (
+      {pathName === '/session' && (
         <div className="flex items-center gap-4 mr-16">
           <div className="flex items-center gap-2 text-sm">
             <div className="w-2 h-2 bg-green-500 rounded-full" />

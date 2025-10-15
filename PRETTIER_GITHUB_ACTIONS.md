@@ -20,7 +20,6 @@ This project now has consistent code formatting across all services using **Pret
 
 ### GitHub Actions:
 - ✅ `.github/workflows/prettier-check.yml` - Main workflow (parallel checks)
-- ✅ `.github/workflows/prettier-simple.yml` - Simple workflow (sequential)
 
 ## 🚀 Quick Start
 
@@ -81,7 +80,7 @@ In each service directory:
 
 ## 🤖 GitHub Actions Workflows
 
-### Option 1: Parallel Workflow (Recommended)
+### Parallel Workflow
 
 **File:** `.github/workflows/prettier-check.yml`
 
@@ -94,15 +93,7 @@ In each service directory:
 - Pull requests to `master`, `main`, or `develop`
 - Pushes to `master`, `main`, or `develop`
 
-### Option 2: Simple Sequential Workflow
 
-**File:** `.github/workflows/prettier-simple.yml`
-
-- ✅ Checks all services sequentially
-- ✅ Simpler to understand
-- ✅ Single job (uses less GitHub Actions minutes)
-
-**Choose one or use both!** They work independently.
 
 ## 🔧 How GitHub Actions Work
 
@@ -245,35 +236,6 @@ To **enforce** Prettier checks before merging:
 
 Now PRs **cannot be merged** until Prettier checks pass!
 
-## 🪝 Pre-commit Hook (Optional)
-
-Want to check formatting **before committing**?
-
-### Install the Hook:
-
-**PowerShell:**
-```powershell
-# Copy the pre-commit hook
-Copy-Item .git-hooks\pre-commit .git\hooks\pre-commit
-
-# Make it executable (Git Bash)
-git update-index --chmod=+x .git/hooks/pre-commit
-```
-
-**Bash/Linux/Mac:**
-```bash
-# Copy and make executable
-cp .git-hooks/pre-commit .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-Now Prettier checks run **automatically** before every commit!
-
-### Skip the Hook (if needed):
-
-```bash
-git commit --no-verify -m "commit message"
-```
 
 ## 📊 Example Workflow Run
 
