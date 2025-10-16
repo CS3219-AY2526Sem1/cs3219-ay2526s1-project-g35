@@ -14,7 +14,7 @@ interface LoginForm {
 
 const Login: React.FC = () => {
   const router = useRouter();
-  const { login, error, isLoading, clearError } = useAuth();
+  const { login, error, clearError } = useAuth();
   const [formData, setFormData] = useState<LoginForm>({
     email: '',
     password: '',
@@ -35,10 +35,10 @@ const Login: React.FC = () => {
 
     try {
       await login(formData);
-      router.push('/home');
+      // Don't manually navigate - let the layout handle it when isAuthenticated changes
     } catch (err) {
       console.error('Login failed:', err);
-      // Form data is preserved automatically for validation errors
+      // Error is already set in AuthContext, form data is preserved
     }
   };
 
@@ -75,7 +75,6 @@ const Login: React.FC = () => {
               placeholder="eg. peerprepforlife@gmail.com"
               className="py-3 px-4 border rounded-md text-base placeholder-muted-foreground transition-colors duration-200 focus:outline-none focus:border-attention"
               required
-              disabled={isLoading}
             />
           </div>
 
@@ -91,7 +90,6 @@ const Login: React.FC = () => {
               onChange={handleInputChange}
               className="py-3 px-4 border rounded-md text-base placeholder-muted-foreground transition-colors duration-200 focus:outline-none focus:border-attention"
               required
-              disabled={isLoading}
             />
           </div>
 
@@ -101,15 +99,13 @@ const Login: React.FC = () => {
               type="submit"
               variant="attention"
               size="lg"
-              disabled={isLoading}
             >
-              {isLoading ? 'Logging in...' : 'Login'}
+              Login
             </Button>
             <button
               type="button"
               className="bg-transparent border-0 text-sm underline p-0 cursor-pointer hover:text-attention disabled:opacity-50"
               onClick={onResetPassword}
-              disabled={isLoading}
             >
               Reset your password
             </button>
@@ -123,7 +119,6 @@ const Login: React.FC = () => {
               type="button"
               className="bg-transparent border-0 text-sm text-attention underline p-0 ml-1 cursor-pointer hover:text-attention/90 disabled:opacity-50"
               onClick={onSignUp}
-              disabled={isLoading}
             >
               Sign up here now!
             </button>

@@ -9,6 +9,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import authService from '@/services/auth.service';
 import { AuthContextType, AuthState, LoginCredentials, RegisterCredentials } from '@/types/auth.types';
+import { hasAccessToken } from '@/lib/cookies';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -21,24 +22,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   /**
-   * Login handler
+   * Manual session verification (can be called by layouts)
    */
-  const login = useCallback(async (credentials: LoginCredentials) => {
+  const verifySession = useCallback(async () => {
     try {
-      setAuthState((prev: AuthState) => ({ ...prev, isLoading: true, error: null }));
-      
-      const response = await authService.login(credentials);
-      
+      setAuthState((prev) => ({ ...prev, isLoading: true }));
+      const response = await authService.verifySession();
       setAuthState({
-        user: response.data.user,
+        user: response.data,
         isAuthenticated: true,
         isLoading: false,
         error: null,
       });
+      return true;
+    } catch (error) {
+      setAuthState({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
+      return false;
+    }
+  }, []);
+
+  /**
+   * Login handler
+   */
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    try {
+      setAuthState((prev: AuthState) => ({ ...prev, error: null }));
+      
+      const response = await authService.login(credentials);
+      
+      setAuthState((prev: AuthState) => ({
+        ...prev,
+        user: response.data.user,
+        isAuthenticated: true,
+        error: null,
+      }));
     } catch (error: any) {
       setAuthState((prev: AuthState) => ({
         ...prev,
-        isLoading: false,
         error: error.message || 'Login failed',
       }));
       throw error;
@@ -50,20 +75,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const register = useCallback(async (credentials: RegisterCredentials) => {
     try {
-      setAuthState((prev: AuthState) => ({ ...prev, isLoading: true, error: null }));
+      setAuthState((prev: AuthState) => ({ ...prev, error: null }));
       
       const response = await authService.register(credentials);
       
-      setAuthState({
+      setAuthState((prev: AuthState) => ({
+        ...prev,
         user: response.data.user,
         isAuthenticated: true,
-        isLoading: false,
         error: null,
-      });
+      }));
     } catch (error: any) {
       setAuthState((prev: AuthState) => ({
         ...prev,
-        isLoading: false,
         error: error.message || 'Registration failed',
       }));
       throw error;
@@ -75,8 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const logout = useCallback(async () => {
     try {
-      setAuthState((prev: AuthState) => ({ ...prev, isLoading: true }));
-      
       await authService.logout();
       
       setAuthState({
@@ -86,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: null,
       });
     } catch (error: any) {
-      // Even if logout fails on server, clear local state
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -109,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     register,
     clearError,
+    verifySession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

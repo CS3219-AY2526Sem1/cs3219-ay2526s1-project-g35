@@ -31,7 +31,7 @@ type Errors = Partial<Record<keyof SignUpForm, string>>;
 
 export default function SignUpPage(): React.JSX.Element {
   const router = useRouter();
-  const { register, error: authError, isLoading, clearError } = useAuth();
+  const { register, error: authError, clearError } = useAuth();
   const [formData, setFormData] = useState<SignUpForm>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof SignUpForm, boolean>>>({});
@@ -135,12 +135,12 @@ export default function SignUpPage(): React.JSX.Element {
         profile: {
           firstName: formData.firstName,
           lastName: formData.lastName,
-          bio: formData.bio,
+          ...(formData.bio.trim() && { bio: formData.bio }),
         },
       };
       
       await register(payload);
-      router.push('/home');
+      // Don't manually navigate - let the layout handle it when isAuthenticated changes
     } catch (err) {
       console.error('Registration failed:', err);
       
@@ -214,7 +214,6 @@ export default function SignUpPage(): React.JSX.Element {
               onBlur={handleBlur}
               className="w-full px-3 py-2 border border-border rounded"
               placeholder="Username"
-              disabled={isLoading}
             />
             {errors.username && <p className="text-destructive text-sm mt-1">{errors.username}</p>}
           </div>
@@ -229,7 +228,6 @@ export default function SignUpPage(): React.JSX.Element {
                 onBlur={handleBlur}
                 className="w-full px-3 py-2 border border-border rounded"
                 placeholder="First name"
-                disabled={isLoading}
               />
               {errors.firstName && (
                 <p className="text-destructive text-sm mt-1">{errors.firstName}</p>
@@ -245,7 +243,6 @@ export default function SignUpPage(): React.JSX.Element {
                 onBlur={handleBlur}
                 className="w-full px-3 py-2 border border-border rounded"
                 placeholder="Last name"
-                disabled={isLoading}
               />
               {errors.lastName && (
                 <p className="text-destructive text-sm mt-1">{errors.lastName}</p>
@@ -263,7 +260,6 @@ export default function SignUpPage(): React.JSX.Element {
               onBlur={handleBlur}
               className="w-full px-3 py-2 border border-border rounded"
               placeholder="peerprepforlife@example.com"
-              disabled={isLoading}
             />
             {errors.email && <p className="text-destructive text-sm mt-1">{errors.email}</p>}
           </div>
@@ -278,7 +274,6 @@ export default function SignUpPage(): React.JSX.Element {
               onBlur={handleBlur}
               className="w-full px-3 py-2 border border-border rounded"
               placeholder="Enter a strong password"
-              disabled={isLoading}
             />
             {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
             {!errors.password && (
@@ -298,7 +293,6 @@ export default function SignUpPage(): React.JSX.Element {
               onBlur={handleBlur}
               className="w-full px-3 py-2 border border-border rounded"
               placeholder="Re-enter your password"
-              disabled={isLoading}
             />
             {errors.confirmPassword && (
               <p className="text-destructive text-sm mt-1">{errors.confirmPassword}</p>
@@ -315,7 +309,6 @@ export default function SignUpPage(): React.JSX.Element {
               className="w-full px-3 py-2 border border-border rounded resize-none"
               placeholder="Tell us about yourself..."
               rows={3}
-              disabled={isLoading}
             />
           </div>
 
@@ -325,9 +318,9 @@ export default function SignUpPage(): React.JSX.Element {
               type="submit"
               variant="attention"
               size="lg"
-              disabled={!isFormValid || isLoading}
+              disabled={!isFormValid}
             >
-              {isLoading ? 'Signing up...' : 'Sign Up'}
+              Sign Up
             </Button>
           </div>
         </form>
@@ -339,7 +332,6 @@ export default function SignUpPage(): React.JSX.Element {
               type="button"
               className="bg-transparent border-0 text-sm text-attention underline p-0 ml-1 cursor-pointer hover:text-attention/90 disabled:opacity-50"
               onClick={() => router.push('/login')}
-              disabled={isLoading}
             >
               Login here
             </button>

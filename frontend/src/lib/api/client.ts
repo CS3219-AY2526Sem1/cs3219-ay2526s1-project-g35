@@ -29,7 +29,14 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        const currentPath = window.location.pathname;
+        const isPublicAuthPage = currentPath === '/login' || 
+                                  currentPath === '/signup' || 
+                                  currentPath === '/resetpassword';
+        
+        if (!isPublicAuthPage) {
+          window.location.href = '/login';
+        }
       }
     }
 

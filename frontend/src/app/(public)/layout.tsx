@@ -2,32 +2,24 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
+  // Redirect authenticated users (after successful login)
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      router.push('/home');
+    if (isAuthenticated) {
+      router.replace('/home');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // If authenticated, hide content while redirecting
   if (isAuthenticated) {
     return null;
   }
 
+  // Not authenticated - show login/signup pages
   return <>{children}</>;
 }

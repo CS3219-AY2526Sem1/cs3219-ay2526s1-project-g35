@@ -45,6 +45,11 @@ export interface AuthResponse {
   };
 }
 
+export interface VerifyTokenResponse {
+  message: string;
+  data: User;
+}
+
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
@@ -57,4 +62,5 @@ export interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   clearError: () => void;
+  verifySession: () => Promise<boolean>;
 }

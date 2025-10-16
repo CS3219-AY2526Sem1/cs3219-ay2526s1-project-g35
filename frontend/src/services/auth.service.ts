@@ -3,7 +3,7 @@
  */
 
 import apiClient from '@/lib/api/client';
-import { AuthResponse, LoginCredentials, RegisterCredentials } from '@/types/auth.types';
+import { AuthResponse, LoginCredentials, RegisterCredentials, VerifyTokenResponse } from '@/types/auth.types';
 import { AxiosResponse } from 'axios';
 
 /**
@@ -53,6 +53,20 @@ class AuthService {
   async logout(): Promise<void> {
     try {
       await apiClient.post(`${this.AUTH_BASE_PATH}/logout`);
+    } catch (error: any) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Verify the current session by checking if the accessToken cookie is valid
+   */
+  async verifySession(): Promise<VerifyTokenResponse> {
+    try {
+      const response: AxiosResponse<VerifyTokenResponse> = await apiClient.get(
+        `${this.AUTH_BASE_PATH}/verify-token`
+      );
+      return response.data;
     } catch (error: any) {
       throw this.handleError(error);
     }
