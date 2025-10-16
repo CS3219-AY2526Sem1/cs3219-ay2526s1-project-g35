@@ -19,7 +19,7 @@ apiClient.interceptors.request.use(
   },
   (error: AxiosError) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 apiClient.interceptors.response.use(
@@ -30,10 +30,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         const currentPath = window.location.pathname;
-        const isPublicAuthPage = currentPath === '/login' || 
-                                  currentPath === '/signup' || 
-                                  currentPath === '/resetpassword';
-        
+        const isPublicAuthPage =
+          currentPath === '/login' || currentPath === '/signup' || currentPath === '/resetpassword';
+
         if (!isPublicAuthPage) {
           window.location.href = '/login';
         }
@@ -41,7 +40,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

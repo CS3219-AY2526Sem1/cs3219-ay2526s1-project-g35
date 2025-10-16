@@ -3,7 +3,12 @@
  */
 
 import apiClient from '@/lib/api/client';
-import { AuthResponse, LoginCredentials, RegisterCredentials, VerifyTokenResponse } from '@/types/auth.types';
+import {
+  AuthResponse,
+  LoginCredentials,
+  RegisterCredentials,
+  VerifyTokenResponse,
+} from '@/types/auth.types';
 import { AxiosResponse } from 'axios';
 
 /**
@@ -30,7 +35,7 @@ class AuthService {
     try {
       const response: AxiosResponse<AuthResponse> = await apiClient.post(
         `${this.AUTH_BASE_PATH}/login`,
-        credentials
+        credentials,
       );
       return response.data;
     } catch (error: any) {
@@ -42,7 +47,7 @@ class AuthService {
     try {
       const response: AxiosResponse<AuthResponse> = await apiClient.post(
         `${this.AUTH_BASE_PATH}/register`,
-        credentials
+        credentials,
       );
       return response.data;
     } catch (error: any) {
@@ -64,7 +69,7 @@ class AuthService {
   async verifySession(): Promise<VerifyTokenResponse> {
     try {
       const response: AxiosResponse<VerifyTokenResponse> = await apiClient.get(
-        `${this.AUTH_BASE_PATH}/verify-token`
+        `${this.AUTH_BASE_PATH}/verify-token`,
       );
       return response.data;
     } catch (error: any) {
@@ -74,7 +79,8 @@ class AuthService {
 
   private handleError(error: any): AuthError {
     if (error.response) {
-      const message = error.response.data?.message || error.response.data?.error || 'An error occurred';
+      const message =
+        error.response.data?.message || error.response.data?.error || 'An error occurred';
       const statusCode = error.response.status;
       const details = error.response.data?.details;
       return new AuthError(message, statusCode, details);

@@ -1,462 +1,485 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Collaboration Service Test Client</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <!-- Monaco Editor -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor/editor.main.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/editor/editor.main.css"
+    />
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            padding: 20px;
-            background: #f5f5f5;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
 
-        .header {
-            background: #4299e1;
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      .header {
+        background: #4299e1;
+        color: white;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-        .indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #cbd5e0;
-        }
+      .indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #cbd5e0;
+      }
 
-        .indicator.connected {
-            background: #48bb78;
-        }
+      .indicator.connected {
+        background: #48bb78;
+      }
 
-        .content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            padding: 20px;
-        }
+      .content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 20px;
+      }
 
-        .section {
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            overflow: hidden;
-        }
+      .section {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        overflow: hidden;
+      }
 
-        .section-header {
-            background: #edf2f7;
-            padding: 12px;
-            font-weight: 600;
-            border-bottom: 1px solid #e2e8f0;
-        }
+      .section-header {
+        background: #edf2f7;
+        padding: 12px;
+        font-weight: 600;
+        border-bottom: 1px solid #e2e8f0;
+      }
 
-        .section-body {
-            padding: 12px;
-        }
+      .section-body {
+        padding: 12px;
+      }
 
-        textarea {
-            width: 100%;
-            min-height: 300px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 12px;
-            font-family: 'Monaco', monospace;
-            font-size: 14px;
-            resize: vertical;
-        }
+      textarea {
+        width: 100%;
+        min-height: 300px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 12px;
+        font-family: 'Monaco', monospace;
+        font-size: 14px;
+        resize: vertical;
+      }
 
-        .chat-messages {
-            min-height: 200px;
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
+      .chat-messages {
+        min-height: 200px;
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
 
-        .message {
-            margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 4px;
-        }
+      .message {
+        margin-bottom: 8px;
+        padding: 8px;
+        border-radius: 4px;
+      }
 
-        .message.me {
-            background: #e2e8f0;
-            text-align: right;
-        }
+      .message.me {
+        background: #e2e8f0;
+        text-align: right;
+      }
 
-        .message.partner {
-            background: #bee3f8;
-        }
+      .message.partner {
+        background: #bee3f8;
+      }
 
-        .message.system {
-            background: #fefcbf;
-            text-align: center;
-            font-style: italic;
-        }
+      .message.system {
+        background: #fefcbf;
+        text-align: center;
+        font-style: italic;
+      }
 
-        .input-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
+      .input-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
 
-        input[type="text"] {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            font-size: 14px;
-        }
+      input[type='text'] {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 14px;
+      }
 
-        button {
-            padding: 8px 16px;
-            background: #4299e1;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
+      button {
+        padding: 8px 16px;
+        background: #4299e1;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
 
-        button:hover {
-            background: #3182ce;
-        }
+      button:hover {
+        background: #3182ce;
+      }
 
-        button:disabled {
-            background: #cbd5e0;
-            cursor: not-allowed;
-        }
+      button:disabled {
+        background: #cbd5e0;
+        cursor: not-allowed;
+      }
 
-        .info {
-            background: #e6fffa;
-            padding: 12px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            border: 1px solid #81e6d9;
-        }
+      .info {
+        background: #e6fffa;
+        padding: 12px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        border: 1px solid #81e6d9;
+      }
 
-        .info strong {
-            color: #234e52;
-        }
+      .info strong {
+        color: #234e52;
+      }
 
-        select {
-            padding: 6px 10px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            font-size: 14px;
-        }
+      select {
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        font-size: 14px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <div>
-                <h1>🚀 Collaboration Service Test Client</h1>
-                <p id="session-info">Session: <span id="session-id">-</span></p>
-            </div>
-            <div class="status">
-                <div class="indicator" id="status-indicator"></div>
-                <span id="status-text">Disconnected</span>
-            </div>
+      <div class="header">
+        <div>
+          <h1>🚀 Collaboration Service Test Client</h1>
+          <p id="session-info">Session: <span id="session-id">-</span></p>
+        </div>
+        <div class="status">
+          <div class="indicator" id="status-indicator"></div>
+          <span id="status-text">Disconnected</span>
+        </div>
+      </div>
+
+      <div style="padding: 20px">
+        <div class="input-group">
+          <input
+            type="text"
+            id="session-input"
+            placeholder="Session ID (e.g., test123)"
+            value="test-session"
+          />
+          <input type="text" id="user-input" placeholder="Your User ID (e.g., alice)" value="" />
+          <input type="text" id="username-input" placeholder="Your Name" value="" />
+          <button id="connect-btn" onclick="connect()">Connect</button>
+          <button id="disconnect-btn" onclick="disconnect()" disabled>Disconnect</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <!-- Code Editor -->
+        <div class="section">
+          <div class="section-header">
+            Code Editor
+            <select id="language" onchange="changeLanguage()" style="float: right">
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+            </select>
+          </div>
+          <div class="section-body" style="padding: 0">
+            <div id="monaco-editor" style="height: 400px; width: 100%"></div>
+          </div>
         </div>
 
-        <div style="padding: 20px;">
+        <!-- Chat -->
+        <div class="section">
+          <div class="section-header">Chat</div>
+          <div class="section-body">
+            <div class="chat-messages" id="chat-messages"></div>
             <div class="input-group">
-                <input type="text" id="session-input" placeholder="Session ID (e.g., test123)" value="test-session">
-                <input type="text" id="user-input" placeholder="Your User ID (e.g., alice)" value="">
-                <input type="text" id="username-input" placeholder="Your Name" value="">
-                <button id="connect-btn" onclick="connect()">Connect</button>
-                <button id="disconnect-btn" onclick="disconnect()" disabled>Disconnect</button>
+              <input
+                type="text"
+                id="chat-input"
+                placeholder="Type a message..."
+                onkeypress="handleChatKeypress(event)"
+              />
+              <button onclick="sendMessage()">Send</button>
             </div>
+          </div>
         </div>
-
-        <div class="content">
-            <!-- Code Editor -->
-            <div class="section">
-                <div class="section-header">
-                    Code Editor
-                    <select id="language" onchange="changeLanguage()" style="float: right;">
-                        <option value="javascript">JavaScript</option>
-                        <option value="python">Python</option>
-                        <option value="java">Java</option>
-                        <option value="cpp">C++</option>
-                    </select>
-                </div>
-                <div class="section-body" style="padding: 0;">
-                    <div id="monaco-editor" style="height: 400px; width: 100%;"></div>
-                </div>
-            </div>
-
-            <!-- Chat -->
-            <div class="section">
-                <div class="section-header">Chat</div>
-                <div class="section-body">
-                    <div class="chat-messages" id="chat-messages"></div>
-                    <div class="input-group">
-                        <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKeypress(event)">
-                        <button onclick="sendMessage()">Send</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
     <!-- Monaco Editor Loader -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
     <script>
-        let socket = null;
-        let sessionId = null;
-        let userId = null;
-        let username = null;
-        let codeDebounce = null;
-        let monacoEditor = null;
-        let isUpdatingFromRemote = false;
+      let socket = null;
+      let sessionId = null;
+      let userId = null;
+      let username = null;
+      let codeDebounce = null;
+      let monacoEditor = null;
+      let isUpdatingFromRemote = false;
 
-        // Language mapping for Monaco Editor
-        const languageMap = {
-            'javascript': 'javascript',
-            'python': 'python',
-            'java': 'java',
-            'cpp': 'cpp'
-        };
+      // Language mapping for Monaco Editor
+      const languageMap = {
+        javascript: 'javascript',
+        python: 'python',
+        java: 'java',
+        cpp: 'cpp',
+      };
 
-        // Initialize Monaco Editor
-        require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
-        require(['vs/editor/editor.main'], function () {
-            monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
-                value: `function twoSum(nums, target) {\n    // Your code here\n    \n}`,
-                language: 'javascript',
-                theme: 'vs-dark',
-                automaticLayout: true,
-                fontSize: 14,
-                minimap: { enabled: true },
-                scrollBeyondLastLine: false,
-                wordWrap: 'on',
-                tabSize: 4
-            });
-
-            // Listen for content changes
-            monacoEditor.onDidChangeModelContent((event) => {
-                if (!isUpdatingFromRemote) {
-                    handleCodeChange();
-                }
-            });
-
-            console.log('✅ Monaco Editor initialized');
+      // Initialize Monaco Editor
+      require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+      require(['vs/editor/editor.main'], function () {
+        monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+          value: `function twoSum(nums, target) {\n    // Your code here\n    \n}`,
+          language: 'javascript',
+          theme: 'vs-dark',
+          automaticLayout: true,
+          fontSize: 14,
+          minimap: { enabled: true },
+          scrollBeyondLastLine: false,
+          wordWrap: 'on',
+          tabSize: 4,
         });
 
-        // Generate random user ID if not provided
-        document.getElementById('user-input').value = 'user-' + Math.random().toString(36).substr(2, 9);
-        document.getElementById('username-input').value = 'User ' + Math.floor(Math.random() * 1000);
+        // Listen for content changes
+        monacoEditor.onDidChangeModelContent((event) => {
+          if (!isUpdatingFromRemote) {
+            handleCodeChange();
+          }
+        });
 
-        function connect() {
-            sessionId = document.getElementById('session-input').value;
-            userId = document.getElementById('user-input').value;
-            username = document.getElementById('username-input').value;
+        console.log('✅ Monaco Editor initialized');
+      });
 
-            if (!sessionId || !userId || !username) {
-                alert('Please fill in all fields');
-                return;
-            }
+      // Generate random user ID if not provided
+      document.getElementById('user-input').value =
+        'user-' + Math.random().toString(36).substr(2, 9);
+      document.getElementById('username-input').value = 'User ' + Math.floor(Math.random() * 1000);
 
-            // Connect to Socket.IO server
-            socket = io('http://localhost:8000', {
-                auth: { userId, username },
-                query: { userId, username }
-            });
+      function connect() {
+        sessionId = document.getElementById('session-input').value;
+        userId = document.getElementById('user-input').value;
+        username = document.getElementById('username-input').value;
 
-            // Connection events
-            socket.on('connect', () => {
-                updateStatus('connected', 'Connected');
-                document.getElementById('connect-btn').disabled = true;
-                document.getElementById('disconnect-btn').disabled = false;
-                document.getElementById('session-id').textContent = sessionId;
+        if (!sessionId || !userId || !username) {
+          alert('Please fill in all fields');
+          return;
+        }
 
-                // Join session
-                socket.emit('join-session', { sessionId, userId, userInfo: { username } }, (response) => {
-                    if (response.success) {
-                        addSystemMessage(`Joined session successfully (${response.session.userCount}/2 users)`);
-                        if (response.session.code && monacoEditor) {
-                            isUpdatingFromRemote = true;
-                            monacoEditor.setValue(response.session.code);
-                            isUpdatingFromRemote = false;
-                        }
-                        if (response.session.language) {
-                            document.getElementById('language').value = response.session.language;
-                            if (monacoEditor) {
-                                monaco.editor.setModelLanguage(monacoEditor.getModel(), languageMap[response.session.language] || 'javascript');
-                            }
-                        }
-                    } else {
-                        addSystemMessage('Failed to join: ' + response.error);
-                    }
-                });
-            });
+        // Connect to Socket.IO server
+        socket = io('http://localhost:8000', {
+          auth: { userId, username },
+          query: { userId, username },
+        });
 
-            socket.on('disconnect', () => {
-                updateStatus('disconnected', 'Disconnected');
-            });
+        // Connection events
+        socket.on('connect', () => {
+          updateStatus('connected', 'Connected');
+          document.getElementById('connect-btn').disabled = true;
+          document.getElementById('disconnect-btn').disabled = false;
+          document.getElementById('session-id').textContent = sessionId;
 
-            // Real-time events
-            socket.on('code-update', (data) => {
-                if (data.userId !== userId && monacoEditor) {
-                    isUpdatingFromRemote = true;
-                    monacoEditor.setValue(data.code);
-                    isUpdatingFromRemote = false;
+          // Join session
+          socket.emit('join-session', { sessionId, userId, userInfo: { username } }, (response) => {
+            if (response.success) {
+              addSystemMessage(
+                `Joined session successfully (${response.session.userCount}/2 users)`,
+              );
+              if (response.session.code && monacoEditor) {
+                isUpdatingFromRemote = true;
+                monacoEditor.setValue(response.session.code);
+                isUpdatingFromRemote = false;
+              }
+              if (response.session.language) {
+                document.getElementById('language').value = response.session.language;
+                if (monacoEditor) {
+                  monaco.editor.setModelLanguage(
+                    monacoEditor.getModel(),
+                    languageMap[response.session.language] || 'javascript',
+                  );
                 }
-            });
-
-            socket.on('language-update', (data) => {
-                if (data.userId !== userId) {
-                    document.getElementById('language').value = data.language;
-                    if (monacoEditor) {
-                        monaco.editor.setModelLanguage(monacoEditor.getModel(), languageMap[data.language] || 'javascript');
-                    }
-                    addSystemMessage(`Language changed to ${data.language}`);
-                }
-            });
-
-            socket.on('chat-message', (data) => {
-                addChatMessage(data.message, data.userId === userId ? 'me' : 'partner', data.username);
-            });
-
-            socket.on('user-joined', (data) => {
-                addSystemMessage(`${data.username} joined the session (${data.userCount}/2 users)`);
-            });
-
-            socket.on('user-left', (data) => {
-                addSystemMessage(`${data.username} left the session`);
-            });
-
-            socket.on('user-disconnected', (data) => {
-                addSystemMessage(`${data.username} disconnected`);
-            });
-        }
-
-        function disconnect() {
-            if (socket) {
-                socket.emit('leave-session', { sessionId });
-                socket.disconnect();
-                socket = null;
-                updateStatus('disconnected', 'Disconnected');
-                document.getElementById('connect-btn').disabled = false;
-                document.getElementById('disconnect-btn').disabled = true;
-                document.getElementById('session-id').textContent = '-';
-            }
-        }
-
-        function handleCodeChange() {
-            if (!socket || !sessionId || !monacoEditor) return;
-
-            const code = monacoEditor.getValue();
-
-            // Debounce code changes
-            if (codeDebounce) clearTimeout(codeDebounce);
-            codeDebounce = setTimeout(() => {
-                socket.emit('code-change', { sessionId, code, userId });
-            }, 300);
-        }
-
-        function changeLanguage() {
-            if (!socket || !sessionId) return;
-
-            const language = document.getElementById('language').value;
-            
-            // Update Monaco Editor language
-            if (monacoEditor) {
-                monaco.editor.setModelLanguage(monacoEditor.getModel(), languageMap[language] || 'javascript');
-            }
-            
-            socket.emit('language-change', { sessionId, language, userId }, (response) => {
-                if (response.success) {
-                    addSystemMessage(`You changed language to ${language}`);
-                }
-            });
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-
-            if (!message || !socket || !sessionId) return;
-
-            socket.emit('chat-message', { sessionId, message, userId, username });
-            input.value = '';
-        }
-
-        function handleChatKeypress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-
-        function updateStatus(status, text) {
-            const indicator = document.getElementById('status-indicator');
-            const statusText = document.getElementById('status-text');
-
-            if (status === 'connected') {
-                indicator.classList.add('connected');
+              }
             } else {
-                indicator.classList.remove('connected');
+              addSystemMessage('Failed to join: ' + response.error);
             }
-
-            statusText.textContent = text;
-        }
-
-        function addChatMessage(text, type, senderName) {
-            const messagesDiv = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = type === 'me' ? text : `${senderName}: ${text}`;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        function addSystemMessage(text) {
-            const messagesDiv = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message system';
-            messageDiv.textContent = text;
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (socket) {
-                socket.emit('leave-session', { sessionId });
-                socket.disconnect();
-            }
+          });
         });
+
+        socket.on('disconnect', () => {
+          updateStatus('disconnected', 'Disconnected');
+        });
+
+        // Real-time events
+        socket.on('code-update', (data) => {
+          if (data.userId !== userId && monacoEditor) {
+            isUpdatingFromRemote = true;
+            monacoEditor.setValue(data.code);
+            isUpdatingFromRemote = false;
+          }
+        });
+
+        socket.on('language-update', (data) => {
+          if (data.userId !== userId) {
+            document.getElementById('language').value = data.language;
+            if (monacoEditor) {
+              monaco.editor.setModelLanguage(
+                monacoEditor.getModel(),
+                languageMap[data.language] || 'javascript',
+              );
+            }
+            addSystemMessage(`Language changed to ${data.language}`);
+          }
+        });
+
+        socket.on('chat-message', (data) => {
+          addChatMessage(data.message, data.userId === userId ? 'me' : 'partner', data.username);
+        });
+
+        socket.on('user-joined', (data) => {
+          addSystemMessage(`${data.username} joined the session (${data.userCount}/2 users)`);
+        });
+
+        socket.on('user-left', (data) => {
+          addSystemMessage(`${data.username} left the session`);
+        });
+
+        socket.on('user-disconnected', (data) => {
+          addSystemMessage(`${data.username} disconnected`);
+        });
+      }
+
+      function disconnect() {
+        if (socket) {
+          socket.emit('leave-session', { sessionId });
+          socket.disconnect();
+          socket = null;
+          updateStatus('disconnected', 'Disconnected');
+          document.getElementById('connect-btn').disabled = false;
+          document.getElementById('disconnect-btn').disabled = true;
+          document.getElementById('session-id').textContent = '-';
+        }
+      }
+
+      function handleCodeChange() {
+        if (!socket || !sessionId || !monacoEditor) return;
+
+        const code = monacoEditor.getValue();
+
+        // Debounce code changes
+        if (codeDebounce) clearTimeout(codeDebounce);
+        codeDebounce = setTimeout(() => {
+          socket.emit('code-change', { sessionId, code, userId });
+        }, 300);
+      }
+
+      function changeLanguage() {
+        if (!socket || !sessionId) return;
+
+        const language = document.getElementById('language').value;
+
+        // Update Monaco Editor language
+        if (monacoEditor) {
+          monaco.editor.setModelLanguage(
+            monacoEditor.getModel(),
+            languageMap[language] || 'javascript',
+          );
+        }
+
+        socket.emit('language-change', { sessionId, language, userId }, (response) => {
+          if (response.success) {
+            addSystemMessage(`You changed language to ${language}`);
+          }
+        });
+      }
+
+      function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+
+        if (!message || !socket || !sessionId) return;
+
+        socket.emit('chat-message', { sessionId, message, userId, username });
+        input.value = '';
+      }
+
+      function handleChatKeypress(event) {
+        if (event.key === 'Enter') {
+          sendMessage();
+        }
+      }
+
+      function updateStatus(status, text) {
+        const indicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+
+        if (status === 'connected') {
+          indicator.classList.add('connected');
+        } else {
+          indicator.classList.remove('connected');
+        }
+
+        statusText.textContent = text;
+      }
+
+      function addChatMessage(text, type, senderName) {
+        const messagesDiv = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = type === 'me' ? text : `${senderName}: ${text}`;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      function addSystemMessage(text) {
+        const messagesDiv = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message system';
+        messageDiv.textContent = text;
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Cleanup on page unload
+      window.addEventListener('beforeunload', () => {
+        if (socket) {
+          socket.emit('leave-session', { sessionId });
+          socket.disconnect();
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
-
-

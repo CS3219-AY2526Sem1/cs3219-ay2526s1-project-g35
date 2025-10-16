@@ -9,9 +9,9 @@ export function hasCookie(name: string): boolean {
   if (typeof document === 'undefined') {
     return false;
   }
-  
+
   const cookies = document.cookie.split(';');
-  return cookies.some(cookie => {
+  return cookies.some((cookie) => {
     const [cookieName] = cookie.trim().split('=');
     return cookieName === name;
   });

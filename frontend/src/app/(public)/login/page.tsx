@@ -37,8 +37,7 @@ const Login: React.FC = () => {
       await login(formData);
       // Don't manually navigate - let the layout handle it when isAuthenticated changes
     } catch (err) {
-      console.error('Login failed:', err);
-      // Error is already set in AuthContext, form data is preserved
+      // Error is already set in AuthContext and displayed in the UI
     }
   };
 
@@ -94,12 +93,7 @@ const Login: React.FC = () => {
           </div>
 
           <div className="flex items-center justify-between mt-2.5">
-            <Button
-              className="text-md"
-              type="submit"
-              variant="attention"
-              size="lg"
-            >
+            <Button className="text-md" type="submit" variant="attention" size="lg">
               Login
             </Button>
             <button

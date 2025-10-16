@@ -121,7 +121,7 @@ export default function SignUpPage(): React.JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!validateAll()) return;
     clearError();
     setBackendErrors([]);
@@ -138,26 +138,24 @@ export default function SignUpPage(): React.JSX.Element {
           ...(formData.bio.trim() && { bio: formData.bio }),
         },
       };
-      
+
       await register(payload);
       // Don't manually navigate - let the layout handle it when isAuthenticated changes
     } catch (err) {
-      console.error('Registration failed:', err);
-      
       // Handle backend validation errors
       if (err instanceof AuthError && err.isValidationError) {
         // Extract field-specific errors from backend
         if (err.details && Array.isArray(err.details)) {
           setBackendErrors(err.details);
-          
+
           // Map backend errors to form field errors
           const fieldErrors: Errors = {};
           err.details.forEach((detail: { field: string; message: string }) => {
             // Map nested field paths like 'profile.firstName' to 'firstName'
-            const fieldName = detail.field.includes('.') 
-              ? detail.field.split('.').pop() 
+            const fieldName = detail.field.includes('.')
+              ? detail.field.split('.').pop()
               : detail.field;
-            
+
             if (fieldName && fieldName in formData) {
               fieldErrors[fieldName as keyof SignUpForm] = detail.message;
             }
@@ -165,7 +163,7 @@ export default function SignUpPage(): React.JSX.Element {
           setErrors((prev) => ({ ...prev, ...fieldErrors }));
         }
       }
-      // For validation errors (400), form data is preserved automatically
+      // Error is already handled and displayed in the UI
     }
   };
 
@@ -278,7 +276,8 @@ export default function SignUpPage(): React.JSX.Element {
             {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
             {!errors.password && (
               <p className="text-muted-foreground text-xs mt-1">
-                Must be 6-128 characters with uppercase, lowercase, number, and special character (@$!%*?&)
+                Must be 6-128 characters with uppercase, lowercase, number, and special character
+                (@$!%*?&)
               </p>
             )}
           </div>

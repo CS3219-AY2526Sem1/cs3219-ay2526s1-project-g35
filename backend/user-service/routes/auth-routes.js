@@ -12,12 +12,12 @@ import {
 } from '../controller/auth-controller.js';
 import { createUser } from '../controller/user-controller.js';
 import { verifyToken } from '../middleware/jwtAuth.js';
-import { 
-  validate, 
-  userSchemas, 
-  normalizeEmail, 
+import {
+  validate,
+  userSchemas,
+  normalizeEmail,
   normalizeUsername,
-  validateCreateUser 
+  validateCreateUser,
 } from '../middleware/validation.js';
 
 const router = express.Router();

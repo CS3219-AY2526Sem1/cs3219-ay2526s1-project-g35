@@ -1,6 +1,6 @@
 /**
  * Authentication Context
- * 
+ *
  * Global state management for authentication using React Context API.
  */
 
@@ -8,7 +8,12 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import authService from '@/services/auth.service';
-import { AuthContextType, AuthState, LoginCredentials, RegisterCredentials } from '@/types/auth.types';
+import {
+  AuthContextType,
+  AuthState,
+  LoginCredentials,
+  RegisterCredentials,
+} from '@/types/auth.types';
 import { hasAccessToken } from '@/lib/cookies';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,9 +57,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (credentials: LoginCredentials) => {
     try {
       setAuthState((prev: AuthState) => ({ ...prev, error: null }));
-      
+
       const response = await authService.login(credentials);
-      
+
       setAuthState((prev: AuthState) => ({
         ...prev,
         user: response.data.user,
@@ -76,9 +81,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (credentials: RegisterCredentials) => {
     try {
       setAuthState((prev: AuthState) => ({ ...prev, error: null }));
-      
+
       const response = await authService.register(credentials);
-      
+
       setAuthState((prev: AuthState) => ({
         ...prev,
         user: response.data.user,
@@ -100,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await authService.logout();
-      
+
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -138,10 +143,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  
+
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
+
   return context;
 }
