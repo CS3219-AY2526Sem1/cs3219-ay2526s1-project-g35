@@ -76,7 +76,7 @@ export default function WaitingRoomPage(): React.ReactElement {
       {/* Alert dialog shows after timeout */}
       <AlertDialog
         open={timedOut}
-        onOpenChange={(open) => {
+        onOpenChange={(open: boolean) => {
           if (!open) setTimedOut(false);
         }}
       >

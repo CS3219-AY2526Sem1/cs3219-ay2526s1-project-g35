@@ -2,6 +2,8 @@ import argon2 from 'argon2';
 import { isValidObjectId } from 'mongoose';
 import { UserRepository } from '../model/user-repository.js';
 import { USER_ERRORS, sendUserErrorResponse, sendErrorResponse } from '../errors/index.js';
+import * as tokenService from '../services/token-service.js';
+import { setAuthCookies } from '../utils/cookie-helper.js';
 
 export async function createUser(req, res) {
   try {
@@ -31,9 +33,15 @@ export async function createUser(req, res) {
 
     const createdUser = await _createUser(userData.username, userData.email, userData.password);
 
+    // Automatically log the user in by creating tokens
+    const tokens = await tokenService.createAndStoreTokenPair(createdUser);
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
     return res.status(201).json({
-      message: `User ${username} created successfully. Please login to verify your email address.`,
+      message: `User ${username} created successfully. Please verify your email address.`,
       data: {
+        expiresIn: tokens.expiresIn,
+        tokenReused: tokens.wasReused,
         user: formatUserResponse(createdUser),
       },
     });
