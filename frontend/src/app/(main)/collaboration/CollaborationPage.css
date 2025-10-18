@@ -299,35 +299,22 @@
 /* Code Editor */
 .code-editor {
   flex: 1;
-  padding: 20px;
+  padding: 0;
+  border: none;
+  background-color: #ffffff;
+  overflow: hidden;
 }
 
-.code-textarea {
-  width: 100%;
-  height: 100%;
-  border: none;
-  outline: none;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  resize: none;
-  background-color: #ffffff;
-  color: #2d3748;
+/* Monaco Editor container */
+.code-editor > div {
+  height: 100% !important;
+  width: 100% !important;
 }
 
 /* Language Selector */
 .language-selector {
-  display: flex;
-  align-items: center;
-}
-
-.language-dropdown {
-  padding: 4px 8px;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  font-size: 14px;
-  background-color: white;
-  cursor: pointer;
+  position: relative;
+  display: inline-block;
 }
 
 /* Tabs */

@@ -1,43 +1,132 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import socketService from '../services/socketService';
+import { useRouter, useSearchParams } from 'next/navigation';
+import socketService from '../../../services/socketService';
+import MonacoCodeEditor from '../../../components/MonacoCodeEditor';
+import LanguageSelector from '../../../components/LanguageSelector';
 import './CollaborationPage.css';
 
-const CollaborationPage = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+// Type definitions
+interface TestCase {
+  id: string;
+  nums: string;
+  target: string;
+  expected: string;
+}
+
+interface Message {
+  id: number;
+  text: string;
+  sender: 'me' | 'partner' | 'system';
+  username?: string;
+  timestamp?: string;
+}
+
+interface PartnerInfo {
+  userId: string;
+  username: string;
+}
+
+interface SessionUser {
+  userId: string;
+  username: string;
+}
+
+interface Session {
+  code?: string;
+  language?: string;
+  users?: SessionUser[];
+}
+
+interface JoinSessionResponse {
+  success: boolean;
+  session?: Session;
+  error?: string;
+}
+
+interface CodeUpdateData {
+  userId: string;
+  code: string;
+  cursorPosition?: { line: number; column: number };
+}
+
+interface LanguageUpdateData {
+  userId: string;
+  language: string;
+}
+
+interface ChatMessageData {
+  userId: string;
+  username: string;
+  message: string;
+  timestamp: string;
+}
+
+interface UserJoinedData {
+  userId: string;
+  username: string;
+  timestamp: string;
+}
+
+interface UserLeftData {
+  userId: string;
+  username: string;
+  timestamp: string;
+}
+
+interface UserDisconnectedData {
+  userId: string;
+}
+
+interface UserTypingData {
+  userId: string;
+  isTyping: boolean;
+}
+
+type Language = 'javascript' | 'python' | 'java' | 'cpp';
+type ActiveTab = 'testCases' | 'testResults';
+
+const CollaborationPage: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Get session ID from URL params or generate one
-  const sessionId = searchParams.get('sessionId') || `session-${Date.now()}`;
-  const userId = searchParams.get('userId') || `user-${Math.random().toString(36).substr(2, 9)}`;
-  const username = searchParams.get('username') || 'Anonymous';
+  const sessionId = searchParams?.get('sessionId') || `session-${Date.now()}`;
+  const userId = searchParams?.get('userId') || `user-${Math.random().toString(36).substr(2, 9)}`;
+  const username = searchParams?.get('username') || 'Anonymous';
 
-  const [selectedLanguage, setSelectedLanguage] = useState('javascript');
-  const [activeTab, setActiveTab] = useState('testCases');
-  const [selectedTestCase, setSelectedTestCase] = useState('Case 1');
-  const [code, setCode] = useState(`function twoSum(nums, target) {
+  // State declarations
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>('javascript');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('testCases');
+  const [selectedTestCase, setSelectedTestCase] = useState<string>('Case 1');
+  const [code, setCode] = useState<string>(`function twoSum(nums, target) {
     // Your code here
     
 }`);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const [partnerInfo, setPartnerInfo] = useState(null);
-  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState<string>('');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [partnerInfo, setPartnerInfo] = useState<PartnerInfo | null>(null);
+  const [isPartnerTyping, setIsPartnerTyping] = useState<boolean>(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>('Connecting...');
+  const [cursorPosition, setCursorPosition] = useState<{ line: number; column: number }>({ line: 1, column: 1 });
 
-  const codeChangeDebounce = useRef(null);
-  const typingTimeout = useRef(null);
+  // Refs
+  const codeChangeDebounce = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+  const cursorDebounce = useRef<NodeJS.Timeout | null>(null);
 
-  const languages = ['javascript', 'python', 'java', 'cpp'];
-  const languageLabels = {
+  // Constants
+  const languages: Language[] = ['javascript', 'python', 'java', 'cpp'];
+  const languageLabels: Record<Language, string> = {
     javascript: 'JavaScript',
     python: 'Python',
     java: 'Java',
     cpp: 'C++',
   };
 
-  const testCases = [
+  const testCases: TestCase[] = [
     {
       id: 'Case 1',
       nums: '[2,7,11,15]',
@@ -60,14 +149,14 @@ const CollaborationPage = () => {
 
   // Initialize socket connection on mount
   useEffect(() => {
-    const initializeSocket = async () => {
+    const initializeSocket = async (): Promise<void> => {
       try {
         // Connect to socket service
         const token = localStorage.getItem('authToken') || '';
         socketService.connect(token, userId);
 
         // Join the collaboration session
-        const result = await socketService.joinSession(sessionId, userId, { username });
+        const result: JoinSessionResponse = await socketService.joinSession(sessionId, userId, { username });
 
         setIsConnected(true);
         setConnectionStatus('Connected');
@@ -75,10 +164,10 @@ const CollaborationPage = () => {
         // Load initial session data
         if (result.session) {
           if (result.session.code) setCode(result.session.code);
-          if (result.session.language) setSelectedLanguage(result.session.language);
+          if (result.session.language) setSelectedLanguage(result.session.language as Language);
 
           // Set partner info if there's another user
-          const partner = result.session.users?.find((u) => u.userId !== userId);
+          const partner = result.session.users?.find((u: SessionUser) => u.userId !== userId);
           if (partner) {
             setPartnerInfo(partner);
           }
@@ -104,24 +193,24 @@ const CollaborationPage = () => {
   }, [sessionId, userId, username]);
 
   // Setup socket event listeners
-  const setupSocketListeners = () => {
+  const setupSocketListeners = (): void => {
     // Code updates from partner
-    socketService.onCodeUpdate((data) => {
+    socketService.onCodeUpdate((data: CodeUpdateData) => {
       if (data.userId !== userId) {
         setCode(data.code);
       }
     });
 
     // Language changes
-    socketService.onLanguageUpdate((data) => {
+    socketService.onLanguageUpdate((data: LanguageUpdateData) => {
       if (data.userId !== userId) {
-        setSelectedLanguage(data.language);
+        setSelectedLanguage(data.language as Language);
       }
     });
 
     // Chat messages
-    socketService.onChatMessage((data) => {
-      setMessages((prev) => [
+    socketService.onChatMessage((data: ChatMessageData) => {
+      setMessages((prev: Message[]) => [
         ...prev,
         {
           id: Date.now(),
@@ -134,11 +223,11 @@ const CollaborationPage = () => {
     });
 
     // User joined
-    socketService.onUserJoined((data) => {
+    socketService.onUserJoined((data: UserJoinedData) => {
       if (data.userId !== userId) {
         setPartnerInfo({ userId: data.userId, username: data.username });
         setConnectionStatus(`Connected with ${data.username}`);
-        setMessages((prev) => [
+        setMessages((prev: Message[]) => [
           ...prev,
           {
             id: Date.now(),
@@ -151,11 +240,11 @@ const CollaborationPage = () => {
     });
 
     // User left
-    socketService.onUserLeft((data) => {
+    socketService.onUserLeft((data: UserLeftData) => {
       if (data.userId !== userId) {
         setPartnerInfo(null);
         setConnectionStatus('Partner left');
-        setMessages((prev) => [
+        setMessages((prev: Message[]) => [
           ...prev,
           {
             id: Date.now(),
@@ -168,7 +257,7 @@ const CollaborationPage = () => {
     });
 
     // User disconnected
-    socketService.onUserDisconnected((data) => {
+    socketService.onUserDisconnected((data: UserDisconnectedData) => {
       if (data.userId !== userId) {
         setPartnerInfo(null);
         setConnectionStatus('Partner disconnected');
@@ -176,7 +265,7 @@ const CollaborationPage = () => {
     });
 
     // Typing indicator
-    socketService.onUserTyping((data) => {
+    socketService.onUserTyping((data: UserTypingData) => {
       if (data.userId !== userId) {
         setIsPartnerTyping(data.isTyping);
       }
@@ -184,7 +273,7 @@ const CollaborationPage = () => {
   };
 
   // Remove socket listeners
-  const removeSocketListeners = () => {
+  const removeSocketListeners = (): void => {
     socketService.off('code-update');
     socketService.off('language-update');
     socketService.off('chat-message');
@@ -195,7 +284,7 @@ const CollaborationPage = () => {
   };
 
   // Handle code changes with debouncing
-  const handleCodeChange = (newCode) => {
+  const handleCodeChange = (newCode: string): void => {
     setCode(newCode);
 
     // Debounce code changes to avoid sending too many updates
@@ -204,12 +293,26 @@ const CollaborationPage = () => {
     }
 
     codeChangeDebounce.current = setTimeout(() => {
-      socketService.sendCodeChange(newCode);
+      socketService.sendCodeChange(newCode, cursorPosition);
     }, 300);
   };
 
+  // Handle cursor position changes
+  const handleCursorChange = (position: { line: number; column: number }): void => {
+    setCursorPosition(position);
+
+    // Debounce cursor position updates
+    if (cursorDebounce.current) {
+      clearTimeout(cursorDebounce.current);
+    }
+
+    cursorDebounce.current = setTimeout(() => {
+      socketService.sendCursorPosition(position);
+    }, 100);
+  };
+
   // Handle language change
-  const handleLanguageChange = async (newLanguage) => {
+  const handleLanguageChange = async (newLanguage: Language): Promise<void> => {
     setSelectedLanguage(newLanguage);
     try {
       await socketService.changeLanguage(newLanguage);
@@ -219,7 +322,7 @@ const CollaborationPage = () => {
   };
 
   // Handle sending chat message
-  const handleSendMessage = (e) => {
+  const handleSendMessage = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (newMessage.trim()) {
       socketService.sendChatMessage(newMessage, username);
@@ -234,7 +337,7 @@ const CollaborationPage = () => {
   };
 
   // Handle typing in chat
-  const handleChatInputChange = (e) => {
+  const handleChatInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setNewMessage(e.target.value);
 
     // Send typing indicator
@@ -252,15 +355,15 @@ const CollaborationPage = () => {
   };
 
   // Handle leaving session
-  const handleLeaveSession = async () => {
+  const handleLeaveSession = async (): Promise<void> => {
     if (window.confirm('Are you sure you want to leave this session?')) {
       await socketService.leaveSession();
       socketService.disconnect();
-      navigate('/');
+      router.push('/');
     }
   };
 
-  const currentTestCase = testCases.find((tc) => tc.id === selectedTestCase);
+  const currentTestCase = testCases.find((tc: TestCase) => tc.id === selectedTestCase);
 
   return (
     <div className="collaboration-page">
@@ -338,7 +441,7 @@ const CollaborationPage = () => {
               </div>
             </div>
             <div className="chat-messages">
-              {messages.map((message) => (
+              {messages.map((message: Message) => (
                 <div key={message.id} className={`message ${message.sender}`}>
                   {message.sender === 'system' ? (
                     <em className="system-message">{message.text}</em>
@@ -373,26 +476,86 @@ const CollaborationPage = () => {
           <div className="section-header">
             <h3>Code</h3>
             <div className="language-selector">
-              <select
-                value={selectedLanguage}
-                onChange={(e) => handleLanguageChange(e.target.value)}
-                className="language-dropdown"
-              >
-                {languages.map((lang) => (
-                  <option key={lang} value={lang}>
-                    {languageLabels[lang]}
-                  </option>
-                ))}
-              </select>
+              <LanguageSelector
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={handleLanguageChange}
+              />
             </div>
           </div>
           <div className="code-editor">
-            <textarea
+            <MonacoCodeEditor
               value={code}
-              onChange={(e) => handleCodeChange(e.target.value)}
-              className="code-textarea"
-              spellCheck={false}
-              placeholder="Start typing your code here... Changes will be synced in real-time!"
+              language={selectedLanguage}
+              onChange={handleCodeChange}
+              onCursorChange={handleCursorChange}
+              height="100%"
+              theme="vs"
+              options={{
+                fontSize: 14,
+                fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', monospace",
+                lineHeight: 1.5,
+                tabSize: 2,
+                insertSpaces: true,
+                wordWrap: 'on',
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                contextmenu: true,
+                mouseWheelZoom: true,
+                smoothScrolling: true,
+                cursorBlinking: 'blink',
+                cursorSmoothCaretAnimation: 'on' as any,
+                suggest: {
+                  showKeywords: true,
+                  showSnippets: true,
+                  showFunctions: true,
+                  showConstructors: true,
+                  showFields: true,
+                  showVariables: true,
+                  showClasses: true,
+                  showStructs: true,
+                  showInterfaces: true,
+                  showModules: true,
+                  showProperties: true,
+                  showEvents: true,
+                  showOperators: true,
+                  showUnits: true,
+                  showValues: true,
+                  showConstants: true,
+                  showEnums: true,
+                  showEnumMembers: true,
+                  showColors: true,
+                  showFiles: true,
+                  showReferences: true,
+                  showFolders: true,
+                  showTypeParameters: true,
+                  showIssues: true,
+                  showUsers: true,
+                  showWords: true,
+                } as any,
+                quickSuggestions: {
+                  other: true,
+                  comments: false,
+                  strings: true,
+                },
+                parameterHints: {
+                  enabled: true,
+                },
+                hover: {
+                  enabled: true,
+                },
+                folding: true,
+                foldingStrategy: 'indentation',
+                showFoldingControls: 'always',
+                unfoldOnClickAfterEndOfLine: false,
+                bracketPairColorization: {
+                  enabled: true,
+                } as any,
+                guides: {
+                  bracketPairs: true,
+                  indentation: true,
+                },
+              }}
             />
           </div>
         </div>
@@ -422,7 +585,7 @@ const CollaborationPage = () => {
 
           <div className="test-cases">
             <div className="test-case-selector">
-              {testCases.map((testCase) => (
+              {testCases.map((testCase: TestCase) => (
                 <button
                   key={testCase.id}
                   className={`test-case-btn ${selectedTestCase === testCase.id ? 'active' : ''}`}
