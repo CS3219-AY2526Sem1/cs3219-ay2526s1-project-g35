@@ -10,10 +10,19 @@ import {
   handleVerifyOTP,
   handleCheckVerificationStatus,
 } from '../controller/auth-controller.js';
+import { createUser } from '../controller/user-controller.js';
 import { verifyToken } from '../middleware/jwtAuth.js';
-import { validate, userSchemas, normalizeEmail } from '../middleware/validation.js';
+import {
+  validate,
+  userSchemas,
+  normalizeEmail,
+  normalizeUsername,
+  validateCreateUser,
+} from '../middleware/validation.js';
 
 const router = express.Router();
+
+router.post('/register', normalizeEmail, normalizeUsername, validateCreateUser, createUser);
 
 // Login endpoint
 router.post('/login', normalizeEmail, validate(userSchemas.login), handleLogin);
