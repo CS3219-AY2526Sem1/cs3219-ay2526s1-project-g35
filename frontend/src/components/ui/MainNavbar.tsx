@@ -8,12 +8,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/DropdownMenu';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserIcon } from 'lucide-react';
+import { MessagesSquare, UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ModeToggle from './ModeToggle';
 
-function DesktopNavbar() {
+function MainNavbar() {
   const { user, logout } = useAuth();
   const pathName = usePathname();
 
@@ -26,7 +26,14 @@ function DesktopNavbar() {
   };
 
   return (
-    <div className="hidden md:flex items-center gap-4">
+    <div className="flex items-center justify-between h-16">
+      <Link
+        href="/home"
+        className="text-xl font-bold text-primary tracking-widest flex gap-2 items-center"
+      >
+        <MessagesSquare className="w-8 h-8 inline-block" />
+        <span>PeerPrep</span>
+      </Link>
       {pathName === '/session' && (
         <div className="flex items-center gap-4 mr-16">
           <div className="flex items-center gap-2 text-sm">
@@ -36,42 +43,34 @@ function DesktopNavbar() {
           <Button variant="destructive">Leave Session</Button>
         </div>
       )}
-      <ModeToggle />
-      {user ? (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="rounded-full" size="icon">
-                <UserIcon className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-44" align="end" sideOffset={10}>
-              <DropdownMenuItem asChild>
-                <Link href={`/profile/${user.username ?? user.email}`}>View Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/profile">Manage Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/history">History</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings">Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      ) : (
-        <Button variant="ghost" className="flex items-center" asChild>
-          <Link href="/signup">
-            <span className="hidden lg:inline">Sign Up</span>
-          </Link>
-        </Button>
-      )}
+      <div className="flex items-center gap-4">
+        <ModeToggle />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="rounded-full" size="icon">
+              <UserIcon className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-44" align="end" sideOffset={10}>
+            <DropdownMenuItem asChild>
+              <Link href={`/profile/${user?.username ?? user?.email}`}>View Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/profile">Manage Profile</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/history">History</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">Settings</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }
-export default DesktopNavbar;
+export default MainNavbar;

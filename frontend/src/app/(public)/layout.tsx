@@ -1,8 +1,10 @@
 'use client';
 
+import LoginNavbar from '@/components/ui/LoginNavbar';
+import Navbar from '@/components/ui/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -21,5 +23,10 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   }
 
   // Not authenticated - show login/signup pages
-  return <>{children}</>;
+  return (
+    <>
+      <Navbar buttons={<LoginNavbar />} />
+      <main>{children}</main>
+    </>
+  );
 }

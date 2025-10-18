@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { AuthError } from '@/services/auth.service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 

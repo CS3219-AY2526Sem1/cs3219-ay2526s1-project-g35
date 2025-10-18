@@ -1,7 +1,7 @@
 'use client';
 
-import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { Geist_Mono, Inter } from 'next/font/google';
 import './globals.css';
 
