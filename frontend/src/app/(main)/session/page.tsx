@@ -55,9 +55,9 @@ const Session = (): React.ReactElement => {
   const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
   const languageMap: Record<string, string> = {
     'C++': 'cpp',
-    'Java': 'java',
-    'Python': 'python',
-    'JavaScript': 'javascript',
+    Java: 'java',
+    Python: 'python',
+    JavaScript: 'javascript',
   };
 
   // Auto-scroll to bottom of messages
@@ -71,12 +71,12 @@ const Session = (): React.ReactElement => {
       try {
         // Connect to collaboration service
         const socket = socketService.connect('test-token', userId);
-        
+
         if (socket) {
           // Join the session
           await socketService.joinSession(sessionId, userId, { username: 'SessionUser' });
           setIsConnected(true);
-          
+
           // Set up event listeners
           setupSocketListeners();
         }
@@ -108,7 +108,7 @@ const Session = (): React.ReactElement => {
     // Listen for language changes from partner
     socketService.onLanguageUpdate((data) => {
       if (data.userId !== userId) {
-        const langKey = Object.keys(languageMap).find(key => languageMap[key] === data.language);
+        const langKey = Object.keys(languageMap).find((key) => languageMap[key] === data.language);
         if (langKey) {
           setSelectedLanguage(data.language);
         }
@@ -123,7 +123,7 @@ const Session = (): React.ReactElement => {
           text: data.message,
           sender: 'partner',
         };
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
         setPartnerInfo({ userId: data.userId, username: data.username });
       }
     });
@@ -137,7 +137,7 @@ const Session = (): React.ReactElement => {
           text: `${data.username} joined the session!`,
           sender: 'partner',
         };
-        setMessages(prev => [...prev, welcomeMessage]);
+        setMessages((prev) => [...prev, welcomeMessage]);
       }
     });
 
@@ -149,7 +149,7 @@ const Session = (): React.ReactElement => {
           text: `${data.username} left the session.`,
           sender: 'partner',
         };
-        setMessages(prev => [...prev, leaveMessage]);
+        setMessages((prev) => [...prev, leaveMessage]);
         setPartnerInfo(null);
       }
     });
@@ -183,7 +183,7 @@ const Session = (): React.ReactElement => {
   // Handle code changes with real-time sync
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
-    
+
     // Send code change to collaboration service
     if (isConnected) {
       socketService.sendCodeChange(newCode);
@@ -193,7 +193,7 @@ const Session = (): React.ReactElement => {
   // Handle language changes with real-time sync
   const handleLanguageChange = (newLanguage: string) => {
     setSelectedLanguage(newLanguage);
-    
+
     // Send language change to collaboration service
     if (isConnected) {
       socketService.changeLanguage(newLanguage).catch(console.error);
@@ -206,7 +206,7 @@ const Session = (): React.ReactElement => {
     if (!newMessage.trim()) return;
 
     const messageToSend = newMessage.trim();
-    
+
     // Add message to local state
     setMessages((prev) => {
       const nextId = (prev?.length ?? 0) + 1;
@@ -230,17 +230,19 @@ const Session = (): React.ReactElement => {
       <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 text-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <div
+              className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+            />
             <span className="text-blue-700">
-              {isConnected ? 'Connected to collaboration service' : 'Connecting to collaboration service...'}
+              {isConnected
+                ? 'Connected to collaboration service'
+                : 'Connecting to collaboration service...'}
             </span>
           </div>
-          <div className="text-blue-600">
-            Session ID: {sessionId}
-          </div>
+          <div className="text-blue-600">Session ID: {sessionId}</div>
         </div>
       </div>
-      
+
       <div className="flex h-full">
         {/* Left Panel - Problem Description and Chat */}
         <div className="min-w-[350px] max-w-[500px] w-1/3 h-full border-r border-border flex flex-col">
@@ -294,14 +296,14 @@ const Session = (): React.ReactElement => {
             <div className="flex justify-between items-center px-5 py-4 border-b border-border bg-muted h-15">
               <h3 className="text-base font-semibold">Messages</h3>
               <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
+                />
                 <span className="text-xs text-muted-foreground">
                   {isConnected ? 'Connected' : 'Connecting...'}
                 </span>
                 {partnerInfo && (
-                  <span className="text-xs text-blue-600">
-                    • {partnerInfo.username}
-                  </span>
+                  <span className="text-xs text-blue-600">• {partnerInfo.username}</span>
                 )}
               </div>
             </div>
@@ -398,7 +400,7 @@ const Session = (): React.ReactElement => {
                 Test Results
               </button>
             </div>
-            <button 
+            <button
               onClick={() => {
                 if (isConnected) {
                   socketService.runCode();

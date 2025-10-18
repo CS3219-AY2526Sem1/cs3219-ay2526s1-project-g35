@@ -144,7 +144,11 @@ class SocketService {
   /**
    * Join a collaboration session
    */
-  joinSession(sessionId: string, userId: string, userInfo: { username?: string } = {}): Promise<JoinSessionResponse> {
+  joinSession(
+    sessionId: string,
+    userId: string,
+    userInfo: { username?: string } = {},
+  ): Promise<JoinSessionResponse> {
     return new Promise((resolve, reject) => {
       if (!this.socket) {
         return reject(new Error('Socket not connected'));
@@ -154,7 +158,7 @@ class SocketService {
       this.userId = userId;
 
       const data: JoinSessionData = { sessionId, userId, userInfo };
-      
+
       this.socket.emit('join-session', data, (response: JoinSessionResponse) => {
         if (response.success) {
           console.log('✅ Joined session:', sessionId);
@@ -177,7 +181,7 @@ class SocketService {
       }
 
       const data: LeaveSessionData = { sessionId: this.sessionId };
-      
+
       this.socket.emit('leave-session', data, (response: LeaveSessionResponse) => {
         this.sessionId = null;
         resolve(response);
@@ -231,13 +235,17 @@ class SocketService {
         language,
       };
 
-      this.socket.emit('language-change', data, (response: { success: boolean; error?: string }) => {
-        if (response.success) {
-          resolve(response);
-        } else {
-          reject(new Error(response.error || 'Failed to change language'));
-        }
-      });
+      this.socket.emit(
+        'language-change',
+        data,
+        (response: { success: boolean; error?: string }) => {
+          if (response.success) {
+            resolve(response);
+          } else {
+            reject(new Error(response.error || 'Failed to change language'));
+          }
+        },
+      );
     });
   }
 
@@ -262,24 +270,24 @@ class SocketService {
    */
   sendTypingStart(username: string): void {
     if (!this.socket || !this.sessionId || !this.userId) return;
-    
+
     const data: TypingData = {
       sessionId: this.sessionId,
       userId: this.userId,
       username,
     };
-    
+
     this.socket.emit('typing-start', data);
   }
 
   sendTypingStop(): void {
     if (!this.socket || !this.sessionId || !this.userId) return;
-    
+
     const data: TypingData = {
       sessionId: this.sessionId,
       userId: this.userId,
     };
-    
+
     this.socket.emit('typing-stop', data);
   }
 
@@ -288,12 +296,12 @@ class SocketService {
    */
   runCode(): void {
     if (!this.socket || !this.sessionId || !this.userId) return;
-    
+
     const data: RunCodeData = {
       sessionId: this.sessionId,
       userId: this.userId,
     };
-    
+
     this.socket.emit('run-code', data);
   }
 
@@ -307,7 +315,7 @@ class SocketService {
       }
 
       const data: RequestSyncData = { sessionId: this.sessionId };
-      
+
       this.socket.emit('request-sync', data, (response: RequestSyncResponse) => {
         if (response.success) {
           resolve(response.session);
@@ -398,4 +406,3 @@ class SocketService {
 // Export singleton instance
 const socketService = new SocketService();
 export default socketService;
-
