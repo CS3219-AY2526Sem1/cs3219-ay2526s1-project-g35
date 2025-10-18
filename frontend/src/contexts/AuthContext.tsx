@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import authService from '@/services/auth.service';
 import {
   AuthContextType,
@@ -14,7 +14,6 @@ import {
   LoginCredentials,
   RegisterCredentials,
 } from '@/types/auth.types';
-import { hasAccessToken } from '@/lib/cookies';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -66,10 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         error: null,
       }));
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState((prev: AuthState) => ({
         ...prev,
-        error: error.message || 'Login failed',
+        error: errorMessage,
       }));
       throw error;
     }
@@ -90,10 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         error: null,
       }));
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setAuthState((prev: AuthState) => ({
         ...prev,
-        error: error.message || 'Registration failed',
+        error: errorMessage,
       }));
       throw error;
     }
@@ -112,12 +113,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         error: null,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
-        error: error.message || 'Logout failed',
+        error: errorMessage,
       });
     }
   }, []);
