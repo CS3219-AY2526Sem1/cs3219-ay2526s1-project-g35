@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import VerificationTemplate from "@/components/ui/VerificationTemplate";
-import { useRouter } from "next/navigation";
-import React from "react";
+import VerificationTemplate from '@/components/ui/VerificationTemplate';
+import { useRouter } from 'next/navigation';
+import React from 'react';
 
 export default function TwoFactorPage(): React.ReactElement {
   const router = useRouter();
@@ -10,12 +10,12 @@ export default function TwoFactorPage(): React.ReactElement {
   const handleSubmit = (code: string) => {
     if (code.length === 6) {
       // mock success
-      router.push("/home");
+      router.push('/home');
     }
   };
 
   const handleResend = () => {
-    console.log("Resend 2FA code requested");
+    console.log('Resend 2FA code requested');
   };
 
   return (

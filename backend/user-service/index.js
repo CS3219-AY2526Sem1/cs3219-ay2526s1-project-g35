@@ -1,11 +1,11 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import cookieParser from "cookie-parser";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
-import userRoutes from "./routes/user-routes.js";
-import authRoutes from "./routes/auth-routes.js";
+import userRoutes from './routes/user-routes.js';
+import authRoutes from './routes/auth-routes.js';
 
 const app = express();
 
@@ -13,7 +13,7 @@ const app = express();
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
-  })
+  }),
 );
 
 // Rate limiting
@@ -21,7 +21,7 @@ const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
   max: parseInt(process.env.RATE_LIMIT_MAX),
   message: {
-    error: "Too many requests from this IP, please try again later.",
+    error: 'Too many requests from this IP, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -31,7 +31,7 @@ const authLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
   max: parseInt(process.env.AUTH_RATE_LIMIT_MAX),
   message: {
-    error: "Too many authentication attempts, please try again later.",
+    error: 'Too many authentication attempts, please try again later.',
   },
   skipSuccessfulRequests: true,
 });
@@ -42,8 +42,8 @@ app.use(limiter);
 app.use(cookieParser());
 
 // Body parsing middleware
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 // CORS configuration
 const corsOptions = {
@@ -52,52 +52,46 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     const allowedOrigins = [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "https://peerprep.com",
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'https://peerprep.com',
       // Add your frontend domains here
     ];
 
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === 'development') {
       allowedOrigins.push(origin);
     }
 
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: [
-    "Origin",
-    "X-Requested-With",
-    "Content-Type",
-    "Accept",
-    "Authorization",
-  ],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Additional CORS headers for manual setup
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (corsOptions.origin(origin, () => {})) {
-    res.header("Access-Control-Allow-Origin", origin);
+    res.header('Access-Control-Allow-Origin', origin);
   }
 
   res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization',
   );
-  res.header("Access-Control-Allow-Credentials", "true");
+  res.header('Access-Control-Allow-Credentials', 'true');
 
-  if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH");
+  if (req.method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, PUT, PATCH');
     return res.status(200).json({});
   }
 
@@ -105,13 +99,13 @@ app.use((req, res, next) => {
 });
 
 // Email service debug endpoint (for development)
-app.get("/debug/email-status", async (req, res) => {
+app.get('/debug/email-status', async (req, res) => {
   try {
-    const { emailService } = await import("./services/email-service.js");
+    const { emailService } = await import('./services/email-service.js');
     const status = emailService.getStatus();
 
     res.status(200).json({
-      message: "Email service status",
+      message: 'Email service status',
       data: {
         ...status,
         environment: {
@@ -120,43 +114,43 @@ app.get("/debug/email-status", async (req, res) => {
           EMAIL_FROM: process.env.EMAIL_FROM,
           MAILTRAP_HOST: process.env.MAILTRAP_HOST,
           MAILTRAP_PORT: process.env.MAILTRAP_PORT,
-          MAILTRAP_USER: process.env.MAILTRAP_USER ? "SET" : "NOT_SET",
-          MAILTRAP_PASS: process.env.MAILTRAP_PASS ? "SET" : "NOT_SET",
+          MAILTRAP_USER: process.env.MAILTRAP_USER ? 'SET' : 'NOT_SET',
+          MAILTRAP_PASS: process.env.MAILTRAP_PASS ? 'SET' : 'NOT_SET',
         },
       },
     });
   } catch (error) {
     res.status(500).json({
-      message: "Failed to get email service status",
+      message: 'Failed to get email service status',
       error: error.message,
     });
   }
 });
 // Routes
-app.use("/users", userRoutes);
-app.use("/auth", authLimiter, authRoutes);
+app.use('/users', userRoutes);
+app.use('/auth', authLimiter, authRoutes);
 
 // Health check endpoint for Docker
-app.get("/health", (req, res) => {
+app.get('/health', (req, res) => {
   res.status(200).json({
-    status: "OK",
+    status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 
 // Root endpoint
-app.get("/", (req, res) => {
-  console.log("Sending Greetings!");
+app.get('/', (req, res) => {
+  console.log('Sending Greetings!');
   res.json({
-    message: "Hello World from user-service",
-    version: process.env.npm_package_version || "1.0.0",
+    message: 'Hello World from user-service',
+    version: process.env.npm_package_version || '1.0.0',
     timestamp: new Date().toISOString(),
     endpoints: {
-      health: "/health",
-      users: "/users",
-      auth: "/auth",
+      health: '/health',
+      users: '/users',
+      auth: '/auth',
     },
   });
 });
@@ -174,7 +168,7 @@ app.use((error, req, res, next) => {
   console.error(error.stack);
 
   // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   res.status(error.status || 500).json({
     error: {

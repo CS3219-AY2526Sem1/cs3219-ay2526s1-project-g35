@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import Header from "@/components/ui/Header";
-import React, { useState } from "react";
+import { Button } from '@/components/ui/button';
+import Header from '@/components/ui/Header';
+import React, { useState } from 'react';
 // router not required yet
 
 type ProfileData = {
@@ -17,14 +17,14 @@ type ProfileData = {
 };
 
 const DUMMY: ProfileData = {
-  username: "abcd-1234",
-  first_name: "John",
-  last_name: "Doe",
-  country_code: "+65",
-  phone_number: "12345678",
-  bio: "Tell us more about yourself!",
-  avatar: "https://example.com/avatar.jpg",
-  email: "peerprepforlife@gmail.com",
+  username: 'abcd-1234',
+  first_name: 'John',
+  last_name: 'Doe',
+  country_code: '+65',
+  phone_number: '12345678',
+  bio: 'Tell us more about yourself!',
+  avatar: 'https://example.com/avatar.jpg',
+  email: 'peerprepforlife@gmail.com',
 };
 
 export default function ProfilePage(): React.ReactElement {
@@ -32,10 +32,7 @@ export default function ProfilePage(): React.ReactElement {
   const [data, setData] = useState<ProfileData>(DUMMY);
   const [saving, setSaving] = useState(false);
 
-  function handleChange<K extends keyof ProfileData>(
-    key: K,
-    value: ProfileData[K]
-  ) {
+  function handleChange<K extends keyof ProfileData>(key: K, value: ProfileData[K]) {
     setData((d) => ({ ...d, [key]: value }));
   }
 
@@ -43,7 +40,7 @@ export default function ProfilePage(): React.ReactElement {
     e.preventDefault();
     setSaving(true);
     // Mock save to sessionStorage
-    sessionStorage.setItem("mockProfile", JSON.stringify(data));
+    sessionStorage.setItem('mockProfile', JSON.stringify(data));
     setTimeout(() => setSaving(false), 600);
   }
 
@@ -70,7 +67,7 @@ export default function ProfilePage(): React.ReactElement {
                 <input
                   type="text"
                   value={data.username}
-                  onChange={(e) => handleChange("username", e.target.value)}
+                  onChange={(e) => handleChange('username', e.target.value)}
                   className="mt-2 w-full px-3 py-2 border rounded"
                 />
               </div>
@@ -80,7 +77,7 @@ export default function ProfilePage(): React.ReactElement {
                   <label className="text-sm font-medium">Last Name</label>
                   <input
                     value={data.last_name}
-                    onChange={(e) => handleChange("last_name", e.target.value)}
+                    onChange={(e) => handleChange('last_name', e.target.value)}
                     className="w-full px-3 py-2 border rounded mt-1"
                   />
                 </div>
@@ -88,7 +85,7 @@ export default function ProfilePage(): React.ReactElement {
                   <label className="text-sm font-medium">First Name</label>
                   <input
                     value={data.first_name}
-                    onChange={(e) => handleChange("first_name", e.target.value)}
+                    onChange={(e) => handleChange('first_name', e.target.value)}
                     className="w-full px-3 py-2 border rounded mt-1"
                   />
                 </div>
@@ -103,7 +100,7 @@ export default function ProfilePage(): React.ReactElement {
                 <label className="text-sm font-medium">Country Code</label>
                 <input
                   value={data.country_code}
-                  onChange={(e) => handleChange("country_code", e.target.value)}
+                  onChange={(e) => handleChange('country_code', e.target.value)}
                   className="w-full px-3 py-2 border rounded mt-1"
                 />
               </div>
@@ -111,7 +108,7 @@ export default function ProfilePage(): React.ReactElement {
                 <label className="text-sm font-medium">Phone Number</label>
                 <input
                   value={data.phone_number}
-                  onChange={(e) => handleChange("phone_number", e.target.value)}
+                  onChange={(e) => handleChange('phone_number', e.target.value)}
                   className="w-full px-3 py-2 border rounded mt-1"
                 />
               </div>
@@ -121,7 +118,7 @@ export default function ProfilePage(): React.ReactElement {
               <label className="text-sm font-medium">Bio</label>
               <textarea
                 value={data.bio}
-                onChange={(e) => handleChange("bio", e.target.value)}
+                onChange={(e) => handleChange('bio', e.target.value)}
                 className="w-full px-3 py-2 border rounded mt-1 h-24"
               />
             </div>
@@ -130,7 +127,7 @@ export default function ProfilePage(): React.ReactElement {
               <label className="text-sm font-medium">Avatar URL</label>
               <input
                 value={data.avatar}
-                onChange={(e) => handleChange("avatar", e.target.value)}
+                onChange={(e) => handleChange('avatar', e.target.value)}
                 className="w-full px-3 py-2 border rounded mt-1"
               />
             </div>
@@ -139,7 +136,7 @@ export default function ProfilePage(): React.ReactElement {
               <label className="text-sm font-medium">Email</label>
               <input
                 value={data.email}
-                onChange={(e) => handleChange("email", e.target.value)}
+                onChange={(e) => handleChange('email', e.target.value)}
                 className="w-full px-3 py-2 border rounded mt-1"
               />
             </div>
@@ -154,9 +151,7 @@ export default function ProfilePage(): React.ReactElement {
             </div>
 
             <div className="mt-6">
-              <div className="text-md font-bold text-destructive">
-                Danger Zone
-              </div>
+              <div className="text-md font-bold text-destructive">Danger Zone</div>
               <div className="mt-3">
                 <Button variant="destructive">Delete My Account</Button>
               </div>
@@ -167,7 +162,7 @@ export default function ProfilePage(): React.ReactElement {
 
             <div className="mt-12 flex justify-center">
               <Button type="submit" variant="attention" size="lg">
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>

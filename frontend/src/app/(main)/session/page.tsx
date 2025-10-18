@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import React, { useState } from "react";
+import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 
 // Original React Code made by Basil
 
-type Sender = "me" | "partner";
+type Sender = 'me' | 'partner';
 
 interface Message {
   id: number;
@@ -21,50 +21,48 @@ interface TestCase {
 }
 
 const Session = (): React.ReactElement => {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("C++");
-  const [activeTab, setActiveTab] = useState<"testCases" | "testResults">(
-    "testCases"
-  );
-  const [selectedTestCase, setSelectedTestCase] = useState<string>("Case 1");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('C++');
+  const [activeTab, setActiveTab] = useState<'testCases' | 'testResults'>('testCases');
+  const [selectedTestCase, setSelectedTestCase] = useState<string>('Case 1');
   const [code, setCode] = useState<string>(`class Solution {
 public:
     vector<int> twoSum(vector<int>& nums, int target) {
     }
 };`);
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: "Hello! Nice to meet you!", sender: "me" },
+    { id: 1, text: 'Hello! Nice to meet you!', sender: 'me' },
     {
       id: 2,
       text: "Hi! Let's get started! I'm thinking that we can probably use a HashMap for this question, what do you think?",
-      sender: "partner",
+      sender: 'partner',
     },
     {
       id: 3,
       text: "Yeah I think that's a good idea, let's try it! So I guess the next step for us would be to see how we can minimise the number of times we have to look through the array.",
-      sender: "me",
+      sender: 'me',
     },
   ]);
-  const [newMessage, setNewMessage] = useState<string>("");
+  const [newMessage, setNewMessage] = useState<string>('');
 
-  const languages: string[] = ["C++", "Java", "Python", "JavaScript"];
+  const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
   const testCases: TestCase[] = [
     {
-      id: "Case 1",
-      nums: "[2,7,11,15]",
-      target: "9",
-      expected: "[0,1]",
+      id: 'Case 1',
+      nums: '[2,7,11,15]',
+      target: '9',
+      expected: '[0,1]',
     },
     {
-      id: "Case 2",
-      nums: "[3,2,4]",
-      target: "6",
-      expected: "[1,2]",
+      id: 'Case 2',
+      nums: '[3,2,4]',
+      target: '6',
+      expected: '[1,2]',
     },
     {
-      id: "Case 3",
-      nums: "[3,3]",
-      target: "6",
-      expected: "[0,1]",
+      id: 'Case 3',
+      nums: '[3,3]',
+      target: '6',
+      expected: '[0,1]',
     },
   ];
 
@@ -74,11 +72,11 @@ public:
 
     setMessages((prev) => {
       const nextId = (prev?.length ?? 0) + 1;
-      const next: Message = { id: nextId, text: newMessage, sender: "me" };
+      const next: Message = { id: nextId, text: newMessage, sender: 'me' };
       return [...prev, next];
     });
 
-    setNewMessage("");
+    setNewMessage('');
   };
 
   const currentTestCase = testCases.find((t) => t.id === selectedTestCase);
@@ -98,10 +96,9 @@ public:
             <div className="p-5">
               <h2 className="text-2xl font-bold mb-4">Two Sum</h2>
               <p className="text-sm text-secondary-foreground mb-5">
-                Given an an array of integers nums and an integer target, return
-                indices of the two numbers such that they add up to target. You
-                may assume that each input would have exactly one solution, and
-                you may not use the same element twice. You can return the
+                Given an an array of integers nums and an integer target, return indices of the two
+                numbers such that they add up to target. You may assume that each input would have
+                exactly one solution, and you may not use the same element twice. You can return the
                 answer in any order.
               </p>
 
@@ -115,8 +112,7 @@ public:
                     <strong>Output:</strong> [0,1]
                   </p>
                   <p className="text-sm">
-                    <strong>Explanation:</strong> Because nums[0] + nums[1] ==
-                    9, we return [0, 1].
+                    <strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].
                   </p>
                 </div>
               </div>
@@ -149,9 +145,9 @@ public:
                 <div
                   key={message.id}
                   className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-6 ${
-                    message.sender === "me"
-                      ? "bg-muted self-end ml-auto"
-                      : "bg-attention text-primary-foreground self-start"
+                    message.sender === 'me'
+                      ? 'bg-muted self-end ml-auto'
+                      : 'bg-attention text-primary-foreground self-start'
                   }`}
                 >
                   {message.text}
@@ -159,10 +155,7 @@ public:
               ))}
             </div>
 
-            <form
-              onSubmit={handleSendMessage}
-              className="p-4 border-t border-border"
-            >
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
               <input
                 type="text"
                 value={newMessage}
@@ -209,21 +202,21 @@ public:
             <div className="flex gap-0">
               <button
                 className={`px-4 py-2 text-sm cursor-pointer transition ${
-                  activeTab === "testCases"
-                    ? "text-attention border-b-2 border-attention font-semibold"
-                    : "text-muted-foreground hover:text-secondary-foreground"
+                  activeTab === 'testCases'
+                    ? 'text-attention border-b-2 border-attention font-semibold'
+                    : 'text-muted-foreground hover:text-secondary-foreground'
                 }`}
-                onClick={() => setActiveTab("testCases")}
+                onClick={() => setActiveTab('testCases')}
               >
                 Test Cases
               </button>
               <button
                 className={`px-4 py-2 text-sm cursor-pointer transition ${
-                  activeTab === "testResults"
-                    ? "text-attention border-b-2 border-attention font-semibold"
-                    : "text-muted-foreground hover:text-secondary-foreground"
+                  activeTab === 'testResults'
+                    ? 'text-attention border-b-2 border-attention font-semibold'
+                    : 'text-muted-foreground hover:text-secondary-foreground'
                 }`}
-                onClick={() => setActiveTab("testResults")}
+                onClick={() => setActiveTab('testResults')}
               >
                 Test Results
               </button>
@@ -240,9 +233,7 @@ public:
                 <Button
                   key={testCase.id}
                   onClick={() => setSelectedTestCase(testCase.id)}
-                  variant={
-                    selectedTestCase === testCase.id ? "attention" : "outline"
-                  }
+                  variant={selectedTestCase === testCase.id ? 'attention' : 'outline'}
                 >
                   {testCase.id}
                 </Button>
@@ -252,20 +243,12 @@ public:
             {currentTestCase && (
               <div className="bg-muted p-4 rounded-2xl">
                 <div className="flex items-center mb-3">
-                  <span className="mr-2 text-secondary-foreground font-medium">
-                    nums =
-                  </span>
-                  <span className="font-mono px-2 py-1">
-                    {currentTestCase.nums}
-                  </span>
+                  <span className="mr-2 text-secondary-foreground font-medium">nums =</span>
+                  <span className="font-mono px-2 py-1">{currentTestCase.nums}</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="mr-2 text-secondary-foreground font-medium">
-                    target =
-                  </span>
-                  <span className="font-mono px-2 py-1">
-                    {currentTestCase.target}
-                  </span>
+                  <span className="mr-2 text-secondary-foreground font-medium">target =</span>
+                  <span className="font-mono px-2 py-1">{currentTestCase.target}</span>
                 </div>
               </div>
             )}

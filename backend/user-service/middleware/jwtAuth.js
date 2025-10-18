@@ -1,7 +1,7 @@
-import jwt from "jsonwebtoken";
-import { UserRepository } from "../model/user-repository.js";
-import { redisService } from "../services/redis-service.js";
-import { AUTH_ERRORS, sendErrorResponse } from "../errors/index.js";
+import jwt from 'jsonwebtoken';
+import { UserRepository } from '../model/user-repository.js';
+import { whitelistRedisService } from '../services/redis/redis-whitelist-service.js';
+import { AUTH_ERRORS, sendErrorResponse } from '../errors/index.js';
 
 /**
  * Middleware to verify JWT token and extract user information
@@ -15,19 +15,19 @@ export const verifyToken = (req, res, next) => {
 
   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
     if (err) {
-      res.clearCookie("accessToken", {
-        path: "/",
+      res.clearCookie('accessToken', {
+        path: '/',
         httpOnly: true,
-        secure: process.env.COOKIE_SECURE === "true",
+        secure: process.env.COOKIE_SECURE === 'true',
         sameSite: process.env.COOKIE_SAME_SITE,
         domain: process.env.COOKIE_DOMAIN,
       });
 
       let errorToReturn = AUTH_ERRORS.INVALID_TOKEN;
 
-      if (err.name === "TokenExpiredError") {
+      if (err.name === 'TokenExpiredError') {
         errorToReturn = AUTH_ERRORS.TOKEN_EXPIRED;
-      } else if (err.name === "JsonWebTokenError") {
+      } else if (err.name === 'JsonWebTokenError') {
         errorToReturn = AUTH_ERRORS.INVALID_SIGNATURE;
       }
 
@@ -35,16 +35,29 @@ export const verifyToken = (req, res, next) => {
     }
 
     try {
-      const isWhitelisted = await redisService.isTokenWhitelisted(
-        decoded.id,
-        token
-      );
+      const cachedUser = await whitelistRedisService.getCachedUserData(decoded.id, token);
+
+      if (cachedUser) {
+        req.userId = cachedUser.id;
+        req.user = {
+          id: cachedUser.id,
+          username: cachedUser.username,
+          email: cachedUser.email,
+          isAdmin: cachedUser.isAdmin,
+          isVerified: cachedUser.isVerified,
+          createdAt: cachedUser.createdAt,
+          lastLogin: cachedUser.lastLogin,
+        };
+        return next();
+      }
+
+      const isWhitelisted = await whitelistRedisService.isTokenWhitelisted(decoded.id, token);
       if (!isWhitelisted) {
-        res.clearCookie("accessToken", {
-          path: "/",
+        res.clearCookie('accessToken', {
+          path: '/',
           httpOnly: true,
-          secure: process.env.COOKIE_SECURE === "true",
-          sameSite: process.env.COOKIE_SAME_SITE || "lax",
+          secure: process.env.COOKIE_SECURE === 'true',
+          sameSite: process.env.COOKIE_SAME_SITE,
           domain: process.env.COOKIE_DOMAIN,
         });
 
@@ -54,7 +67,7 @@ export const verifyToken = (req, res, next) => {
       const user = await UserRepository.findById(decoded.id);
 
       if (!user) {
-        await redisService.removeWhitelistToken(decoded.id);
+        await whitelistRedisService.removeWhitelistToken(decoded.id);
         return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND);
       }
 
@@ -69,9 +82,14 @@ export const verifyToken = (req, res, next) => {
         lastLogin: user.lastLogin,
       };
 
+      const tokenTTL = decoded.exp - Math.floor(Date.now() / 1000);
+      if (tokenTTL > 0) {
+        await whitelistRedisService.updateWhitelistUserData(user.id.toString(), req.user);
+      }
+
       next();
     } catch (dbError) {
-      console.error("Database error in token verification:", dbError);
+      console.error('Database error in token verification:', dbError);
       return sendErrorResponse(res, AUTH_ERRORS.DATABASE_ERROR);
     }
   });
@@ -107,27 +125,25 @@ export const generateToken = (user, sessionId = null) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN
-        ? `${process.env.JWT_EXPIRES_IN}s`
-        : "15m",
-    }
+      expiresIn: process.env.JWT_EXPIRES_IN ? `${process.env.JWT_EXPIRES_IN}s` : '15m',
+    },
   );
 };
 
 /**
  * Generate refresh token
  */
-export const generateRefreshToken = user => {
+export const generateRefreshToken = (user) => {
   return jwt.sign(
     {
       id: user.id,
-      type: "refresh",
+      type: 'refresh',
     },
     process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
     {
       expiresIn: process.env.JWT_REFRESH_EXPIRES_IN
         ? `${process.env.JWT_REFRESH_EXPIRES_IN}s`
-        : "7d",
-    }
+        : '7d',
+    },
   );
 };

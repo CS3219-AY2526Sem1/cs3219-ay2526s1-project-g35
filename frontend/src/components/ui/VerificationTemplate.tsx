@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from 'react';
 
 interface VerificationTemplateProps {
   title: string;
@@ -16,7 +16,7 @@ export default function VerificationTemplate({
   onResend,
 }: VerificationTemplateProps) {
   const length = 6;
-  const [values, setValues] = useState<string[]>(Array(length).fill(""));
+  const [values, setValues] = useState<string[]>(Array(length).fill(''));
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const focusAt = useCallback((index: number) => {
@@ -25,15 +25,12 @@ export default function VerificationTemplate({
     input?.select();
   }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    idx: number
-  ) => {
-    const v = e.target.value.replace(/\D/g, "");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
+    const v = e.target.value.replace(/\D/g, '');
     if (!v) {
       setValues((s) => {
         const next = [...s];
-        next[idx] = "";
+        next[idx] = '';
         return next;
       });
       return;
@@ -41,7 +38,7 @@ export default function VerificationTemplate({
 
     // If user pasted multiple digits, distribute
     if (v.length > 1) {
-      const digits = v.split("");
+      const digits = v.split('');
       setValues((s) => {
         const next = [...s];
         for (let i = 0; i < digits.length && idx + i < length; i++) {
@@ -58,7 +55,7 @@ export default function VerificationTemplate({
       const next = [...s];
       next[idx] = v;
       // auto-submit when we filled all
-      const maybe = next.join("");
+      const maybe = next.join('');
       if (maybe.length === length && onSubmit) {
         onSubmit(maybe);
       }
@@ -67,34 +64,28 @@ export default function VerificationTemplate({
     if (idx < length - 1) focusAt(idx + 1);
   };
 
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    idx: number
-  ) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
     const key = e.key;
-    if (key === "Backspace") {
+    if (key === 'Backspace') {
       if (values[idx]) {
         setValues((s) => {
           const next = [...s];
-          next[idx] = "";
+          next[idx] = '';
           return next;
         });
       } else if (idx > 0) {
         focusAt(idx - 1);
       }
-    } else if (key === "ArrowLeft") {
+    } else if (key === 'ArrowLeft') {
       if (idx > 0) focusAt(idx - 1);
-    } else if (key === "ArrowRight") {
+    } else if (key === 'ArrowRight') {
       if (idx < length - 1) focusAt(idx + 1);
     }
   };
 
-  const handlePaste = (
-    e: React.ClipboardEvent<HTMLInputElement>,
-    idx: number
-  ) => {
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>, idx: number) => {
     e.preventDefault();
-    const text = e.clipboardData.getData("text").replace(/\D/g, "");
+    const text = e.clipboardData.getData('text').replace(/\D/g, '');
     if (!text) return;
     setValues((s) => {
       const next = [...s];
@@ -102,7 +93,7 @@ export default function VerificationTemplate({
         next[idx + i] = text[i];
       }
       // auto-submit when we filled all
-      const maybe = next.join("");
+      const maybe = next.join('');
       if (maybe.length === length && onSubmit) onSubmit(maybe);
       return next;
     });
@@ -116,9 +107,7 @@ export default function VerificationTemplate({
     <div className="min-h-(--hscreen) flex items-center justify-center bg-background">
       <div className="w-full max-w-3xl px-6 py-12">
         <div className="flex flex-col items-center gap-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            {title}
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground">{title}</h1>
           <p className="text-center text-sm md:text-base text-muted-foreground max-w-2xl">
             {explanation}
           </p>
@@ -146,11 +135,7 @@ export default function VerificationTemplate({
 
             <div className="text-sm text-muted-foreground mt-2">
               <span>Didn&apos;t receive the code? </span>
-              <button
-                type="button"
-                onClick={onResend}
-                className="underline hover:text-primary"
-              >
+              <button type="button" onClick={onResend} className="underline hover:text-primary">
                 Click here to resend the code.
               </button>
             </div>

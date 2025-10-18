@@ -1,4 +1,4 @@
-import express from "express";
+import express from 'express';
 
 import {
   handleLogin,
@@ -9,39 +9,39 @@ import {
   handleSendVerificationOTP,
   handleVerifyOTP,
   handleCheckVerificationStatus,
-} from "../controller/auth-controller.js";
-import { verifyToken } from "../middleware/jwtAuth.js";
+} from '../controller/auth-controller.js';
+import { createUser } from '../controller/user-controller.js';
+import { verifyToken } from '../middleware/jwtAuth.js';
 import {
   validate,
   userSchemas,
   normalizeEmail,
-} from "../middleware/validation.js";
+  normalizeUsername,
+  validateCreateUser,
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
+router.post('/register', normalizeEmail, normalizeUsername, validateCreateUser, createUser);
+
 // Login endpoint
-router.post("/login", normalizeEmail, validate(userSchemas.login), handleLogin);
+router.post('/login', normalizeEmail, validate(userSchemas.login), handleLogin);
 
 // Token verification endpoint
-router.get("/verify-token", verifyToken, handleVerifyToken);
+router.get('/verify-token', verifyToken, handleVerifyToken);
 
 // Refresh token endpoint
-router.post("/refresh", handleRefreshToken);
+router.post('/refresh', handleRefreshToken);
 
 // Logout endpoint
-router.post("/logout", verifyToken, handleLogout);
+router.post('/logout', verifyToken, handleLogout);
 
 // Reset token TTL to full duration
-router.post("/reset-ttl", verifyToken, handleResetTokenTTL);
+router.post('/reset-ttl', verifyToken, handleResetTokenTTL);
 
 // OTP verification endpoints
-router.post("/send-otp", verifyToken, handleSendVerificationOTP);
-router.post(
-  "/verify-otp",
-  verifyToken,
-  validate(userSchemas.verifyOTPOnly),
-  handleVerifyOTP
-);
-router.get("/verification-status", verifyToken, handleCheckVerificationStatus);
+router.post('/send-otp', verifyToken, handleSendVerificationOTP);
+router.post('/verify-otp', verifyToken, validate(userSchemas.verifyOTPOnly), handleVerifyOTP);
+router.get('/verification-status', verifyToken, handleCheckVerificationStatus);
 
 export default router;

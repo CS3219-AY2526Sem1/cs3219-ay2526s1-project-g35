@@ -1,47 +1,81 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-require('dotenv').config();
+import WebSocket, { WebSocketServer } from 'ws';
 
-const app = express();
-const PORT = process.env.PORT || 8000;
+const wss = new WebSocketServer({ port: 8080 });
 
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(morgan('combined'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+let waitingQueue = [];
+let activePairs = [];
 
-// Routes
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    service: 'MatchingService',
-    timestamp: new Date().toISOString() 
+wss.on('connection', (ws) => {
+  console.log('New connection');
+
+  ws.on('message', (data) => {
+    const msg = JSON.parse(data);
+    if (msg.type === 'search') {
+      const { topics, userId } = msg;
+
+      // Create user entry
+      const user = { ws, topics, userId, connectedAt: Date.now() };
+
+      if (waitingQueue.length === 0) {
+        waitingQueue.push(user);
+        return;
+      }
+
+      let bestMatch = null;
+      let maxShared = 0;
+
+      // Find the first waiting user with the most shared topics
+      for (const candidate of waitingQueue) {
+        const shared = countSharedTopics(user.topics, candidate.topics);
+        if (shared > maxShared) {
+          bestMatch = candidate;
+          maxShared = shared;
+        }
+      }
+
+      if (bestMatch && maxShared > 0) {
+        // Remove matched user from queue
+        waitingQueue = waitingQueue.filter((u) => u !== bestMatch);
+
+        // Store the active pair
+        activePairs.push([user, bestMatch]);
+
+        // Notify both users
+        user.ws.send(
+          JSON.stringify({
+            type: 'match',
+            partnerId: bestMatch.userId,
+            sharedTopics: maxShared,
+          }),
+        );
+
+        bestMatch.ws.send(
+          JSON.stringify({
+            type: 'match',
+            partnerId: user.userId,
+            sharedTopics: maxShared,
+          }),
+        );
+
+        console.log(
+          `Matched users (shared ${maxShared} topics): ${user.userId}, ${bestMatch.userId}`,
+        );
+      } else {
+        waitingQueue.push(user);
+      }
+    }
+  });
+
+  ws.on('close', () => {
+    // Remove from queue if still waiting
+    waitingQueue = waitingQueue.filter((u) => u.ws !== ws);
+    console.log('Connection closed');
   });
 });
 
-// Matching routes will be added here
-app.get('/api/matching', (req, res) => {
-  res.json({ message: 'Matching service is running' });
-});
+function countSharedTopics(a, b) {
+  const setA = new Set(a);
+  return b.filter((t) => setA.has(t)).length;
+}
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-app.listen(PORT, () => {
-  console.log(`MatchingService running on port ${PORT}`);
-});
+console.log('Matching WebSocket server running on port 8080');

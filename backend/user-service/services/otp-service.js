@@ -1,4 +1,5 @@
-import crypto from "crypto";
+import crypto from 'crypto';
+import { getOTPErrorMessage } from '../errors/otp-errors.js';
 
 /**
  * OTP Service for handling One-Time Password generation, validation, and management
@@ -32,7 +33,7 @@ class OTPService {
    * Validate OTP format
    */
   isValidOTPFormat(otp, expectedLength = this.defaultOTPLength) {
-    if (!otp || typeof otp !== "string") {
+    if (!otp || typeof otp !== 'string') {
       return false;
     }
     const otpRegex = new RegExp(`^\\d{${expectedLength}}$`);
@@ -44,9 +45,9 @@ class OTPService {
    */
   generateOTPData(
     email,
-    purpose = "registration",
+    purpose = 'registration',
     length = this.defaultOTPLength,
-    ttl = this.defaultTTL
+    ttl = this.defaultTTL,
   ) {
     const otp = this.generateOTP(length);
     const timestamp = Date.now();
@@ -67,7 +68,7 @@ class OTPService {
   /**
    * Validate OTP attempt and check constraints
    */
-  validateOTP(storedOTPData, providedOTP, email, purpose = "registration") {
+  validateOTP(storedOTPData, providedOTP, email, purpose = 'registration') {
     const result = {
       isValid: false,
       reason: null,
@@ -75,33 +76,32 @@ class OTPService {
       shouldDelete: false,
     };
     if (!storedOTPData) {
-      result.reason = "OTP_NOT_FOUND";
+      result.reason = 'OTP_NOT_FOUND';
       return result;
     }
     if (Date.now() > storedOTPData.expiresAt) {
-      result.reason = "OTP_EXPIRED";
+      result.reason = 'OTP_EXPIRED';
       result.shouldDelete = true;
       return result;
     }
     if (storedOTPData.attempts >= storedOTPData.maxAttempts) {
-      result.reason = "MAX_ATTEMPTS_EXCEEDED";
+      result.reason = 'MAX_ATTEMPTS_EXCEEDED';
       result.shouldDelete = true;
       return result;
     }
     if (storedOTPData.purpose !== purpose) {
-      result.reason = "PURPOSE_MISMATCH";
+      result.reason = 'PURPOSE_MISMATCH';
       return result;
     }
 
     if (!this.isValidOTPFormat(providedOTP, storedOTPData.otp.length)) {
-      result.reason = "INVALID_FORMAT";
-      result.attemptsRemaining =
-        storedOTPData.maxAttempts - storedOTPData.attempts - 1;
+      result.reason = 'INVALID_FORMAT';
+      result.attemptsRemaining = storedOTPData.maxAttempts - storedOTPData.attempts - 1;
       return result;
     }
     const isOTPMatch = crypto.timingSafeEqual(
-      Buffer.from(storedOTPData.otp, "utf8"),
-      Buffer.from(providedOTP, "utf8")
+      Buffer.from(storedOTPData.otp, 'utf8'),
+      Buffer.from(providedOTP, 'utf8'),
     );
 
     if (isOTPMatch) {
@@ -109,9 +109,8 @@ class OTPService {
       result.shouldDelete = true;
       return result;
     } else {
-      result.reason = "OTP_MISMATCH";
-      result.attemptsRemaining =
-        storedOTPData.maxAttempts - storedOTPData.attempts - 1;
+      result.reason = 'OTP_MISMATCH';
+      result.attemptsRemaining = storedOTPData.maxAttempts - storedOTPData.attempts - 1;
       return result;
     }
   }
@@ -119,29 +118,16 @@ class OTPService {
   /**
    * Get Redis key for OTP storage
    */
-  getOTPKey(email, purpose = "registration") {
+  getOTPKey(email, purpose = 'registration') {
     return `otp:${purpose}:${email.toLowerCase()}`;
   }
 
   /**
    * Get user-friendly error message for validation result
+
    */
   getErrorMessage(validationResult) {
-    const errorMessages = {
-      OTP_NOT_FOUND: "OTP not found or has expired. Please request a new OTP.",
-      OTP_EXPIRED: "OTP has expired. Please request a new OTP.",
-      MAX_ATTEMPTS_EXCEEDED:
-        "Maximum verification attempts exceeded. Please request a new OTP.",
-      PURPOSE_MISMATCH:
-        "Invalid OTP type. Please use the correct verification link.",
-      INVALID_FORMAT: `Invalid OTP format. Please enter a ${this.defaultOTPLength}-digit number.`,
-      OTP_MISMATCH: `Incorrect OTP. ${validationResult.attemptsRemaining} attempt(s) remaining.`,
-    };
-
-    return (
-      errorMessages[validationResult.reason] ||
-      "OTP validation failed. Please try again."
-    );
+    return getOTPErrorMessage(validationResult, this.defaultOTPLength);
   }
 
   /**
@@ -152,10 +138,7 @@ class OTPService {
       return 0;
     }
 
-    const remaining = Math.max(
-      0,
-      Math.floor((otpData.expiresAt - Date.now()) / 1000)
-    );
+    const remaining = Math.max(0, Math.floor((otpData.expiresAt - Date.now()) / 1000));
     return remaining;
   }
 }
