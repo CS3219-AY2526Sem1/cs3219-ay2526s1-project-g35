@@ -93,8 +93,15 @@ class AuthService {
     }
   }
 
-  private isAxiosError(error: unknown): error is { response?: { status: number; data?: { message?: string; error?: string; details?: unknown } }; request?: unknown } {
-    return typeof error === 'object' && error !== null && ('response' in error || 'request' in error);
+  private isAxiosError(
+    error: unknown,
+  ): error is {
+    response?: { status: number; data?: { message?: string; error?: string; details?: unknown } };
+    request?: unknown;
+  } {
+    return (
+      typeof error === 'object' && error !== null && ('response' in error || 'request' in error)
+    );
   }
 }
 

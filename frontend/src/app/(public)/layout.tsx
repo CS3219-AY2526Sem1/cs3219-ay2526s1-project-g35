@@ -14,7 +14,6 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     }
   }, [isAuthenticated, router]);
 
-
   if (isAuthenticated) {
     return null;
   }
