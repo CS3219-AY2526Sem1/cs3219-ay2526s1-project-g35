@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Editor } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 
@@ -96,7 +96,7 @@ const MonacoCodeEditor: React.FC<MonacoCodeEditorProps> = ({
     mouseWheelZoom: true,
     smoothScrolling: true,
     cursorBlinking: 'blink',
-    cursorSmoothCaretAnimation: true,
+    cursorSmoothCaretAnimation: 'on',
     ...options,
   };
 

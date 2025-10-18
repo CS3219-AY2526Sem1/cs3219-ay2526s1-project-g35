@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: null,
       });
       return true;
-    } catch (error) {
+    } catch {
       setAuthState({
         user: null,
         isAuthenticated: false,

@@ -5,10 +5,6 @@
 import { io, Socket } from 'socket.io-client';
 
 // Type definitions
-interface AuthData {
-  token: string;
-  userId: string;
-}
 
 interface JoinSessionData {
   sessionId: string;
@@ -69,7 +65,11 @@ interface RequestSyncData {
 
 interface RequestSyncResponse {
   success: boolean;
-  session?: any;
+  session?: {
+    code?: string;
+    language?: string;
+    users?: Array<{ userId: string; username: string }>;
+  };
   error?: string;
 }
 
@@ -85,7 +85,7 @@ class SocketService {
   private socket: Socket | null = null;
   private sessionId: string | null = null;
   private userId: string | null = null;
-  private listeners: Map<string, Function> = new Map();
+  private listeners: Map<string, (...args: unknown[]) => void> = new Map();
 
   /**
    * Connect to the collaboration service
@@ -300,7 +300,7 @@ class SocketService {
   /**
    * Request session sync
    */
-  requestSync(): Promise<any> {
+  requestSync(): Promise<RequestSyncResponse['session']> {
     return new Promise((resolve, reject) => {
       if (!this.socket || !this.sessionId) {
         return reject(new Error('Not connected to session'));
@@ -321,46 +321,46 @@ class SocketService {
   /**
    * Event listeners
    */
-  onCodeUpdate(callback: (data: any) => void): void {
+  onCodeUpdate(callback: (data: CodeChangeData) => void): void {
     this.socket?.on('code-update', callback);
   }
 
-  onLanguageUpdate(callback: (data: any) => void): void {
+  onLanguageUpdate(callback: (data: LanguageChangeData) => void): void {
     this.socket?.on('language-update', callback);
   }
 
-  onCursorUpdate(callback: (data: any) => void): void {
+  onCursorUpdate(callback: (data: CursorPositionData) => void): void {
     this.socket?.on('cursor-update', callback);
   }
 
-  onChatMessage(callback: (data: any) => void): void {
+  onChatMessage(callback: (data: ChatMessageData) => void): void {
     this.socket?.on('chat-message', callback);
   }
 
-  onUserJoined(callback: (data: any) => void): void {
+  onUserJoined(callback: (data: { userId: string; username: string }) => void): void {
     this.socket?.on('user-joined', callback);
   }
 
-  onUserLeft(callback: (data: any) => void): void {
+  onUserLeft(callback: (data: { userId: string; username: string }) => void): void {
     this.socket?.on('user-left', callback);
   }
 
-  onUserDisconnected(callback: (data: any) => void): void {
+  onUserDisconnected(callback: (data: { userId: string; username: string }) => void): void {
     this.socket?.on('user-disconnected', callback);
   }
 
-  onUserTyping(callback: (data: any) => void): void {
+  onUserTyping(callback: (data: TypingData) => void): void {
     this.socket?.on('user-typing', callback);
   }
 
-  onCodeRunning(callback: (data: any) => void): void {
+  onCodeRunning(callback: (data: { sessionId: string; userId: string }) => void): void {
     this.socket?.on('code-running', callback);
   }
 
   /**
    * Remove event listener
    */
-  off(eventName: string, callback?: Function): void {
+  off(eventName: string, callback?: (...args: unknown[]) => void): void {
     if (callback) {
       this.socket?.off(eventName, callback);
     } else {

@@ -1,9 +1,11 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import React, { useState } from 'react';
+import MonacoCodeEditor from '@/components/MonacoCodeEditor';
+import socketService from '@/services/socketService';
+import React, { useState, useEffect, useRef } from 'react';
 
-// Original React Code made by Basil
+// Original React Code made by Basil - Enhanced with Collaboration
 
 type Sender = 'me' | 'partner';
 
@@ -21,14 +23,15 @@ interface TestCase {
 }
 
 const Session = (): React.ReactElement => {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('C++');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('java');
   const [activeTab, setActiveTab] = useState<'testCases' | 'testResults'>('testCases');
   const [selectedTestCase, setSelectedTestCase] = useState<string>('Case 1');
   const [code, setCode] = useState<string>(`class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
+    public int[] twoSum(int[] nums, int target) {
+        // Your code here
+        return new int[0];
     }
-};`);
+}`);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: 'Hello! Nice to meet you!', sender: 'me' },
     {
@@ -43,8 +46,119 @@ public:
     },
   ]);
   const [newMessage, setNewMessage] = useState<string>('');
+  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [sessionId] = useState<string>('session-' + Date.now());
+  const [userId] = useState<string>('user-' + Math.random().toString(36).substr(2, 9));
+  const [partnerInfo, setPartnerInfo] = useState<{ userId: string; username: string } | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
+  const languageMap: Record<string, string> = {
+    'C++': 'cpp',
+    'Java': 'java',
+    'Python': 'python',
+    'JavaScript': 'javascript',
+  };
+
+  // Auto-scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Initialize collaboration session
+  useEffect(() => {
+    const initCollaboration = async () => {
+      try {
+        // Connect to collaboration service
+        const socket = socketService.connect('test-token', userId);
+        
+        if (socket) {
+          // Join the session
+          await socketService.joinSession(sessionId, userId, { username: 'SessionUser' });
+          setIsConnected(true);
+          
+          // Set up event listeners
+          setupSocketListeners();
+        }
+      } catch (error) {
+        console.error('Failed to initialize collaboration:', error);
+      }
+    };
+
+    initCollaboration();
+
+    // Cleanup on unmount
+    return () => {
+      if (isConnected) {
+        socketService.leaveSession();
+        socketService.disconnect();
+      }
+    };
+  }, []);
+
+  // Set up socket event listeners
+  const setupSocketListeners = () => {
+    // Listen for code updates from partner
+    socketService.onCodeUpdate((data) => {
+      if (data.userId !== userId) {
+        setCode(data.code);
+      }
+    });
+
+    // Listen for language changes from partner
+    socketService.onLanguageUpdate((data) => {
+      if (data.userId !== userId) {
+        const langKey = Object.keys(languageMap).find(key => languageMap[key] === data.language);
+        if (langKey) {
+          setSelectedLanguage(data.language);
+        }
+      }
+    });
+
+    // Listen for chat messages from partner
+    socketService.onChatMessage((data) => {
+      if (data.userId !== userId) {
+        const newMessage: Message = {
+          id: messages.length + 1,
+          text: data.message,
+          sender: 'partner',
+        };
+        setMessages(prev => [...prev, newMessage]);
+        setPartnerInfo({ userId: data.userId, username: data.username });
+      }
+    });
+
+    // Listen for user joining
+    socketService.onUserJoined((data) => {
+      if (data.userId !== userId) {
+        setPartnerInfo({ userId: data.userId, username: data.username });
+        const welcomeMessage: Message = {
+          id: messages.length + 1,
+          text: `${data.username} joined the session!`,
+          sender: 'partner',
+        };
+        setMessages(prev => [...prev, welcomeMessage]);
+      }
+    });
+
+    // Listen for user leaving
+    socketService.onUserLeft((data) => {
+      if (data.userId !== userId) {
+        const leaveMessage: Message = {
+          id: messages.length + 1,
+          text: `${data.username} left the session.`,
+          sender: 'partner',
+        };
+        setMessages(prev => [...prev, leaveMessage]);
+        setPartnerInfo(null);
+      }
+    });
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
   const testCases: TestCase[] = [
     {
       id: 'Case 1',
@@ -66,15 +180,44 @@ public:
     },
   ];
 
+  // Handle code changes with real-time sync
+  const handleCodeChange = (newCode: string) => {
+    setCode(newCode);
+    
+    // Send code change to collaboration service
+    if (isConnected) {
+      socketService.sendCodeChange(newCode);
+    }
+  };
+
+  // Handle language changes with real-time sync
+  const handleLanguageChange = (newLanguage: string) => {
+    setSelectedLanguage(newLanguage);
+    
+    // Send language change to collaboration service
+    if (isConnected) {
+      socketService.changeLanguage(newLanguage).catch(console.error);
+    }
+  };
+
+  // Handle sending chat messages
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
+    const messageToSend = newMessage.trim();
+    
+    // Add message to local state
     setMessages((prev) => {
       const nextId = (prev?.length ?? 0) + 1;
-      const next: Message = { id: nextId, text: newMessage, sender: 'me' };
+      const next: Message = { id: nextId, text: messageToSend, sender: 'me' };
       return [...prev, next];
     });
+
+    // Send message to collaboration service
+    if (isConnected) {
+      socketService.sendChatMessage(messageToSend, 'SessionUser');
+    }
 
     setNewMessage('');
   };
@@ -83,6 +226,21 @@ public:
 
   return (
     <div className="h-(--hscreen) w-full">
+      {/* Connection Status Bar */}
+      <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 text-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-blue-700">
+              {isConnected ? 'Connected to collaboration service' : 'Connecting to collaboration service...'}
+            </span>
+          </div>
+          <div className="text-blue-600">
+            Session ID: {sessionId}
+          </div>
+        </div>
+      </div>
+      
       <div className="flex h-full">
         {/* Left Panel - Problem Description and Chat */}
         <div className="min-w-[350px] max-w-[500px] w-1/3 h-full border-r border-border flex flex-col">
@@ -136,7 +294,15 @@ public:
             <div className="flex justify-between items-center px-5 py-4 border-b border-border bg-muted h-15">
               <h3 className="text-base font-semibold">Messages</h3>
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                <span className="text-xs text-muted-foreground">
+                  {isConnected ? 'Connected' : 'Connecting...'}
+                </span>
+                {partnerInfo && (
+                  <span className="text-xs text-blue-600">
+                    • {partnerInfo.username}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -153,6 +319,7 @@ public:
                   {message.text}
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
             <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
@@ -174,11 +341,11 @@ public:
             <div className="flex items-center">
               <select
                 value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
+                onChange={(e) => handleLanguageChange(e.target.value)}
                 className="px-2 py-1 border border-border rounded text-sm"
               >
                 {languages.map((lang) => (
-                  <option key={lang} value={lang}>
+                  <option key={lang} value={languageMap[lang]}>
                     {lang}
                   </option>
                 ))}
@@ -187,11 +354,21 @@ public:
           </div>
 
           <div className="flex-1 p-5">
-            <textarea
+            <MonacoCodeEditor
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full h-full border-none outline-none font-mono text-sm resize-none"
-              spellCheck={false}
+              language={selectedLanguage}
+              onChange={handleCodeChange}
+              theme="vs-dark"
+              height="100%"
+              options={{
+                fontSize: 14,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                lineNumbers: 'on',
+                automaticLayout: true,
+                theme: 'vs-dark',
+              }}
             />
           </div>
         </div>
@@ -221,7 +398,15 @@ public:
                 Test Results
               </button>
             </div>
-            <button className="flex items-center gap-2 px-3 py-2 bg-green-500 rounded text-sm hover:bg-green-600 text-primary-foreground">
+            <button 
+              onClick={() => {
+                if (isConnected) {
+                  socketService.runCode();
+                }
+                console.log('Running code:', code);
+              }}
+              className="flex items-center gap-2 px-3 py-2 bg-green-500 rounded text-sm hover:bg-green-600 text-primary-foreground"
+            >
               <span className="text-sm">▶</span>
               Run
             </button>
