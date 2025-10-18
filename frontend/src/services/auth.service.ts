@@ -93,9 +93,7 @@ class AuthService {
     }
   }
 
-  private isAxiosError(
-    error: unknown,
-  ): error is {
+  private isAxiosError(error: unknown): error is {
     response?: { status: number; data?: { message?: string; error?: string; details?: unknown } };
     request?: unknown;
   } {
