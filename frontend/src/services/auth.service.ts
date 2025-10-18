@@ -17,9 +17,9 @@ import { AxiosResponse } from 'axios';
 export class AuthError extends Error {
   public readonly isValidationError: boolean;
   public readonly statusCode?: number;
-  public readonly details?: any;
+  public readonly details?: Record<string, unknown>;
 
-  constructor(message: string, statusCode?: number, details?: any) {
+  constructor(message: string, statusCode?: number, details?: Record<string, unknown>) {
     super(message);
     this.name = 'AuthError';
     this.statusCode = statusCode;
@@ -38,7 +38,7 @@ class AuthService {
         credentials,
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       throw this.handleError(error);
     }
   }
@@ -50,7 +50,7 @@ class AuthService {
         credentials,
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       throw this.handleError(error);
     }
   }
@@ -58,7 +58,7 @@ class AuthService {
   async logout(): Promise<void> {
     try {
       await apiClient.post(`${this.AUTH_BASE_PATH}/logout`);
-    } catch (error: any) {
+    } catch (error) {
       throw this.handleError(error);
     }
   }
@@ -72,23 +72,34 @@ class AuthService {
         `${this.AUTH_BASE_PATH}/verify-token`,
       );
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
       throw this.handleError(error);
     }
   }
 
-  private handleError(error: any): AuthError {
-    if (error.response) {
+  private handleError(error: unknown): AuthError {
+    if (this.isAxiosError(error) && error.response) {
       const message =
         error.response.data?.message || error.response.data?.error || 'An error occurred';
       const statusCode = error.response.status;
-      const details = error.response.data?.details;
+      const details = error.response.data?.details as Record<string, unknown> | undefined;
       return new AuthError(message, statusCode, details);
-    } else if (error.request) {
+    } else if (this.isAxiosError(error) && error.request) {
       return new AuthError('No response from server. Please check your connection.');
+    } else if (error instanceof Error) {
+      return new AuthError(error.message);
     } else {
-      return new AuthError(error.message || 'An unexpected error occurred');
+      return new AuthError('An unexpected error occurred');
     }
+  }
+
+  private isAxiosError(error: unknown): error is {
+    response?: { status: number; data?: { message?: string; error?: string; details?: unknown } };
+    request?: unknown;
+  } {
+    return (
+      typeof error === 'object' && error !== null && ('response' in error || 'request' in error)
+    );
   }
 }
 
