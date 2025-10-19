@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: null,
       });
       return true;
-    } catch (error: unknown) {
+    } catch {
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -65,10 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         error: null,
       }));
-    } catch (error: unknown) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState((prev: AuthState) => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Login failed',
+        error: errorMessage,
       }));
       throw error;
     }
@@ -89,10 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         error: null,
       }));
-    } catch (error: unknown) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setAuthState((prev: AuthState) => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Registration failed',
+        error: errorMessage,
       }));
       throw error;
     }
@@ -111,12 +113,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         error: null,
       });
-    } catch (error: unknown) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Logout failed';
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Logout failed',
+        error: errorMessage,
       });
     }
   }, []);

@@ -35,7 +35,7 @@ const Login: React.FC = () => {
     try {
       await login(formData);
       // Don't manually navigate - let the layout handle it when isAuthenticated changes
-    } catch (err) {
+    } catch {
       // Error is already set in AuthContext and displayed in the UI
     }
   };

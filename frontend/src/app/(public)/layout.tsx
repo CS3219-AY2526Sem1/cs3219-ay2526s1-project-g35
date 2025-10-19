@@ -10,14 +10,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Redirect authenticated users (after successful login)
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/home');
     }
   }, [isAuthenticated, router]);
 
-  // If authenticated, hide content while redirecting
   if (isAuthenticated) {
     return null;
   }
