@@ -46,10 +46,23 @@ const setupSocketHandlers = (io, sessionManager) => {
           success: true,
           session: sessionData,
           message: `Joined session ${sessionId}`,
+          isMatchedSession: result.isMatchedSession || false,
         });
 
+        // If this is a matched session and both users have joined, notify everyone
+        if (result.isMatchedSession && sessionData.userCount === 2) {
+          io.to(sessionId).emit('matched-session-ready', {
+            sessionId,
+            questionId: sessionData.questionId,
+            question: sessionData.problem,
+            users: sessionData.users,
+            timestamp: Date.now(),
+          });
+          console.log(`🎉 Matched session ${sessionId} is now ready with both users!`);
+        }
+
         console.log(
-          `✅ User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})`,
+          `✅ User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})${result.isMatchedSession ? ' [MATCHED SESSION]' : ''}`,
         );
       } catch (error) {
         console.error('Error in join-session:', error);
