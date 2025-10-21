@@ -327,13 +327,55 @@ const QuestionController = {
 
       res.status(200).json({
         success: true,
-        data: question,
+        questionId: question._id,
       });
     } catch (error) {
       console.error('Error getting random question:', error);
       res.status(500).json({
         success: false,
         error: 'Failed to retrieve random question',
+      });
+    }
+  },
+
+  /**
+   * Get all categories/topics
+   * GET /api/questions/categories
+   */
+  async getAllCategories(req, res) {
+    try {
+      const categories = await Question.getAllCategories();
+      res.status(200).json({
+        success: true,
+        count: categories.length,
+        data: categories,
+      });
+    } catch (error) {
+      console.error('Error getting all categories:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve categories',
+      });
+    }
+  },
+
+  /**
+   * Get all difficulty levels
+   * GET /api/questions/difficulties
+   */
+  async getAllDifficulties(req, res) {
+    try {
+      const difficulties = await Question.getAllDifficulties();
+      res.status(200).json({
+        success: true,
+        count: difficulties.length,
+        data: difficulties,
+      });
+    } catch (error) {
+      console.error('Error getting all difficulties:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve difficulties',
       });
     }
   },

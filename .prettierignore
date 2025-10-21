@@ -14,3 +14,7 @@ docker-compose.yml
 
 # Environment
 .env*
+
+# Postman files
+backend/question-service/Question-Service-API.postman_collection.json
+backend/question-service/Question-Service.postman_environment.json

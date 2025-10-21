@@ -1,0 +1,318 @@
+{
+    "info": {
+        "name": "Question Service API",
+        "description": "RESTful API for managing coding interview questions with support for difficulty levels, topics, test cases, and constraints.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "version": "1.0.0"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:8000",
+            "type": "string"
+        },
+        {
+            "key": "question_id",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Health Check",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/health",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        },
+                        "description": "Check if the service is running"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Questions - CRUD",
+            "item": [
+                {
+                    "name": "Get All Questions",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions"
+                            ]
+                        },
+                        "description": "Retrieve all questions in the database"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Question by ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/{{question_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "{{question_id}}"
+                            ]
+                        },
+                        "description": "Retrieve a single question by its ID"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Question",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Two Sum\",\n  \"description\": \"Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.\",\n  \"difficulty\": \"Easy\",\n  \"topics\": [\"Arrays\", \"Hash Table\"],\n  \"tags\": [\"leetcode\", \"interview\", \"fundamentals\"],\n  \"testCases\": [\n    {\n      \"input\": \"nums = [2,7,11,15], target = 9\",\n      \"expectedOutput\": \"[0,1]\",\n      \"explanation\": \"Because nums[0] + nums[1] == 9, we return [0, 1].\",\n      \"type\": \"Sample\"\n    },\n    {\n      \"input\": \"nums = [3,2,4], target = 6\",\n      \"expectedOutput\": \"[1,2]\",\n      \"explanation\": \"Because nums[1] + nums[2] == 6, we return [1, 2].\",\n      \"type\": \"Sample\"\n    },\n    {\n      \"input\": \"nums = [3,3], target = 6\",\n      \"expectedOutput\": \"[0,1]\",\n      \"explanation\": \"\",\n      \"type\": \"Hidden\"\n    }\n  ],\n  \"constraints\": [\n    \"2 <= nums.length <= 10^4\",\n    \"-10^9 <= nums[i] <= 10^9\",\n    \"-10^9 <= target <= 10^9\",\n    \"Only one valid answer exists\"\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/questions",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions"
+                            ]
+                        },
+                        "description": "Create a new question in the database"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Question",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"difficulty\": \"Medium\",\n  \"topics\": [\"Arrays\", \"Hash Table\", \"Dynamic Programming\"]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/{{question_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "{{question_id}}"
+                            ]
+                        },
+                        "description": "Update an existing question (partial update supported)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Question",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/{{question_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "{{question_id}}"
+                            ]
+                        },
+                        "description": "Delete a question by its ID"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Questions - Filtering",
+            "item": [
+                {
+                    "name": "Get Questions by Difficulty",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/difficulty/Easy",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "difficulty",
+                                "Easy"
+                            ]
+                        },
+                        "description": "Get all questions filtered by difficulty level (Easy, Medium, or Hard)"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Questions by Topic",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/topic/Arrays",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "topic",
+                                "Arrays"
+                            ]
+                        },
+                        "description": "Get all questions that include the specified topic"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Categories",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/categories",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "categories"
+                            ]
+                        },
+                        "description": "Get all unique categories/topics from all questions"
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Difficulties",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/difficulties",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "difficulties"
+                            ]
+                        },
+                        "description": "Get all available difficulty levels"
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Questions - Random Selection",
+            "item": [
+                {
+                    "name": "Get Random Question by Topic and Difficulty",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/random?topic=Arrays&difficulty=Easy",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "random"
+                            ],
+                            "query": [
+                                {
+                                    "key": "topic",
+                                    "value": "Arrays",
+                                    "description": "Topic to filter by (required)"
+                                },
+                                {
+                                    "key": "difficulty",
+                                    "value": "Easy",
+                                    "description": "Difficulty level: Easy, Medium, or Hard (required)"
+                                },
+                                {
+                                    "key": "excludeQuestionId",
+                                    "value": "",
+                                    "description": "Question ID to exclude from selection (optional)",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Get a random question ID based on topic and difficulty. Returns only the question ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Random Question by Difficulty Only",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/questions/random/difficulty/Medium",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "questions",
+                                "random",
+                                "difficulty",
+                                "Medium"
+                            ]
+                        },
+                        "description": "Get a random question filtered only by difficulty level"
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
+}
