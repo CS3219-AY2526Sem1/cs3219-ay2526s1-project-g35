@@ -10,12 +10,14 @@ const SessionManager = require('../models/SessionManager');
 const { setupSocketHandlers } = require('../utils/socketHandlers');
 const { socketAuthMiddleware, socketAuthMiddlewareDev } = require('../middleware/socketAuth');
 const { initRedis, closeRedis } = require('../config/redis');
+const ServiceIntegration = require('../utils/serviceIntegration');
 
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Session Manager
+// Initialize Session Manager and Service Integration
 const sessionManager = new SessionManager();
+const serviceIntegration = new ServiceIntegration();
 
 // Socket.IO setup with CORS
 const io = socketIo(server, {
@@ -63,7 +65,34 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Get session info (REST endpoint)
+// Get pending sessions (for debugging/admin) - MUST be before /api/sessions/:sessionId
+app.get('/api/sessions/pending', (req, res) => {
+  try {
+    const pendingSessions = sessionManager.getPendingSessions();
+    res.json({ success: true, pendingSessions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get session by user ID (for matched sessions) - MUST be before /api/sessions/:sessionId
+app.get('/api/sessions/user/:userId', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const sessionId = sessionManager.getSessionByUserId(userId);
+
+    if (!sessionId) {
+      return res.status(404).json({ error: 'No session found for this user' });
+    }
+
+    const sessionData = sessionManager.getSessionData(sessionId);
+    res.json({ success: true, sessionId, session: sessionData });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get session info (REST endpoint) - MUST be after specific routes
 app.get('/api/sessions/:sessionId', (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -109,6 +138,69 @@ app.post('/api/sessions', (req, res) => {
     }
 
     res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create a matched session from matching service
+app.post('/api/sessions/matched', async (req, res) => {
+  try {
+    const { userIds, questionId } = req.body;
+
+    // Validate input
+    if (!userIds || !Array.isArray(userIds) || userIds.length !== 2) {
+      return res.status(400).json({ error: 'Exactly 2 user IDs are required' });
+    }
+
+    if (!questionId) {
+      return res.status(400).json({ error: 'Question ID is required' });
+    }
+
+    // Fetch question details from question service
+    const questionResult = await serviceIntegration.getQuestionDetails(questionId);
+    let questionDetails = null;
+
+    if (questionResult.success) {
+      questionDetails = questionResult.question;
+    } else {
+      console.warn(`Could not fetch question details: ${questionResult.error}`);
+      // Continue without question details - session can still be created
+    }
+
+    // Create the matched session (SessionManager will generate sessionId)
+    const result = sessionManager.createMatchedSession(userIds, questionId, questionDetails);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    // Notify matching service that session is ready with the generated sessionId
+    const notifyResult = await serviceIntegration.notifySessionReady(
+      result.sessionId,
+      userIds,
+      questionId,
+    );
+    if (!notifyResult.success) {
+      console.warn(`Could not notify matching service: ${notifyResult.error}`);
+    }
+
+    res.status(201).json({
+      ...result,
+      questionDetails: questionDetails,
+      notificationSent: notifyResult.success,
+    });
+  } catch (error) {
+    console.error('Error creating matched session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Service health check endpoint
+app.get('/api/services/health', async (req, res) => {
+  try {
+    const healthStatus = await serviceIntegration.healthCheck();
+    res.json({ success: true, services: healthStatus });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -195,4 +287,4 @@ process.on('unhandledRejection', (reason, promise) => {
 startServer();
 
 // Export for testing
-module.exports = { app, server, io, sessionManager };
+module.exports = { app, server, io, sessionManager, serviceIntegration };

@@ -4,7 +4,7 @@
 
 const setupSocketHandlers = (io, sessionManager) => {
   io.on('connection', (socket) => {
-    console.log(`🔌 New connection: ${socket.id}`);
+    console.log(`New connection: ${socket.id}`);
 
     /**
      * JOIN_SESSION - User joins a collaboration session
@@ -46,10 +46,23 @@ const setupSocketHandlers = (io, sessionManager) => {
           success: true,
           session: sessionData,
           message: `Joined session ${sessionId}`,
+          isMatchedSession: result.isMatchedSession || false,
         });
 
+        // If this is a matched session and both users have joined, notify everyone
+        if (result.isMatchedSession && sessionData.userCount === 2) {
+          io.to(sessionId).emit('matched-session-ready', {
+            sessionId,
+            questionId: sessionData.questionId,
+            question: sessionData.problem,
+            users: sessionData.users,
+            timestamp: Date.now(),
+          });
+          console.log(`Matched session ${sessionId} is now ready with both users!`);
+        }
+
         console.log(
-          `✅ User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})`,
+          `User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})${result.isMatchedSession ? ' [MATCHED SESSION]' : ''}`,
         );
       } catch (error) {
         console.error('Error in join-session:', error);
@@ -270,13 +283,11 @@ const setupSocketHandlers = (io, sessionManager) => {
               timestamp: Date.now(),
             });
 
-            console.log(
-              `🔌 User ${result.removedUser.userId} disconnected from session ${sessionId}`,
-            );
+            console.log(`User ${result.removedUser.userId} disconnected from session ${sessionId}`);
           }
         }
 
-        console.log(`🔌 Socket disconnected: ${socket.id}`);
+        console.log(`Socket disconnected: ${socket.id}`);
       } catch (error) {
         console.error('Error in disconnect:', error);
       }
@@ -295,7 +306,7 @@ const setupSocketHandlers = (io, sessionManager) => {
     const stats = sessionManager.getStats();
     if (stats.totalSessions > 0) {
       console.log(
-        `📊 Sessions: ${stats.activeSessions}/${stats.totalSessions} active | Users: ${stats.totalUsers}`,
+        `Sessions: ${stats.activeSessions}/${stats.totalSessions} active | Users: ${stats.totalUsers}`,
       );
     }
   }, 60000); // Every minute

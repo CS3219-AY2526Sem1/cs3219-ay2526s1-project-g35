@@ -13,7 +13,7 @@ let redisClient = null;
 const initRedis = async () => {
   try {
     if (process.env.REDIS_ENABLED !== 'true') {
-      console.log('⚠️  Redis disabled - sessions will be stored in memory only');
+      console.log('Redis disabled - sessions will be stored in memory only');
       return null;
     }
 
@@ -22,7 +22,7 @@ const initRedis = async () => {
       socket: {
         reconnectStrategy: (retries) => {
           if (retries > 10) {
-            console.error('❌ Redis reconnection failed after 10 attempts');
+            console.error('Redis reconnection failed after 10 attempts');
             return new Error('Redis reconnection limit reached');
           }
           return retries * 100; // Exponential backoff
@@ -31,26 +31,26 @@ const initRedis = async () => {
     });
 
     redisClient.on('error', (err) => {
-      console.error('❌ Redis Client Error:', err);
+      console.error('Redis Client Error:', err);
     });
 
     redisClient.on('connect', () => {
-      console.log('🔄 Redis connecting...');
+      console.log('Redis connecting...');
     });
 
     redisClient.on('ready', () => {
-      console.log('✅ Redis connected and ready');
+      console.log('Redis connected and ready');
     });
 
     redisClient.on('reconnecting', () => {
-      console.log('🔄 Redis reconnecting...');
+      console.log('Redis reconnecting...');
     });
 
     await redisClient.connect();
     return redisClient;
   } catch (error) {
-    console.error('❌ Failed to initialize Redis:', error.message);
-    console.log('⚠️  Continuing without Redis - sessions will be in-memory only');
+    console.error('Failed to initialize Redis:', error.message);
+    console.log('Continuing without Redis - sessions will be in-memory only');
     return null;
   }
 };
