@@ -69,7 +69,7 @@ export default function WaitingRoomPage(): React.ReactElement {
     hasConnected.current = true;
 
     const searchData = JSON.parse(searchDataStr);
-    
+
     // Connect to matching service
     let ws: WebSocket;
     try {
@@ -83,7 +83,7 @@ export default function WaitingRoomPage(): React.ReactElement {
 
     ws.onopen = () => {
       setIsConnecting(false);
-      
+
       // Send search request
       const message = {
         type: 'search',
@@ -91,7 +91,7 @@ export default function WaitingRoomPage(): React.ReactElement {
         difficulty: searchData.difficulty,
         port: searchData.port,
       };
-      
+
       ws.send(JSON.stringify(message));
     };
 
@@ -101,7 +101,7 @@ export default function WaitingRoomPage(): React.ReactElement {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      
+
       if (data.type === 'match') {
         setMatchData(data);
         setMatchFound(true);
@@ -213,7 +213,8 @@ export default function WaitingRoomPage(): React.ReactElement {
             <AlertDialogHeader>
               <AlertDialogTitle>Match Found! 🎉</AlertDialogTitle>
               <AlertDialogDescription>
-                We found you a match! You'll be paired with someone at port {matchData?.partnerPort}.
+                We found you a match! You'll be paired with someone at port {matchData?.partnerPort}
+                .
                 {matchData?.sharedTopics > 0 && (
                   <> You have {matchData.sharedTopics} topic(s) in common!</>
                 )}

@@ -46,21 +46,24 @@ export default function HomePage() {
 
     // Get selected topic names
     const selectedTopicNames = selectedTopics.map((i) => topics[i]);
-    
+
     // Store search data for waiting room page
-    sessionStorage.setItem('matchingSearch', JSON.stringify({
-      topics: selectedTopicNames,
-      difficulty: selectedDifficulty,
-      port: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
-    }));
-    
+    sessionStorage.setItem(
+      'matchingSearch',
+      JSON.stringify({
+        topics: selectedTopicNames,
+        difficulty: selectedDifficulty,
+        port: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
+      }),
+    );
+
     // Navigate to waiting room
     router.push('/waitingroom');
   };
 
   const onToggleTopic = (index: number) =>
     setSelectedTopics((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
     );
   const onSelectDifficulty = (d: string) => setSelectedDifficulty(d);
 
@@ -74,13 +77,13 @@ export default function HomePage() {
           Let&apos;s get you matched up!
         </p>
       </header>
-      
+
       {error && (
         <div className="w-full max-w-[600px] p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
           {error}
         </div>
       )}
-      
+
       <section id="topics" className="w-full">
         <h2 className="text-3xl text-center">Which topic(s) would you like to practice today?</h2>
         <Carousel
