@@ -1,9 +1,9 @@
-import WebSocket, { WebSocketServer } from "ws";
+import WebSocket, { WebSocketServer } from 'ws';
 
-const wss = new WebSocketServer({ 
+const wss = new WebSocketServer({
   port: 8004,
   // Allow connections from any origin (for development)
-  verifyClient: () => true
+  verifyClient: () => true,
 });
 
 let waitingQueue = [];
@@ -11,13 +11,13 @@ let activePairs = [];
 
 const TIMEOUT_MS = 60000; // 1 minute
 
-wss.on("connection", (ws) => {
-  console.log("New connection");
+wss.on('connection', (ws) => {
+  console.log('New connection');
 
-  ws.on("message", (data) => {
+  ws.on('message', (data) => {
     const msg = JSON.parse(data);
 
-    if (msg.type === "search") {
+    if (msg.type === 'search') {
       const { topics, port, difficulty } = msg;
 
       // Create user entry
@@ -63,24 +63,24 @@ wss.on("connection", (ws) => {
         // Notify both
         user.ws.send(
           JSON.stringify({
-            type: "match",
+            type: 'match',
             partnerPort: bestMatch.port,
             sharedTopics: maxShared,
             difficulty: user.difficulty,
-          })
+          }),
         );
 
         bestMatch.ws.send(
           JSON.stringify({
-            type: "match",
+            type: 'match',
             partnerPort: user.port,
             sharedTopics: maxShared,
             difficulty: user.difficulty,
-          })
+          }),
         );
 
         console.log(
-          `Matched users [difficulty=${user.difficulty}] (shared ${maxShared} topics): ${user.port} <--> ${bestMatch.port}`
+          `Matched users [difficulty=${user.difficulty}] (shared ${maxShared} topics): ${user.port} <--> ${bestMatch.port}`,
         );
       } else {
         // No match found yet — queue silently
@@ -90,10 +90,10 @@ wss.on("connection", (ws) => {
     }
   });
 
-  ws.on("close", () => {
+  ws.on('close', () => {
     // Remove from queue if still waiting
     waitingQueue = waitingQueue.filter((u) => u.ws !== ws);
-    console.log("Connection closed");
+    console.log('Connection closed');
   });
 });
 
@@ -107,13 +107,15 @@ function startTimeout(user) {
     // Remove from waiting queue if still there
     waitingQueue = waitingQueue.filter((u) => u !== user);
     try {
-      user.ws.send(JSON.stringify({ type: "timeout", message: "No match found within 60 seconds." }));
+      user.ws.send(
+        JSON.stringify({ type: 'timeout', message: 'No match found within 60 seconds.' }),
+      );
       user.ws.close();
     } catch (e) {
-      console.log("Error sending timeout:", e.message);
+      console.log('Error sending timeout:', e.message);
     }
     console.log(`User on port ${user.port} timed out`);
   }, TIMEOUT_MS);
 }
 
-console.log("Matching WebSocket server running on port 8004");
+console.log('Matching WebSocket server running on port 8004');
