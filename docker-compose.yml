@@ -50,15 +50,12 @@ services:
 
   # Matching Service
   matching-service:
-    build: ./backend/MatchingService
+    container_name: matching-service
+    build: ./backend/matching-service
     ports:
-      - "8004:8000"
+      - "8004:8004"
     environment:
       - NODE_ENV=development
-      - PORT=8000
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
 
   # Databases
   user-db:

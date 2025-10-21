@@ -1,22 +1,38 @@
-import WebSocket, { WebSocketServer } from 'ws';
+import WebSocket, { WebSocketServer } from "ws";
 
-const wss = new WebSocketServer({ port: 8080 });
+const wss = new WebSocketServer({ 
+  port: 8004,
+  // Allow connections from any origin (for development)
+  verifyClient: () => true
+});
 
 let waitingQueue = [];
 let activePairs = [];
 
-wss.on('connection', (ws) => {
-  console.log('New connection');
+const TIMEOUT_MS = 60000; // 1 minute
 
-  ws.on('message', (data) => {
+wss.on("connection", (ws) => {
+  console.log("New connection");
+
+  ws.on("message", (data) => {
     const msg = JSON.parse(data);
-    if (msg.type === 'search') {
-      const { topics, userId } = msg;
+
+    if (msg.type === "search") {
+      const { topics, port, difficulty } = msg;
 
       // Create user entry
-      const user = { ws, topics, userId, connectedAt: Date.now() };
+      const user = {
+        ws,
+        topics,
+        port,
+        difficulty, // e.g., 'Easy' | 'Medium' | 'Hard'
+        connectedAt: Date.now(),
+        timeoutId: null,
+      };
 
+      // Try to find best match
       if (waitingQueue.length === 0) {
+        startTimeout(user);
         waitingQueue.push(user);
         return;
       }
@@ -24,8 +40,9 @@ wss.on('connection', (ws) => {
       let bestMatch = null;
       let maxShared = 0;
 
-      // Find the first waiting user with the most shared topics
       for (const candidate of waitingQueue) {
+        // Only consider candidates with the same difficulty level
+        if (candidate.difficulty !== user.difficulty) continue;
         const shared = countSharedTopics(user.topics, candidate.topics);
         if (shared > maxShared) {
           bestMatch = candidate;
@@ -37,39 +54,46 @@ wss.on('connection', (ws) => {
         // Remove matched user from queue
         waitingQueue = waitingQueue.filter((u) => u !== bestMatch);
 
-        // Store the active pair
+        // Clear their timeout
+        clearTimeout(bestMatch.timeoutId);
+
+        // Store active pair
         activePairs.push([user, bestMatch]);
 
-        // Notify both users
+        // Notify both
         user.ws.send(
           JSON.stringify({
-            type: 'match',
-            partnerId: bestMatch.userId,
+            type: "match",
+            partnerPort: bestMatch.port,
             sharedTopics: maxShared,
-          }),
+            difficulty: user.difficulty,
+          })
         );
 
         bestMatch.ws.send(
           JSON.stringify({
-            type: 'match',
-            partnerId: user.userId,
+            type: "match",
+            partnerPort: user.port,
             sharedTopics: maxShared,
-          }),
+            difficulty: user.difficulty,
+          })
         );
 
         console.log(
-          `Matched users (shared ${maxShared} topics): ${user.userId}, ${bestMatch.userId}`,
+          `Matched users [difficulty=${user.difficulty}] (shared ${maxShared} topics): ${user.port} <--> ${bestMatch.port}`
         );
       } else {
+        // No match found yet — queue silently
+        startTimeout(user);
         waitingQueue.push(user);
       }
     }
   });
 
-  ws.on('close', () => {
+  ws.on("close", () => {
     // Remove from queue if still waiting
     waitingQueue = waitingQueue.filter((u) => u.ws !== ws);
-    console.log('Connection closed');
+    console.log("Connection closed");
   });
 });
 
@@ -78,4 +102,18 @@ function countSharedTopics(a, b) {
   return b.filter((t) => setA.has(t)).length;
 }
 
-console.log('Matching WebSocket server running on port 8080');
+function startTimeout(user) {
+  user.timeoutId = setTimeout(() => {
+    // Remove from waiting queue if still there
+    waitingQueue = waitingQueue.filter((u) => u !== user);
+    try {
+      user.ws.send(JSON.stringify({ type: "timeout", message: "No match found within 60 seconds." }));
+      user.ws.close();
+    } catch (e) {
+      console.log("Error sending timeout:", e.message);
+    }
+    console.log(`User on port ${user.port} timed out`);
+  }, TIMEOUT_MS);
+}
+
+console.log("Matching WebSocket server running on port 8004");
