@@ -28,6 +28,12 @@ router.get('/topic/:topic', QuestionController.getQuestionsByTopic);
 // GET /api/questions/random/difficulty/:difficulty - Get random question by difficulty
 router.get('/random/difficulty/:difficulty', QuestionController.getRandomQuestionByDifficulty);
 
+// GET /api/questions/categories - Get all categories/topics
+router.get('/categories', QuestionController.getAllCategories);
+
+// GET /api/questions/difficulties - Get all difficulty levels
+router.get('/difficulties', QuestionController.getAllDifficulties);
+
 // GET /api/questions/:id - Get a single question by ID
 router.get('/:id', QuestionController.getQuestionById);
 

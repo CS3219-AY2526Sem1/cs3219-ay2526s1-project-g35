@@ -180,6 +180,26 @@ The service will be running at `http://localhost:8000`
 http://localhost:8000/api/questions
 ```
 
+### Postman Collection
+
+For easy API testing, you can import the Postman collection and environment files:
+
+1. **Collection File**: `Question-Service-API.postman_collection.json`
+2. **Environment File**: `Question-Service.postman_environment.json`
+
+**How to Import:**
+1. Open Postman
+2. Click "Import" button (top left)
+3. Drag and drop both JSON files or click "Upload Files"
+4. Select "Question Service - Local" environment from the dropdown (top right)
+5. You're ready to test all endpoints!
+
+The collection includes:
+- ✅ All 11 API endpoints organized in folders
+- ✅ Pre-configured request bodies with examples
+- ✅ Environment variables for easy configuration
+- ✅ Descriptions for each endpoint
+
 ### Endpoints
 
 #### 1. Create a Question
@@ -403,13 +423,7 @@ GET /api/questions/random?topic=Arrays&difficulty=Easy&excludeQuestionId=507f1f7
 ```json
 {
   "success": true,
-  "data": {
-    "_id": "507f191e810c19729de860ea",
-    "title": "Reverse Array",
-    "difficulty": "Easy",
-    "topics": ["Arrays"],
-    ...
-  }
+  "questionId": "507f191e810c19729de860ea"
 }
 ```
 
@@ -417,13 +431,60 @@ GET /api/questions/random?topic=Arrays&difficulty=Easy&excludeQuestionId=507f1f7
 ```json
 {
   "success": false,
-  "error": "No matching questions found"
+  "error": "No questions found with topic \"Arrays\" and difficulty \"Easy\""
 }
 ```
 
 ---
 
-#### 9. Health Check
+#### 9. Get All Categories
+```http
+GET /api/questions/categories
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 10,
+  "data": [
+    "Arrays",
+    "Binary Search",
+    "Dynamic Programming",
+    "Graphs",
+    "Hash Table",
+    "Linked Lists",
+    "Sorting",
+    "Strings",
+    "Trees",
+    "Two Pointers"
+  ]
+}
+```
+
+---
+
+#### 10. Get All Difficulties
+```http
+GET /api/questions/difficulties
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 3,
+  "data": [
+    "Easy",
+    "Hard",
+    "Medium"
+  ]
+}
+```
+
+---
+
+#### 11. Health Check
 ```http
 GET /health
 ```
@@ -565,10 +626,13 @@ question-service/
 │   │   └── question-model.test.js # Model unit tests
 │   ├── index.js                  # Express app configuration
 │   └── server.js                 # Server entry point
+├── Question-Service-API.postman_collection.json  # Postman collection
+├── Question-Service.postman_environment.json     # Postman environment
 ├── .env                          # Environment variables (not in git)
 ├── .gitignore                    # Git ignore rules
 ├── package.json                  # Dependencies & scripts
 ├── jest.config.js                # Jest test configuration
+├── Dockerfile                    # Docker configuration
 └── README.md                     # This file
 ```
 
@@ -623,6 +687,10 @@ When two users are matched for a coding session:
 ```javascript
 // Get random question based on user preferences
 GET /api/questions/random?topic=Arrays&difficulty=Medium
+// Returns: { "success": true, "questionId": "507f191e810c19729de860ea" }
+
+// Then fetch the full question details using the returned ID
+GET /api/questions/507f191e810c19729de860ea
 
 // For subsequent questions in same session (avoid duplicates)
 GET /api/questions/random?topic=Arrays&difficulty=Medium&excludeQuestionId=507f1f77bcf86cd799439011
@@ -640,6 +708,22 @@ Get all questions for a specific topic:
 
 ```javascript
 GET /api/questions/topic/DynamicProgramming
+```
+
+### 4. Get Available Categories
+Retrieve all available categories/topics for filtering:
+
+```javascript
+GET /api/questions/categories
+// Returns: ["Arrays", "Binary Search", "Dynamic Programming", ...]
+```
+
+### 5. Get Available Difficulty Levels
+Retrieve all difficulty levels:
+
+```javascript
+GET /api/questions/difficulties
+// Returns: ["Easy", "Hard", "Medium"]
 ```
 
 ---

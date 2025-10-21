@@ -147,6 +147,18 @@ questionSchema.statics.getRandomByTopicAndDifficulty = async function (topic, di
   return questions.length > 0 ? questions[0] : null;
 };
 
+// Get all unique categories/topics
+questionSchema.statics.getAllCategories = async function () {
+  const categories = await this.distinct('topics');
+  return categories.sort();
+};
+
+// Get all difficulty levels
+questionSchema.statics.getAllDifficulties = async function () {
+  const difficulties = await this.distinct('difficulty');
+  return difficulties.sort();
+};
+
 const Question = mongoose.model('Question', questionSchema);
 
 module.exports = Question;
