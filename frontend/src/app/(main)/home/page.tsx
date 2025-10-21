@@ -15,8 +15,10 @@ import { useState } from 'react';
 export default function HomePage() {
   const router = useRouter();
 
-  const [selectedTopic, setSelectedTopic] = useState<number | null>(0);
+  // Support selecting multiple topics
+  const [selectedTopics, setSelectedTopics] = useState<number[]>([0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const topics = [
     'Two Pointers',
@@ -29,9 +31,40 @@ export default function HomePage() {
 
   const difficulties = ['Easy', 'Medium', 'Hard'];
 
-  const goWaiting = () => router.push('/waitingroom');
+  const goWaiting = () => {
+    // Validate selections
+    if (selectedTopics.length === 0) {
+      setError('Please select at least one topic');
+      return;
+    }
+    if (!selectedDifficulty) {
+      setError('Please select a difficulty level');
+      return;
+    }
 
-  const onSelectTopic = (index: number) => setSelectedTopic(index);
+    setError(null);
+
+    // Get selected topic names
+    const selectedTopicNames = selectedTopics.map((i) => topics[i]);
+
+    // Store search data for waiting room page
+    sessionStorage.setItem(
+      'matchingSearch',
+      JSON.stringify({
+        topics: selectedTopicNames,
+        difficulty: selectedDifficulty,
+        port: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
+      }),
+    );
+
+    // Navigate to waiting room
+    router.push('/waitingroom');
+  };
+
+  const onToggleTopic = (index: number) =>
+    setSelectedTopics((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
+    );
   const onSelectDifficulty = (d: string) => setSelectedDifficulty(d);
 
   return (
@@ -44,6 +77,13 @@ export default function HomePage() {
           Let&apos;s get you matched up!
         </p>
       </header>
+
+      {error && (
+        <div className="w-full max-w-[600px] p-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+          {error}
+        </div>
+      )}
+
       <section id="topics" className="w-full">
         <h2 className="text-3xl text-center">Which topic(s) would you like to practice today?</h2>
         <Carousel
@@ -63,12 +103,12 @@ export default function HomePage() {
                 <div
                   role="button"
                   tabIndex={0}
-                  onClick={() => onSelectTopic(i)}
+                  onClick={() => onToggleTopic(i)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') onSelectTopic(i);
+                    if (e.key === 'Enter' || e.key === ' ') onToggleTopic(i);
                   }}
-                  className={`shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1 cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
-                    selectedTopic === i ? 'ring-2 ring-ring scale-105' : ''
+                  className={`shadow-[0_0_8px_rgba(0,0,0,0.12)] flex items-center justify-center h-full rounded-2xl border-1 cursor-pointer transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    selectedTopics.includes(i) ? 'ring-2 ring-ring scale-105' : 'hover:shadow-lg'
                   }`}
                 >
                   <label className="text-2xl block text-center">{t}</label>

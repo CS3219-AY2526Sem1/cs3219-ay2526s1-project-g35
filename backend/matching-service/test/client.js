@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import readline from 'readline';
 
-const SERVER_URL = 'ws://localhost:8080'; // Change to hosting server url
+const SERVER_URL = 'ws://localhost:8004'; // Change to hosting server url
 
 const ws = new WebSocket(SERVER_URL);
 
@@ -26,14 +26,21 @@ ws.on('open', () => {
       return;
     }
 
-    // Send topics to the server
-    const message = {
-      type: 'search',
-      topics,
-      userId: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
-    };
-    ws.send(JSON.stringify(message));
-    console.log('📤 Sent topics:', topics);
+    rl.question('Enter difficulty (Easy/Medium/Hard) [default: Medium]: ', (d) => {
+      const normalized = (d || 'Medium').trim();
+      const allowed = ['Easy', 'Medium', 'Hard'];
+      const difficulty = allowed.includes(normalized) ? normalized : 'Medium';
+
+      // Send search request to the server
+      const message = {
+        type: 'search',
+        topics,
+        difficulty,
+        port: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
+      };
+      ws.send(JSON.stringify(message));
+      console.log('📤 Sent:', { topics, difficulty: message.difficulty, port: message.port });
+    });
   });
 });
 

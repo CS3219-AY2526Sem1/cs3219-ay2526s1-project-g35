@@ -52,6 +52,15 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # Matching Service
+  matching-service:
+    container_name: matching-service
+    build: ./backend/matching-service
+    ports:
+      - "8004:8004"
+    environment:
+      - NODE_ENV=development
+  
   # Collaboration service - Real-time collaboration and WebSocket
   collaboration-service:
     build: ./backend/collaboration-service
