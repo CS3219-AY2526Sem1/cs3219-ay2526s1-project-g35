@@ -9,7 +9,7 @@ class SessionManager {
     this.sessions = new Map();
     this.userToSession = new Map(); // Track which session each user is in
     this.MAX_USERS_PER_SESSION = 2;
-    
+
     // Track pending sessions waiting for users to join
     this.pendingSessions = new Map(); // sessionId -> { userIds: [], questionId, createdAt }
   }
@@ -74,9 +74,11 @@ class SessionManager {
       createdAt: Date.now(),
     });
 
-    console.log(`✅ Matched session created: ${sessionId} for users [${userIds.join(', ')}] with question ${questionId}`);
-    return { 
-      success: true, 
+    console.log(
+      `✅ Matched session created: ${sessionId} for users [${userIds.join(', ')}] with question ${questionId}`,
+    );
+    return {
+      success: true,
       sessionId,
       matchedUserIds: userIds,
       questionId: questionId,
@@ -283,8 +285,8 @@ class SessionManager {
           userIds: data.userIds,
           questionId: data.questionId,
           createdAt: data.createdAt,
-          joinedUsers: session.users.map(u => u.userId),
-          waitingForUsers: data.userIds.filter(id => !session.users.some(u => u.userId === id)),
+          joinedUsers: session.users.map((u) => u.userId),
+          waitingForUsers: data.userIds.filter((id) => !session.users.some((u) => u.userId === id)),
         });
       }
     }
@@ -296,7 +298,11 @@ class SessionManager {
    */
   getSessionByUserId(userId) {
     for (const [sessionId, session] of this.sessions.entries()) {
-      if (session.isMatchedSession && session.matchedUserIds && session.matchedUserIds.includes(userId)) {
+      if (
+        session.isMatchedSession &&
+        session.matchedUserIds &&
+        session.matchedUserIds.includes(userId)
+      ) {
         return sessionId;
       }
     }

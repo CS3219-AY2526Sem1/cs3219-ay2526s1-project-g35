@@ -149,7 +149,11 @@ app.post('/api/sessions/matched', async (req, res) => {
     }
 
     // Notify matching service that session is ready with the generated sessionId
-    const notifyResult = await serviceIntegration.notifySessionReady(result.sessionId, userIds, questionId);
+    const notifyResult = await serviceIntegration.notifySessionReady(
+      result.sessionId,
+      userIds,
+      questionId,
+    );
     if (!notifyResult.success) {
       console.warn(`⚠️ Could not notify matching service: ${notifyResult.error}`);
     }

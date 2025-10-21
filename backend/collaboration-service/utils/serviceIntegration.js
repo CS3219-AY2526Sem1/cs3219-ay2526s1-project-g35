@@ -11,7 +11,7 @@ class ServiceIntegration {
     this.questionServiceUrl = process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
     this.matchingServiceUrl = process.env.MATCHING_SERVICE_URL || 'http://matching-service:8003';
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8000';
-    
+
     // Create axios instances with default configs
     this.questionServiceClient = axios.create({
       baseURL: this.questionServiceUrl,
@@ -44,9 +44,9 @@ class ServiceIntegration {
   async getQuestionDetails(questionId) {
     try {
       console.log(`🔍 Fetching question details for ID: ${questionId}`);
-      
+
       const response = await this.questionServiceClient.get(`/api/questions/${questionId}`);
-      
+
       if (response.data && response.data.success) {
         console.log(`✅ Question details fetched successfully`);
         return {
@@ -58,7 +58,7 @@ class ServiceIntegration {
       }
     } catch (error) {
       console.error('❌ Error fetching question details:', error.message);
-      
+
       if (error.response) {
         // Server responded with error status
         return {
@@ -87,9 +87,9 @@ class ServiceIntegration {
   async getUserDetails(userId) {
     try {
       console.log(`👤 Fetching user details for ID: ${userId}`);
-      
+
       const response = await this.userServiceClient.get(`/api/users/${userId}`);
-      
+
       if (response.data && response.data.success) {
         console.log(`✅ User details fetched successfully`);
         return {
@@ -101,7 +101,7 @@ class ServiceIntegration {
       }
     } catch (error) {
       console.error('❌ Error fetching user details:', error.message);
-      
+
       if (error.response) {
         return {
           success: false,
@@ -127,14 +127,14 @@ class ServiceIntegration {
   async notifySessionReady(sessionId, userIds, questionId) {
     try {
       console.log(`📢 Notifying matching service that session ${sessionId} is ready`);
-      
+
       const response = await this.matchingServiceClient.post('/api/sessions/ready', {
         sessionId,
         userIds,
         questionId,
         timestamp: Date.now(),
       });
-      
+
       if (response.data && response.data.success) {
         console.log(`✅ Matching service notified successfully`);
         return {
@@ -146,7 +146,7 @@ class ServiceIntegration {
       }
     } catch (error) {
       console.error('❌ Error notifying matching service:', error.message);
-      
+
       if (error.response) {
         return {
           success: false,
@@ -171,8 +171,16 @@ class ServiceIntegration {
    */
   async healthCheck() {
     const services = [
-      { name: 'Question Service', client: this.questionServiceClient, url: this.questionServiceUrl },
-      { name: 'Matching Service', client: this.matchingServiceClient, url: this.matchingServiceUrl },
+      {
+        name: 'Question Service',
+        client: this.questionServiceClient,
+        url: this.questionServiceUrl,
+      },
+      {
+        name: 'Matching Service',
+        client: this.matchingServiceClient,
+        url: this.matchingServiceUrl,
+      },
       { name: 'User Service', client: this.userServiceClient, url: this.userServiceUrl },
     ];
 
