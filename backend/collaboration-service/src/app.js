@@ -65,7 +65,34 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Get session info (REST endpoint)
+// Get pending sessions (for debugging/admin) - MUST be before /api/sessions/:sessionId
+app.get('/api/sessions/pending', (req, res) => {
+  try {
+    const pendingSessions = sessionManager.getPendingSessions();
+    res.json({ success: true, pendingSessions });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get session by user ID (for matched sessions) - MUST be before /api/sessions/:sessionId
+app.get('/api/sessions/user/:userId', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const sessionId = sessionManager.getSessionByUserId(userId);
+
+    if (!sessionId) {
+      return res.status(404).json({ error: 'No session found for this user' });
+    }
+
+    const sessionData = sessionManager.getSessionData(sessionId);
+    res.json({ success: true, sessionId, session: sessionData });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get session info (REST endpoint) - MUST be after specific routes
 app.get('/api/sessions/:sessionId', (req, res) => {
   try {
     const { sessionId } = req.params;
@@ -165,33 +192,6 @@ app.post('/api/sessions/matched', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating matched session:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get pending sessions (for debugging/admin)
-app.get('/api/sessions/pending', (req, res) => {
-  try {
-    const pendingSessions = sessionManager.getPendingSessions();
-    res.json({ success: true, pendingSessions });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get session by user ID (for matched sessions)
-app.get('/api/sessions/user/:userId', (req, res) => {
-  try {
-    const { userId } = req.params;
-    const sessionId = sessionManager.getSessionByUserId(userId);
-
-    if (!sessionId) {
-      return res.status(404).json({ error: 'No session found for this user' });
-    }
-
-    const sessionData = sessionManager.getSessionData(sessionId);
-    res.json({ success: true, sessionId, session: sessionData });
-  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
