@@ -51,7 +51,7 @@ class ServiceIntegration {
         console.log(`✅ Question details fetched successfully`);
         return {
           success: true,
-          question: response.data.question,
+          question: response.data.data, // Question data is in "data" field
         };
       } else {
         throw new Error('Invalid response format from question service');
