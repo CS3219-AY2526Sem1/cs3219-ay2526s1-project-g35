@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import socketService from '@/services/socketService';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // Original React Code made by Basil - Enhanced with Collaboration
 
@@ -53,51 +53,23 @@ const Session = (): React.ReactElement => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
-  const languageMap: Record<string, string> = {
-    'C++': 'cpp',
-    Java: 'java',
-    Python: 'python',
-    JavaScript: 'javascript',
-  };
+  const languageMap: Record<string, string> = useMemo(
+    () => ({
+      'C++': 'cpp',
+      Java: 'java',
+      Python: 'python',
+      JavaScript: 'javascript',
+    }),
+    [],
+  );
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Initialize collaboration session
-  useEffect(() => {
-    const initCollaboration = async () => {
-      try {
-        // Connect to collaboration service
-        const socket = socketService.connect('test-token', userId);
-
-        if (socket) {
-          // Join the session
-          await socketService.joinSession(sessionId, userId, { username: 'SessionUser' });
-          setIsConnected(true);
-
-          // Set up event listeners
-          setupSocketListeners();
-        }
-      } catch (error) {
-        console.error('Failed to initialize collaboration:', error);
-      }
-    };
-
-    initCollaboration();
-
-    // Cleanup on unmount
-    return () => {
-      if (isConnected) {
-        socketService.leaveSession();
-        socketService.disconnect();
-      }
-    };
-  }, []);
-
   // Set up socket event listeners
-  const setupSocketListeners = () => {
+  const setupSocketListeners = useCallback(() => {
     // Listen for code updates from partner
     socketService.onCodeUpdate((data) => {
       if (data.userId !== userId) {
@@ -153,7 +125,38 @@ const Session = (): React.ReactElement => {
         setPartnerInfo(null);
       }
     });
-  };
+  }, [userId, messages.length, languageMap]);
+
+  // Initialize collaboration session
+  useEffect(() => {
+    const initCollaboration = async () => {
+      try {
+        // Connect to collaboration service
+        const socket = socketService.connect('test-token', userId);
+
+        if (socket) {
+          // Join the session
+          await socketService.joinSession(sessionId, userId, { username: 'SessionUser' });
+          setIsConnected(true);
+
+          // Set up event listeners
+          setupSocketListeners();
+        }
+      } catch (error) {
+        console.error('Failed to initialize collaboration:', error);
+      }
+    };
+
+    initCollaboration();
+
+    // Cleanup on unmount
+    return () => {
+      if (isConnected) {
+        socketService.leaveSession();
+        socketService.disconnect();
+      }
+    };
+  }, [isConnected, sessionId, userId, setupSocketListeners]);
 
   // Auto-scroll when messages change
   useEffect(() => {
