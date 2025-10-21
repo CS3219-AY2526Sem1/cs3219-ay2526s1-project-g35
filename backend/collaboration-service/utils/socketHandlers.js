@@ -283,9 +283,7 @@ const setupSocketHandlers = (io, sessionManager) => {
               timestamp: Date.now(),
             });
 
-            console.log(
-              `User ${result.removedUser.userId} disconnected from session ${sessionId}`,
-            );
+            console.log(`User ${result.removedUser.userId} disconnected from session ${sessionId}`);
           }
         }
 
