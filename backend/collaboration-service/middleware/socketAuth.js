@@ -25,7 +25,7 @@ const socketAuthMiddleware = (socket, next) => {
     socket.username = decoded.username || decoded.email;
     socket.userInfo = decoded;
 
-    console.log(`✅ Socket authenticated: ${socket.userId}`);
+    console.log(`Socket authenticated: ${socket.userId}`);
     next();
   } catch (error) {
     console.error('Socket authentication failed:', error.message);

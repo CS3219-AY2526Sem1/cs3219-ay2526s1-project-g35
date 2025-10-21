@@ -33,7 +33,7 @@ class SessionManager {
       lastActivity: Date.now(),
     });
 
-    console.log(`✅ Session created: ${sessionId}`);
+    console.log(`Session created: ${sessionId}`);
     return { success: true, sessionId };
   }
 
@@ -75,7 +75,7 @@ class SessionManager {
     });
 
     console.log(
-      `✅ Matched session created: ${sessionId} for users [${userIds.join(', ')}] with question ${questionId}`,
+      `Matched session created: ${sessionId} for users [${userIds.join(', ')}] with question ${questionId}`,
     );
     return {
       success: true,
@@ -131,7 +131,7 @@ class SessionManager {
       // Update socket ID (user reconnecting)
       existingUser.socketId = socketId;
       existingUser.reconnectedAt = Date.now();
-      console.log(`🔄 User reconnected: ${userId} to session ${sessionId}`);
+      console.log(`User reconnected: ${userId} to session ${sessionId}`);
     } else {
       // Add new user
       session.users.push({
@@ -150,7 +150,7 @@ class SessionManager {
     // If this is a matched session and both users have joined, remove from pending
     if (session.isMatchedSession && session.users.length === 2) {
       this.pendingSessions.delete(sessionId);
-      console.log(`🎉 Matched session ${sessionId} is now active with both users`);
+      console.log(`Matched session ${sessionId} is now active with both users`);
     }
 
     return {
@@ -195,7 +195,7 @@ class SessionManager {
           const currentSession = this.sessions.get(sessionId);
           if (currentSession && currentSession.users.length === 0) {
             this.sessions.delete(sessionId);
-            console.log(`🗑️  Empty session deleted: ${sessionId}`);
+            console.log(`Empty session deleted: ${sessionId}`);
           }
         },
         5 * 60 * 1000,

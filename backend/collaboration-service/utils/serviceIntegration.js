@@ -43,12 +43,12 @@ class ServiceIntegration {
    */
   async getQuestionDetails(questionId) {
     try {
-      console.log(`🔍 Fetching question details for ID: ${questionId}`);
+      console.log(`Fetching question details for ID: ${questionId}`);
 
       const response = await this.questionServiceClient.get(`/api/questions/${questionId}`);
 
       if (response.data && response.data.success) {
-        console.log(`✅ Question details fetched successfully`);
+        console.log(`Question details fetched successfully`);
         return {
           success: true,
           question: response.data.data, // Question data is in "data" field
@@ -57,7 +57,7 @@ class ServiceIntegration {
         throw new Error('Invalid response format from question service');
       }
     } catch (error) {
-      console.error('❌ Error fetching question details:', error.message);
+      console.error('Error fetching question details:', error.message);
 
       if (error.response) {
         // Server responded with error status
@@ -86,12 +86,12 @@ class ServiceIntegration {
    */
   async getUserDetails(userId) {
     try {
-      console.log(`👤 Fetching user details for ID: ${userId}`);
+      console.log(`Fetching user details for ID: ${userId}`);
 
       const response = await this.userServiceClient.get(`/api/users/${userId}`);
 
       if (response.data && response.data.success) {
-        console.log(`✅ User details fetched successfully`);
+        console.log(`User details fetched successfully`);
         return {
           success: true,
           user: response.data.user,
@@ -100,7 +100,7 @@ class ServiceIntegration {
         throw new Error('Invalid response format from user service');
       }
     } catch (error) {
-      console.error('❌ Error fetching user details:', error.message);
+      console.error('Error fetching user details:', error.message);
 
       if (error.response) {
         return {
@@ -126,7 +126,7 @@ class ServiceIntegration {
    */
   async notifySessionReady(sessionId, userIds, questionId) {
     try {
-      console.log(`📢 Notifying matching service that session ${sessionId} is ready`);
+      console.log(`Notifying matching service that session ${sessionId} is ready`);
 
       const response = await this.matchingServiceClient.post('/api/sessions/ready', {
         sessionId,
@@ -136,7 +136,7 @@ class ServiceIntegration {
       });
 
       if (response.data && response.data.success) {
-        console.log(`✅ Matching service notified successfully`);
+        console.log(`Matching service notified successfully`);
         return {
           success: true,
           message: 'Matching service notified',
@@ -145,7 +145,7 @@ class ServiceIntegration {
         throw new Error('Invalid response format from matching service');
       }
     } catch (error) {
-      console.error('❌ Error notifying matching service:', error.message);
+      console.error('Error notifying matching service:', error.message);
 
       if (error.response) {
         return {

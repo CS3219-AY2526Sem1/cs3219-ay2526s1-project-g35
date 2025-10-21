@@ -164,7 +164,7 @@ app.post('/api/sessions/matched', async (req, res) => {
     if (questionResult.success) {
       questionDetails = questionResult.question;
     } else {
-      console.warn(`⚠️ Could not fetch question details: ${questionResult.error}`);
+      console.warn(`Could not fetch question details: ${questionResult.error}`);
       // Continue without question details - session can still be created
     }
 
@@ -182,7 +182,7 @@ app.post('/api/sessions/matched', async (req, res) => {
       questionId,
     );
     if (!notifyResult.success) {
-      console.warn(`⚠️ Could not notify matching service: ${notifyResult.error}`);
+      console.warn(`Could not notify matching service: ${notifyResult.error}`);
     }
 
     res.status(201).json({

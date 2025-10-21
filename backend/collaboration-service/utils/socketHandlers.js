@@ -4,7 +4,7 @@
 
 const setupSocketHandlers = (io, sessionManager) => {
   io.on('connection', (socket) => {
-    console.log(`🔌 New connection: ${socket.id}`);
+    console.log(`New connection: ${socket.id}`);
 
     /**
      * JOIN_SESSION - User joins a collaboration session
@@ -58,11 +58,11 @@ const setupSocketHandlers = (io, sessionManager) => {
             users: sessionData.users,
             timestamp: Date.now(),
           });
-          console.log(`🎉 Matched session ${sessionId} is now ready with both users!`);
+          console.log(`Matched session ${sessionId} is now ready with both users!`);
         }
 
         console.log(
-          `✅ User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})${result.isMatchedSession ? ' [MATCHED SESSION]' : ''}`,
+          `User ${userId} joined session ${sessionId} (${sessionData.userCount}/${sessionData.maxUsers})${result.isMatchedSession ? ' [MATCHED SESSION]' : ''}`,
         );
       } catch (error) {
         console.error('Error in join-session:', error);
@@ -284,12 +284,12 @@ const setupSocketHandlers = (io, sessionManager) => {
             });
 
             console.log(
-              `🔌 User ${result.removedUser.userId} disconnected from session ${sessionId}`,
+              `User ${result.removedUser.userId} disconnected from session ${sessionId}`,
             );
           }
         }
 
-        console.log(`🔌 Socket disconnected: ${socket.id}`);
+        console.log(`Socket disconnected: ${socket.id}`);
       } catch (error) {
         console.error('Error in disconnect:', error);
       }
@@ -308,7 +308,7 @@ const setupSocketHandlers = (io, sessionManager) => {
     const stats = sessionManager.getStats();
     if (stats.totalSessions > 0) {
       console.log(
-        `📊 Sessions: ${stats.activeSessions}/${stats.totalSessions} active | Users: ${stats.totalUsers}`,
+        `Sessions: ${stats.activeSessions}/${stats.totalSessions} active | Users: ${stats.totalUsers}`,
       );
     }
   }, 60000); // Every minute
