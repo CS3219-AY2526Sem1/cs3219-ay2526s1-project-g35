@@ -1,52 +1,56 @@
 services:
-  # Frontend Service
+  # Frontend service
   frontend:
     build: ./frontend
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    env_file:
+      - ./frontend/.env.docker
     depends_on:
-      - user-service
-      - collaboration-service
-      - question-service
-      - matching-service
+      user-service:
+        condition: service_healthy
+      question-service:
+        condition: service_healthy
+    networks:
+      - peerprep-network
+    restart: unless-stopped
 
-  # User Service
+  # User service - Authentication and user management API
   user-service:
-    build: ./backend/UserService
+    build: ./backend/user-service
     ports:
-      - "8001:8000"
-    environment:
-      - NODE_ENV=development
-      - PORT=8000
-      - DATABASE_URL=postgresql://user:password@user-db:5432/userdb
+      - "8000:8000"
+    env_file:
+      - ./backend/user-service/.env.docker
     depends_on:
-      - user-db
+      redis:
+        condition: service_healthy
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
-  # Collaboration Service
-  collaboration-service:
-    build: ./backend/CollaborationService
-    ports:
-      - "8002:8000"
-    environment:
-      - NODE_ENV=development
-      - PORT=8000
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      - redis
-
-  # Question Service
+  # Question service - Question management API
   question-service:
-    build: ./backend/QuestionService
+    build: ./backend/question-service
     ports:
-      - "8003:8000"
-    environment:
-      - NODE_ENV=development
-      - PORT=8000
-      - DATABASE_URL=postgresql://user:password@question-db:5432/questiondb
-    depends_on:
-      - question-db
+      - "8001:8001" 
+    env_file:
+      - ./backend/question-service/.env.docker
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
   # Matching Service
   matching-service:
@@ -56,39 +60,47 @@ services:
       - "8004:8004"
     environment:
       - NODE_ENV=development
-
-  # Databases
-  user-db:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=userdb
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - user_data:/var/lib/postgresql/data
+  
+  # Collaboration service - Real-time collaboration and WebSocket
+  collaboration-service:
+    build: ./backend/collaboration-service
     ports:
-      - "5432:5432"
+      - "8002:8002"
+    env_file:
+      - ./backend/collaboration-service/.env.docker
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
 
-  question-db:
-    image: postgres:13
-    environment:
-      - POSTGRES_DB=questiondb
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - question_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-
-  # Redis for caching and real-time features
+  # Redis - Session storage and caching
   redis:
-    image: redis:6-alpine
+    image: redis:7-alpine
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+networks:
+  peerprep-network:
+    driver: bridge
 
 volumes:
-  user_data:
-  question_data:
   redis_data:

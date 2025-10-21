@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { AuthError } from '@/services/auth.service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -36,7 +35,7 @@ const Login: React.FC = () => {
     try {
       await login(formData);
       // Don't manually navigate - let the layout handle it when isAuthenticated changes
-    } catch (err) {
+    } catch {
       // Error is already set in AuthContext and displayed in the UI
     }
   };
