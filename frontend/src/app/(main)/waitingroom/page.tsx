@@ -20,8 +20,11 @@ export default function WaitingRoomPage(): React.ReactElement {
   const router = useRouter();
   const [timedOut, setTimedOut] = useState(false);
   const [matchFound, setMatchFound] = useState(false);
-  const [matchData, setMatchData] = useState<any>(null);
-  const [isConnecting, setIsConnecting] = useState(true);
+  const [matchData, setMatchData] = useState<{
+    partnerPort: number;
+    sharedTopics: number;
+    questionId: string;
+  } | null>(null);
   const timerRef = useRef<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const hasConnected = useRef(false);
@@ -76,14 +79,12 @@ export default function WaitingRoomPage(): React.ReactElement {
       const wsUrl = process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8004';
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
-    } catch (err) {
+    } catch {
       setTimedOut(true);
       return;
     }
 
     ws.onopen = () => {
-      setIsConnecting(false);
-
       // Send search request
       const message = {
         type: 'search',
@@ -213,9 +214,9 @@ export default function WaitingRoomPage(): React.ReactElement {
             <AlertDialogHeader>
               <AlertDialogTitle>Match Found! 🎉</AlertDialogTitle>
               <AlertDialogDescription>
-                We found you a match! You'll be paired with someone at port {matchData?.partnerPort}
+                We found you a match! You&apos;ll be paired with someone at port {matchData?.partnerPort}
                 .
-                {matchData?.sharedTopics > 0 && (
+                {matchData?.sharedTopics && matchData.sharedTopics > 0 && (
                   <> You have {matchData.sharedTopics} topic(s) in common!</>
                 )}
               </AlertDialogDescription>
