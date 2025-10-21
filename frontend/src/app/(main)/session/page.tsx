@@ -53,12 +53,15 @@ const Session = (): React.ReactElement => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
-  const languageMap: Record<string, string> = useMemo(() => ({
-    'C++': 'cpp',
-    Java: 'java',
-    Python: 'python',
-    JavaScript: 'javascript',
-  }), []);
+  const languageMap: Record<string, string> = useMemo(
+    () => ({
+      'C++': 'cpp',
+      Java: 'java',
+      Python: 'python',
+      JavaScript: 'javascript',
+    }),
+    [],
+  );
 
   // Auto-scroll to bottom of messages
   const scrollToBottom = () => {

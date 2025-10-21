@@ -214,8 +214,8 @@ export default function WaitingRoomPage(): React.ReactElement {
             <AlertDialogHeader>
               <AlertDialogTitle>Match Found! 🎉</AlertDialogTitle>
               <AlertDialogDescription>
-                We found you a match! You&apos;ll be paired with someone at port {matchData?.partnerPort}
-                .
+                We found you a match! You&apos;ll be paired with someone at port{' '}
+                {matchData?.partnerPort}.
                 {matchData?.sharedTopics && matchData.sharedTopics > 0 && (
                   <> You have {matchData.sharedTopics} topic(s) in common!</>
                 )}
