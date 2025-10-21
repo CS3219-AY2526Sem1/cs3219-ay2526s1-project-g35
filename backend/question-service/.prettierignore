@@ -46,3 +46,7 @@ Thumbs.db
 # Ignore Git
 .git/
 .gitignore
+
+# Postman files
+Question-Service-API.postman_collection.json
+Question-Service.postman_environment.json
