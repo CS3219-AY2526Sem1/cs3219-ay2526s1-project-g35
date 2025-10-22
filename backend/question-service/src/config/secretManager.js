@@ -36,12 +36,12 @@ async function accessSecretVersion(secretName, version = 'latest') {
 async function loadSecrets() {
   try {
     console.log('Loading secrets from Google Secret Manager...');
-    
+
     const secrets = {
       // Database URI (SENSITIVE - contains credentials)
       MONGODB_URI: await accessSecretVersion('question-service-mongodb-uri'),
     };
-    
+
     console.log('Secrets loaded successfully from Google Secret Manager');
     return secrets;
   } catch (error) {
@@ -57,12 +57,12 @@ async function loadSecrets() {
 async function initializeSecrets() {
   try {
     const secrets = await loadSecrets();
-    
+
     // Set environment variables
-    Object.keys(secrets).forEach(key => {
+    Object.keys(secrets).forEach((key) => {
       process.env[key] = secrets[key];
     });
-    
+
     console.log('Environment variables initialized from Google Secret Manager');
   } catch (error) {
     console.error('Failed to initialize secrets:', error.message);

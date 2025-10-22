@@ -36,23 +36,23 @@ async function accessSecretVersion(secretName, version = 'latest') {
 async function loadSecrets() {
   try {
     console.log('Loading secrets from Google Secret Manager...');
-    
+
     const secrets = {
       // Database URIs (SENSITIVE - contain credentials)
       DB_CLOUD_URI: await accessSecretVersion('user-service-db-cloud-uri'),
       DB_LOCAL_URI: await accessSecretVersion('user-service-db-local-uri'),
-      
+
       // JWT Secrets (SENSITIVE - cryptographic keys)
       JWT_SECRET: await accessSecretVersion('user-service-jwt-secret'),
       JWT_REFRESH_SECRET: await accessSecretVersion('user-service-jwt-refresh-secret'),
-      
+
       // Email Credentials (SENSITIVE - authentication credentials)
       MAILTRAP_USER: await accessSecretVersion('user-service-mailtrap-user'),
       MAILTRAP_PASS: await accessSecretVersion('user-service-mailtrap-pass'),
       SMTP_USER: await accessSecretVersion('user-service-smtp-user'),
       SMTP_PASS: await accessSecretVersion('user-service-smtp-pass'),
     };
-    
+
     console.log('Secrets loaded successfully from Google Secret Manager');
     return secrets;
   } catch (error) {
@@ -68,12 +68,12 @@ async function loadSecrets() {
 async function initializeSecrets() {
   try {
     const secrets = await loadSecrets();
-    
+
     // Set environment variables
-    Object.keys(secrets).forEach(key => {
+    Object.keys(secrets).forEach((key) => {
       process.env[key] = secrets[key];
     });
-    
+
     console.log('Environment variables initialized from Google Secret Manager');
   } catch (error) {
     console.error('Failed to initialize secrets:', error.message);
