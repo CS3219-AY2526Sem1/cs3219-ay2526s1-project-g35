@@ -83,6 +83,7 @@ services:
 
   # Redis - Session storage and caching
   redis:
+    container_name: user-service-redis
     image: redis:7-alpine
     ports:
       - "6379:6379"
