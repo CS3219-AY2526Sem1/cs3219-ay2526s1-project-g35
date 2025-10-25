@@ -1,4 +1,4 @@
-apiVersion: v1
+﻿apiVersion: v1
 kind: ConfigMap
 metadata:
   name: frontend-config
@@ -11,11 +11,9 @@ data:
   # Next.js Configuration
   NEXT_TELEMETRY_DISABLED: "1"
   
-  # API URLs (will be updated after you get domain/IP)
-  # These will point to the backend services via the load balancer
-  # Update these after deployment with your actual IP/domain
-  NEXT_PUBLIC_API_USER_URL: "http://34.8.2.71/api/users"
-  NEXT_PUBLIC_API_QUESTION_URL: "http://34.8.2.71/api/questions"
-  NEXT_PUBLIC_API_MATCHING_URL: "http://34.8.2.71/api/matching"
-  NEXT_PUBLIC_WS_COLLAB_URL: "ws://34.8.2.71/api/collaboration"
-  NEXT_PUBLIC_MATCHING_WS_URL: "ws://34.143.209.176:8003"  # Direct WebSocket connection to matching-service LoadBalancer
+  # API URLs - All through Kong API Gateway
+  NEXT_PUBLIC_API_USER_URL: "http://34.124.186.128/api/users"
+  NEXT_PUBLIC_API_QUESTION_URL: "http://34.124.186.128/api/questions"
+  NEXT_PUBLIC_API_MATCHING_URL: "http://34.124.186.128/api/matching"
+  NEXT_PUBLIC_WS_COLLAB_URL: "ws://34.124.186.128/api/collaboration"
+  NEXT_PUBLIC_MATCHING_WS_URL: "ws://34.143.209.176:8003"  # Direct WebSocket connection

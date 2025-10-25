@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: peerprep-gateway-proxy
+  namespace: peerprep-gateway
+  labels:
+    app: peerprep-gateway
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: LoadBalancer
+  ports:
+  - name: proxy
+    port: 80
+    targetPort: 8000
+    protocol: TCP
+  - name: proxy-ssl
+    port: 443
+    targetPort: 8443
+    protocol: TCP
+  selector:
+    app: peerprep-gateway
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: peerprep-gateway-admin
+  namespace: peerprep-gateway
+  labels:
+    app: peerprep-gateway
+spec:
+  type: ClusterIP
+  ports:
+  - name: admin
+    port: 8001
+    targetPort: 8001
+    protocol: TCP
+  selector:
+    app: peerprep-gateway
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: peerprep-gateway
+  namespace: peerprep-gateway
+  labels:
+    app: peerprep-gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: peerprep-gateway
+  template:
+    metadata:
+      labels:
+        app: peerprep-gateway
+    spec:
+      containers:
+      - name: kong
+        image: kong:3.4
+        env:
+        - name: KONG_DATABASE
+          value: "off"
+        - name: KONG_DECLARATIVE_CONFIG
+          value: /kong/declarative/kong.yml
+        - name: KONG_PROXY_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_ADMIN_ACCESS_LOG
+          value: /dev/stdout
+        - name: KONG_PROXY_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_ERROR_LOG
+          value: /dev/stderr
+        - name: KONG_ADMIN_LISTEN
+          value: "0.0.0.0:8001"
+        - name: KONG_PROXY_LISTEN
+          value: "0.0.0.0:8000, 0.0.0.0:8443 ssl"
+        - name: KONG_REAL_IP_HEADER
+          value: "X-Forwarded-For"
+        - name: KONG_REAL_IP_RECURSIVE
+          value: "on"
+        - name: KONG_TRUSTED_IPS
+          value: "0.0.0.0/0,::/0"
+        ports:
+        - name: proxy
+          containerPort: 8000
+          protocol: TCP
+        - name: proxy-ssl
+          containerPort: 8443
+          protocol: TCP
+        - name: admin
+          containerPort: 8001
+          protocol: TCP
+        volumeMounts:
+        - name: gateway-config
+          mountPath: /kong/declarative
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8001
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: gateway-config
+        configMap:
+          name: peerprep-gateway-config

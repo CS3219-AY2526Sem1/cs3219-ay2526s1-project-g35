@@ -1,7 +1,4 @@
-# Ingress for PeerPrep - Works with IP address (no domain needed)
-# This will create a Google Cloud Load Balancer and give you an IP address
-# You can access your app via: http://<LOAD_BALANCER_IP>
-
+﻿# Ingress for PeerPrep - Routes all API traffic through Kong
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -9,14 +6,7 @@ metadata:
   namespace: peerprep
   annotations:
     kubernetes.io/ingress.class: "gce"
-    # Uncomment below if you reserved a static IP (Phase 5)
-    # kubernetes.io/ingress.global-static-ip-name: "peerprep-ip"
-    
-    # SSL/HTTPS - Uncomment when you have a domain
-    # networking.gke.io/managed-certificates: "peerprep-cert"
-    # kubernetes.io/ingress.allow-http: "false"
 spec:
-  # Default backend - serves frontend
   defaultBackend:
     service:
       name: frontend
@@ -24,10 +14,9 @@ spec:
         number: 3000
   
   rules:
-  # Rule without host - works with IP address
   - http:
       paths:
-      # Frontend (default - all paths not matching below)
+      # Frontend - all non-API paths
       - path: /*
         pathType: ImplementationSpecific
         backend:
@@ -36,47 +25,11 @@ spec:
             port:
               number: 3000
       
-      # Backend API routes
-      - path: /api/users/*
+      # All API traffic routed through Kong API Gateway
+      - path: /api/*
         pathType: ImplementationSpecific
         backend:
           service:
-            name: user-service
+            name: api-gateway
             port:
-              number: 8000
-      
-      - path: /api/questions/*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: question-service
-            port:
-              number: 8001
-      
-      - path: /api/collaboration/*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: collaboration-service
-            port:
-              number: 8002
-      
-      - path: /api/matching/*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: matching-service
-            port:
-              number: 8003
-
----
-# When you get a domain, uncomment and use this ManagedCertificate
-# apiVersion: networking.gke.io/v1
-# kind: ManagedCertificate
-# metadata:
-#   name: peerprep-cert
-#   namespace: peerprep
-# spec:
-#   domains:
-#     - yourdomain.com
-#     - www.yourdomain.com
+              number: 80
