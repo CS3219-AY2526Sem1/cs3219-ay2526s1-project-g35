@@ -5,13 +5,16 @@ metadata:
   namespace: peerprep
   labels:
     app: api-gateway
+  annotations:
+    cloud.google.com/backend-config: '{"default": "api-gateway-backend-config"}'
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: ClusterIP
   ports:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8000
+    targetPort: 80
 ---
 apiVersion: v1
 kind: Endpoints
@@ -20,8 +23,8 @@ metadata:
   namespace: peerprep
 subsets:
   - addresses:
-      - ip: 34.118.237.65
+      - ip: 34.124.186.128  # Kong LoadBalancer external IP
     ports:
       - name: http
-        port: 8000
+        port: 80
         protocol: TCP

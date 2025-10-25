@@ -16,7 +16,7 @@ spec:
   rules:
   - http:
       paths:
-      # Frontend - all non-API paths
+      # Frontend - all paths (API calls go directly to Kong LoadBalancer)
       - path: /*
         pathType: ImplementationSpecific
         backend:
@@ -24,12 +24,3 @@ spec:
             name: frontend
             port:
               number: 3000
-      
-      # All API traffic routed through Kong API Gateway
-      - path: /api/*
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: api-gateway
-            port:
-              number: 80

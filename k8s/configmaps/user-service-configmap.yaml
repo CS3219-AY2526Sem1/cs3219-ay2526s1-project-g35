@@ -18,8 +18,8 @@ data:
   MINIMUM_TOKEN_REUSE_TIME: "600"
   
   # Cookie Configuration (will be updated after you get domain/IP)
-  # For now using wildcard, update after deployment
-  COOKIE_DOMAIN: "34.8.2.71"
+  # Empty domain allows cookies to work across split architecture (frontend at ingress, API at Kong LB)
+  COOKIE_DOMAIN: ""
   COOKIE_SECURE: "false"
   COOKIE_SAME_SITE: "lax"
   
@@ -32,7 +32,7 @@ data:
   
   # CORS Configuration (will be updated after you get domain/IP)
   # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: "http://34.8.2.71"
+  ALLOWED_ORIGINS: "http://34.36.96.229,http://34.124.186.128,http://localhost:3000"
   
   # Rate Limiting
   RATE_LIMIT_WINDOW_MS: "900000"

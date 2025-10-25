@@ -8,9 +8,9 @@ data:
     _format_version: "3.0"
     
     services:
-    # User Service
-    - name: user-service
-      url: http://user-service.peerprep.svc.cluster.local:8000
+    # User Service - Users Routes
+    - name: user-service-users
+      url: http://user-service.peerprep.svc.cluster.local:8000/users
       routes:
       - name: user-routes
         paths:
@@ -23,6 +23,11 @@ data:
         - PATCH
         - DELETE
         - OPTIONS
+    
+    # User Service - Auth Routes
+    - name: user-service-auth
+      url: http://user-service.peerprep.svc.cluster.local:8000/auth
+      routes:
       - name: auth-routes
         paths:
         - /api/auth
@@ -84,7 +89,9 @@ data:
     - name: cors
       config:
         origins:
-        - "*"
+        - "http://34.36.96.229"
+        - "http://localhost:3000"
+        - "http://127.0.0.1:3000"
         methods:
         - GET
         - POST

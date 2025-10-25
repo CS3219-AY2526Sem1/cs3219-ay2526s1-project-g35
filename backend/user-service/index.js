@@ -12,6 +12,15 @@ const app = express();
 // Trust proxy - required when behind Google Cloud Load Balancer
 app.set('trust proxy', true);
 
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
 // Security middleware
 app.use(
   helmet({
@@ -141,16 +150,6 @@ app.get('/debug/email-status', async (req, res) => {
 // Routes
 app.use('/users', userRoutes);
 app.use('/auth', authLimiter, authRoutes);
-
-// Health check endpoint for Docker
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-  });
-});
 
 // Root endpoint
 app.get('/', (req, res) => {

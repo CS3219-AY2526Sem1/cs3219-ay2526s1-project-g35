@@ -1,0 +1,17 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: api-gateway-backend-config
+  namespace: peerprep
+spec:
+  healthCheck:
+    checkIntervalSec: 10
+    port: 80
+    type: HTTP
+    requestPath: /api/users/health
+  connectionDraining:
+    drainingTimeoutSec: 60
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 10800
+  timeoutSec: 30
