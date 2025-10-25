@@ -53,10 +53,7 @@ function MainNavbar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-44" align="end" sideOffset={10}>
             <DropdownMenuItem asChild>
-              <Link href={`/profile/${user?.username ?? user?.email}`}>View Profile</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/profile">Manage Profile</Link>
+              <Link href={`/profile/${user?.username ?? user?.email}`}>Manage Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/history">History</Link>
