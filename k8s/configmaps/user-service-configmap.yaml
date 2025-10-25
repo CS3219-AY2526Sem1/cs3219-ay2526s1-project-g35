@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-service-config
+  namespace: peerprep
+data:
+  # Server Configuration
+  NODE_ENV: "production"
+  PORT: "8000"
+  ENV: "PROD"
+  
+  # Redis Configuration
+  REDIS_URL: "redis://redis-service:6379"
+  
+  # JWT Configuration (timeouts only, secrets from Secret Manager)
+  JWT_EXPIRES_IN: "900"
+  JWT_REFRESH_EXPIRES_IN: "604800"
+  MINIMUM_TOKEN_REUSE_TIME: "600"
+  
+  # Cookie Configuration (will be updated after you get domain/IP)
+  # For now using wildcard, update after deployment
+  COOKIE_DOMAIN: "34.8.2.71"
+  COOKIE_SECURE: "false"
+  COOKIE_SAME_SITE: "lax"
+  
+  # Security Configuration (Argon2 parameters)
+  ARGON2_MEMORY_COST: "65536"
+  ARGON2_TIME_COST: "3"
+  ARGON2_PARALLELISM: "4"
+  ARGON2_HASH_LENGTH: "32"
+  ARGON2_SALT_LENGTH: "16"
+  
+  # CORS Configuration (will be updated after you get domain/IP)
+  # For now allowing all, update after deployment for security
+  ALLOWED_ORIGINS: "http://34.8.2.71"
+  
+  # Rate Limiting
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX: "100"
+  AUTH_RATE_LIMIT_MAX: "10"
+  
+  # OTP Configuration
+  OTP_LENGTH: "6"
+  OTP_TTL_SECONDS: "300"
+  OTP_MAX_ATTEMPTS: "5"
+  
+  # Email Service Configuration
+  EMAIL_ENABLED: "true"
+  EMAIL_PROVIDER: "mailtrap"
+  EMAIL_FROM: "cs3219g35@gmail.com"
+  EMAIL_FROM_NAME: "PeerPrep Team"
+  MAILTRAP_HOST: "sandbox.smtp.mailtrap.io"
+  MAILTRAP_PORT: "2525"
+  SMTP_HOST: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_SECURE: "false"
+  
+  # GCP Configuration
+  GCP_PROJECT_ID: "peerprep-475911"
+  USE_SECRET_MANAGER: "true"

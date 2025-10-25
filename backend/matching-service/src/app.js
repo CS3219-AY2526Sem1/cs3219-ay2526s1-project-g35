@@ -1,7 +1,9 @@
 import WebSocket, { WebSocketServer } from 'ws';
 
+const PORT = process.env.PORT || 8003;
+
 const wss = new WebSocketServer({
-  port: 8004,
+  port: PORT,
   // Allow connections from any origin (for development)
   verifyClient: () => true,
 });
@@ -10,6 +12,8 @@ let waitingQueue = [];
 let activePairs = [];
 
 const TIMEOUT_MS = 60000; // 1 minute
+
+console.log(`Matching WebSocket server running on port ${PORT}`);
 
 wss.on('connection', (ws) => {
   console.log('New connection');
@@ -117,5 +121,3 @@ function startTimeout(user) {
     console.log(`User on port ${user.port} timed out`);
   }, TIMEOUT_MS);
 }
-
-console.log('Matching WebSocket server running on port 8004');

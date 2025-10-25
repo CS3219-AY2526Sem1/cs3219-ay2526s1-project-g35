@@ -1,0 +1,45 @@
+# Kubernetes Service Accounts with Workload Identity
+# These allow pods to authenticate to Google Cloud services (Secret Manager)
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: user-service-sa
+  namespace: peerprep
+  annotations:
+    iam.gke.io/gcp-service-account: peerprep-user-service@peerprep-475911.iam.gserviceaccount.com
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: question-service-sa
+  namespace: peerprep
+  annotations:
+    iam.gke.io/gcp-service-account: peerprep-question-service@peerprep-475911.iam.gserviceaccount.com
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: collaboration-service-sa
+  namespace: peerprep
+  annotations:
+    iam.gke.io/gcp-service-account: peerprep-collaboration-service@peerprep-475911.iam.gserviceaccount.com
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: matching-service-sa
+  namespace: peerprep
+  annotations:
+    iam.gke.io/gcp-service-account: peerprep-matching-service@peerprep-475911.iam.gserviceaccount.com
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend-sa
+  namespace: peerprep

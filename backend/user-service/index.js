@@ -9,6 +9,9 @@ import authRoutes from './routes/auth-routes.js';
 
 const app = express();
 
+// Trust proxy - required when behind Google Cloud Load Balancer
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(
   helmet({
@@ -25,6 +28,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false }, 
 });
 
 const authLimiter = rateLimit({
@@ -34,6 +38,7 @@ const authLimiter = rateLimit({
     error: 'Too many authentication attempts, please try again later.',
   },
   skipSuccessfulRequests: true,
+  validate: { trustProxy: false }, 
 });
 
 app.use(limiter);
@@ -59,6 +64,12 @@ const corsOptions = {
       // Add your frontend domains here
     ];
 
+    // Add origins from environment variable (from ConfigMap)
+    if (process.env.ALLOWED_ORIGINS) {
+      const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
+      allowedOrigins.push(...envOrigins);
+    }
+
     if (process.env.NODE_ENV === 'development') {
       allowedOrigins.push(origin);
     }
@@ -66,6 +77,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}. Allowed origins:`, allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
