@@ -21,12 +21,12 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   const topics = [
-    'Two Pointers',
-    'Sliding Window',
-    'Sorting',
-    'Binary Search',
+    'Arrays',
+    'Algorithms',
+    'Data Structures',
     'Dynamic Programming',
-    'Greedy Algorithms',
+    'Sliding Window',
+    'Strings',
   ];
 
   const difficulties = ['Easy', 'Medium', 'Hard'];

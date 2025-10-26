@@ -152,11 +152,41 @@ wss.on('connection', (ws) => {
         // Store active pair
         activePairs.push([user, bestMatch]);
 
+        // Get a random question from question service based on shared topics
+        let questionId = null;
+        
+        // Try to get a question matching the user's topics and difficulty
+        const questionServiceUrl = process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
+        const topicsToTry = user.topics.length > 0 ? user.topics : ['Algorithms'];
+        
+        for (const topic of topicsToTry) {
+          try {
+            console.log(`Trying to get question for topic="${topic}", difficulty="${user.difficulty}"`);
+            const response = await axios.get(`${questionServiceUrl}/api/questions/random`, {
+              params: { topic, difficulty: user.difficulty }
+            });
+            
+            if (response.data.success && response.data.questionId) {
+              questionId = response.data.questionId;
+              console.log(`Found question for topic "${topic}" and difficulty "${user.difficulty}": ${questionId}`);
+              break;
+            }
+          } catch (error) {
+            console.warn(`Could not get question for topic "${topic}":`, error.message);
+          }
+        }
+        
+        // Fallback to default question if no match found
+        if (!questionId) {
+          questionId = '68ebb93667c84a099513124d'; // Default: Add Binary
+          console.log(`Using default question: ${questionId}`);
+        }
+        
         // Create collaboration session
         try {
           const sessionResponse = await collaborationServiceClient.post('/api/sessions/matched', {
             userIds: [user.userId, bestMatch.userId],
-            questionId: '68ebb93667c84a099513124d', // Default question ID for now
+            questionId,
           });
 
           if (sessionResponse.data.success) {
