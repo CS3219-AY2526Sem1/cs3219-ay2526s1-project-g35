@@ -264,7 +264,7 @@ const setupSocketHandlers = (io, sessionManager) => {
     /**
      * RUN_CODE - Request code execution (can be extended)
      */
-    socket.on('run-code', (data) => {
+    socket.on('run-code', async (data) => {
       try {
         const { sessionId, userId } = data;
 
@@ -273,8 +273,45 @@ const setupSocketHandlers = (io, sessionManager) => {
           userId,
           timestamp: Date.now(),
         });
+
+        // Get session data including code and language
+        const session = sessionManager.getSession(sessionId);
+        if (!session) {
+          io.to(socket.id).emit('code-execution-result', {
+            success: false,
+            error: 'Session not found',
+          });
+          return;
+        }
+
+        // Get test cases from the question
+        const testCases = session.testCases || [];
+
+        // Import code executor
+        const codeExecutor = require('./codeExecutor');
+
+        // Parse test cases first
+        const parsedTestCases = codeExecutor.parseTestCases(testCases);
+
+        // Execute code
+        const result = await codeExecutor.execute(session.code, session.language, parsedTestCases);
+
+        // Send results back to the socket
+        io.to(socket.id).emit('code-execution-result', result);
+        
+        // Also notify other users in the session
+        socket.to(sessionId).emit('code-execution-result', {
+          userId,
+          ...result,
+        });
+
+        console.log(`Code execution completed for user ${userId} in session ${sessionId}`);
       } catch (error) {
         console.error('Error in run-code:', error);
+        io.to(socket.id).emit('code-execution-result', {
+          success: false,
+          error: error.message,
+        });
       }
     });
 

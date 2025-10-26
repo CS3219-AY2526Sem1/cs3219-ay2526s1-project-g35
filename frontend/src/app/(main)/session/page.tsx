@@ -46,6 +46,16 @@ interface MatchedSessionData {
   users?: Array<{ userId: string; username: string }>;
 }
 
+interface TestResult {
+  test: number;
+  status: string;
+  got?: unknown;
+  expected?: unknown;
+  input?: unknown;
+  target?: unknown;
+  error?: string;
+}
+
 const Session = (): React.ReactElement => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('java');
   const [activeTab, setActiveTab] = useState<'testCases' | 'testResults'>('testCases');
@@ -71,6 +81,15 @@ const Session = (): React.ReactElement => {
   );
   const [questionExamples, setQuestionExamples] = useState<QuestionExample[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [executionResults, setExecutionResults] = useState<{
+    success: boolean;
+    passed?: number;
+    failed?: number;
+    total?: number;
+    testResults?: TestResult[];
+    error?: string;
+  } | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
@@ -185,6 +204,18 @@ const Session = (): React.ReactElement => {
         setMessages((prev) => [...prev, leaveMessage]);
         setPartnerInfo(null);
       }
+    });
+
+    // Listen for code execution results
+    socketService.on('code-execution-result', (data: unknown) => {
+      console.log('📊 Code execution result:', data);
+      const rawResult = data as { success: boolean; passed?: number; failed?: number; total?: number; testResults?: Array<Record<string, unknown>>; error?: string };
+      const result = {
+        ...rawResult,
+        testResults: rawResult.testResults as TestResult[] | undefined,
+      };
+      setExecutionResults(result);
+      setIsExecuting(false);
     });
   }, [userId, languageMap]);
 
@@ -486,41 +517,132 @@ const Session = (): React.ReactElement => {
             </div>
             <button
               onClick={() => {
-                if (isConnected) {
+                if (isConnected && !isExecuting) {
+                  setIsExecuting(true);
+                  setActiveTab('testResults');
                   socketService.runCode();
                 }
                 console.log('Running code:', code);
               }}
-              className="flex items-center gap-2 px-3 py-2 bg-green-500 rounded text-sm hover:bg-green-600 text-primary-foreground"
+              disabled={isExecuting || !isConnected}
+              className={`flex items-center gap-2 px-3 py-2 rounded text-sm ${
+                isExecuting || !isConnected
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600'
+              } text-primary-foreground`}
             >
-              <span className="text-sm">▶</span>
-              Run
+              <span className="text-sm">{isExecuting ? '⏳' : '▶'}</span>
+              {isExecuting ? 'Running...' : 'Run'}
             </button>
           </div>
 
           <div className="flex-1 p-5 overflow-y-auto">
-            <div className="flex gap-2 mb-4">
-              {testCases.map((testCase) => (
-                <Button
-                  key={testCase.id}
-                  onClick={() => setSelectedTestCase(testCase.id)}
-                  variant={selectedTestCase === testCase.id ? 'attention' : 'outline'}
-                >
-                  {testCase.id}
-                </Button>
-              ))}
-            </div>
+            {activeTab === 'testCases' && (
+              <>
+                <div className="flex gap-2 mb-4">
+                  {testCases.map((testCase) => (
+                    <Button
+                      key={testCase.id}
+                      onClick={() => setSelectedTestCase(testCase.id)}
+                      variant={selectedTestCase === testCase.id ? 'attention' : 'outline'}
+                    >
+                      {testCase.id}
+                    </Button>
+                  ))}
+                </div>
 
-            {currentTestCase && (
-              <div className="bg-muted p-4 rounded-2xl">
-                <div className="flex items-center mb-3">
-                  <span className="mr-2 text-secondary-foreground font-medium">nums =</span>
-                  <span className="font-mono px-2 py-1">{currentTestCase.nums}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2 text-secondary-foreground font-medium">target =</span>
-                  <span className="font-mono px-2 py-1">{currentTestCase.target}</span>
-                </div>
+                {currentTestCase && (
+                  <div className="bg-muted p-4 rounded-2xl">
+                    <div className="flex items-center mb-3">
+                      <span className="mr-2 text-secondary-foreground font-medium">nums =</span>
+                      <span className="font-mono px-2 py-1">{currentTestCase.nums}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="mr-2 text-secondary-foreground font-medium">target =</span>
+                      <span className="font-mono px-2 py-1">{currentTestCase.target}</span>
+                    </div>
+                    {currentTestCase.expected && (
+                      <div className="flex items-center mt-3">
+                        <span className="mr-2 text-secondary-foreground font-medium">expected =</span>
+                        <span className="font-mono px-2 py-1">{currentTestCase.expected}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeTab === 'testResults' && (
+              <div className="space-y-4">
+                {isExecuting ? (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-attention mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Running tests...</p>
+                    </div>
+                  </div>
+                ) : executionResults ? (
+                  <>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="text-sm">
+                        <span className="text-green-600 font-semibold">{executionResults.passed || 0}</span> passed
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-red-600 font-semibold">{executionResults.failed || 0}</span> failed
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">{executionResults.total || 0}</span> total
+                      </div>
+                    </div>
+
+                    {executionResults.error ? (
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <p className="text-red-600 dark:text-red-400 font-semibold mb-2">Error:</p>
+                        <p className="text-sm text-red-700 dark:text-red-300 font-mono">{executionResults.error}</p>
+                      </div>
+                    ) : null}
+
+                    {executionResults.testResults && executionResults.testResults.length > 0 ? (
+                      <div className="space-y-2">
+                        {executionResults.testResults.map((testResult: TestResult, index: number) => (
+                          <div
+                            key={index}
+                            className={`p-4 rounded-lg border ${
+                              testResult.status === 'PASSED'
+                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-semibold">Test {testResult.test}</span>
+                              <span className={`text-sm px-2 py-1 rounded ${
+                                testResult.status === 'PASSED'
+                                  ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                  : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                              }`}>
+                                {testResult.status}
+                              </span>
+                            </div>
+                            {testResult.got !== undefined && (
+                              <div className="text-sm font-mono">
+                                Output: {JSON.stringify(testResult.got)}
+                              </div>
+                            )}
+                            {testResult.error !== undefined && testResult.error && (
+                              <div className="text-sm text-red-600 dark:text-red-400">
+                                {String(testResult.error)}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="text-center p-8 text-muted-foreground">
+                    No test results yet. Click Run to execute your code.
+                  </div>
+                )}
               </div>
             )}
           </div>

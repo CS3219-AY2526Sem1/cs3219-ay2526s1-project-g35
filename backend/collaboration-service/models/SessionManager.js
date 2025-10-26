@@ -58,14 +58,17 @@ class SessionManager {
       id: sessionId,
       users: [],
       code: questionDetails?.starterCode || '',
-      language: questionDetails?.preferredLanguage || 'javascript',
+      language: questionDetails?.preferredLanguage || 'python',
       problem: questionDetails,
       questionId: questionId,
+      testCases: questionDetails?.testCases || [],
       matchedUserIds: userIds, // Store the matched user IDs
       createdAt: Date.now(),
       lastActivity: Date.now(),
       isMatchedSession: true,
     });
+    
+    console.log(`Created matched session with ${questionDetails?.testCases?.length || 0} test cases`);
 
     // Store as pending session until users join
     this.pendingSessions.set(sessionId, {
@@ -356,6 +359,13 @@ class SessionManager {
   getSessionUsers(sessionId) {
     const session = this.sessions.get(sessionId);
     return session ? session.users : [];
+  }
+
+  /**
+   * Get session by session ID
+   */
+  getSession(sessionId) {
+    return this.sessions.get(sessionId) || null;
   }
 
   /**
