@@ -9,8 +9,6 @@ type ProfileData = {
   username: string;
   first_name: string;
   last_name: string;
-  country_code: string;
-  phone_number: string;
   bio?: string;
   avatar?: string;
   email: string;
@@ -20,8 +18,6 @@ const DUMMY: ProfileData = {
   username: 'abcd-1234',
   first_name: 'John',
   last_name: 'Doe',
-  country_code: '+65',
-  phone_number: '12345678',
   bio: 'Tell us more about yourself!',
   avatar: 'https://example.com/avatar.jpg',
   email: 'peerprepforlife@gmail.com',
@@ -95,25 +91,6 @@ export default function ProfilePage(): React.ReactElement {
 
           {/* Full-width fields below */}
           <div className="mt-6">
-            <div className="grid grid-cols-6 gap-4">
-              <div className="col-span-2">
-                <label className="text-sm font-medium">Country Code</label>
-                <input
-                  value={data.country_code}
-                  onChange={(e) => handleChange('country_code', e.target.value)}
-                  className="w-full px-3 py-2 border rounded mt-1"
-                />
-              </div>
-              <div className="col-span-4">
-                <label className="text-sm font-medium">Phone Number</label>
-                <input
-                  value={data.phone_number}
-                  onChange={(e) => handleChange('phone_number', e.target.value)}
-                  className="w-full px-3 py-2 border rounded mt-1"
-                />
-              </div>
-            </div>
-
             <div className="mt-4">
               <label className="text-sm font-medium">Bio</label>
               <textarea
