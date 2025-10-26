@@ -11,7 +11,6 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@google-cloud/secret-manager": "^6.1.1",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
