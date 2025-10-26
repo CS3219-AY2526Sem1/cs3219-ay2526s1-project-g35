@@ -1,0 +1,182 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: peerprep-gateway-proxy
+  namespace: peerprep-gateway
+  labels:
+    app: peerprep-gateway
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: '{"ports": {"80":"peerprep-gateway-backend-config"}}'
+spec:
+  type: LoadBalancer
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+    - name: proxy
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+    - name: proxy-ssl
+      port: 443
+      targetPort: 8443
+      protocol: TCP
+  selector:
+    app: peerprep-gateway
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: peerprep-gateway-admin
+  namespace: peerprep-gateway
+  labels:
+    app: peerprep-gateway
+spec:
+  type: ClusterIP
+  ports:
+    - name: admin
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  selector:
+    app: peerprep-gateway
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: peerprep-gateway
+  namespace: peerprep-gateway
+  labels:
+    app: peerprep-gateway
+spec:
+  replicas: 3 # Increased for high availability
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 # Add 1 extra pod during update
+      maxUnavailable: 0 # Never go below desired count
+  selector:
+    matchLabels:
+      app: peerprep-gateway
+  template:
+    metadata:
+      labels:
+        app: peerprep-gateway
+    spec:
+      # Pod anti-affinity: spread pods across different nodes for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - peerprep-gateway
+                topologyKey: kubernetes.io/hostname
+      # Graceful shutdown for existing connections
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: kong
+          image: kong:3.4
+          env:
+            - name: KONG_DATABASE
+              value: 'off'
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /kong/declarative/kong.yml
+            - name: KONG_PROXY_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: /dev/stdout
+            - name: KONG_PROXY_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_ADMIN_ERROR_LOG
+              value: /dev/stderr
+            - name: KONG_ADMIN_LISTEN
+              value: '0.0.0.0:8001'
+            - name: KONG_PROXY_LISTEN
+              value: '0.0.0.0:8000, 0.0.0.0:8443 ssl'
+            - name: KONG_REAL_IP_HEADER
+              value: 'X-Forwarded-For'
+            - name: KONG_REAL_IP_RECURSIVE
+              value: 'on'
+            - name: KONG_TRUSTED_IPS
+              value: '0.0.0.0/0,::/0'
+            # Connection handling for load balancing
+            - name: KONG_NGINX_HTTP_KEEPALIVE_TIMEOUT
+              value: '75s'
+            - name: KONG_NGINX_HTTP_KEEPALIVE_REQUESTS
+              value: '1000'
+            - name: KONG_UPSTREAM_KEEPALIVE_MAX_REQUESTS
+              value: '1000'
+            - name: KONG_UPSTREAM_KEEPALIVE_POOL_SIZE
+              value: '60'
+          ports:
+            - name: proxy
+              containerPort: 8000
+              protocol: TCP
+            - name: proxy-ssl
+              containerPort: 8443
+              protocol: TCP
+            - name: admin
+              containerPort: 8001
+              protocol: TCP
+          volumeMounts:
+            - name: gateway-config
+              mountPath: /kong/declarative
+              readOnly: true
+          # Enhanced health checks for load balancing
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 2
+          # Startup probe for slower initial startup
+          startupProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 12 # 60 seconds max startup time
+          # Resource requests and limits for autoscaling
+          resources:
+            requests:
+              memory: '512Mi' # Tuned for Kong's actual usage
+              cpu: '500m'
+            limits:
+              memory: '1Gi'
+              cpu: '1000m'
+          # Graceful shutdown
+          lifecycle:
+            preStop:
+              exec:
+                command: ['/bin/sh', '-c', 'sleep 15'] # Wait for connections to drain
+      volumes:
+        - name: gateway-config
+          configMap:
+            name: peerprep-gateway-config
+            defaultMode: 0444

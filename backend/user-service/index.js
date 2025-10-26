@@ -9,6 +9,18 @@ import authRoutes from './routes/auth-routes.js';
 
 const app = express();
 
+// Trust proxy - required when behind Google Cloud Load Balancer
+app.set('trust proxy', true);
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
 // Security middleware
 app.use(
   helmet({
@@ -25,6 +37,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
 });
 
 const authLimiter = rateLimit({
@@ -34,6 +47,7 @@ const authLimiter = rateLimit({
     error: 'Too many authentication attempts, please try again later.',
   },
   skipSuccessfulRequests: true,
+  validate: { trustProxy: false },
 });
 
 app.use(limiter);
@@ -59,6 +73,12 @@ const corsOptions = {
       // Add your frontend domains here
     ];
 
+    // Add origins from environment variable (from ConfigMap)
+    if (process.env.ALLOWED_ORIGINS) {
+      const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
+      allowedOrigins.push(...envOrigins);
+    }
+
     if (process.env.NODE_ENV === 'development') {
       allowedOrigins.push(origin);
     }
@@ -66,6 +86,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}. Allowed origins:`, allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -126,19 +147,12 @@ app.get('/debug/email-status', async (req, res) => {
     });
   }
 });
-// Routes
+// Routes - handle both /api prefix (from ingress) and direct paths (for local dev)
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+// Legacy routes for backward compatibility
 app.use('/users', userRoutes);
 app.use('/auth', authLimiter, authRoutes);
-
-// Health check endpoint for Docker
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-  });
-});
 
 // Root endpoint
 app.get('/', (req, res) => {

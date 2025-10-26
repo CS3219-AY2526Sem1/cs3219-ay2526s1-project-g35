@@ -29,7 +29,7 @@ export class AuthError extends Error {
 }
 
 class AuthService {
-  private readonly AUTH_BASE_PATH = '/auth';
+  private readonly AUTH_BASE_PATH = '/api/auth';
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
