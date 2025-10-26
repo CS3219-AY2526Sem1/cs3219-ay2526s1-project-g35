@@ -5,16 +5,16 @@ metadata:
   namespace: peerprep
 data:
   # Server Configuration
-  NODE_ENV: "production"
-  PORT: "3000"
-  
+  NODE_ENV: 'production'
+  PORT: '3000'
+
   # Next.js Configuration
-  NEXT_TELEMETRY_DISABLED: "1"
-  
+  NEXT_TELEMETRY_DISABLED: '1'
+
   # API URLs - Through Ingress (same domain as frontend for cookies to work)
-  NEXT_PUBLIC_API_URL: "http://34.8.234.19"
-  NEXT_PUBLIC_API_USER_URL: "http://34.8.234.19/api/users"
-  NEXT_PUBLIC_API_QUESTION_URL: "http://34.8.234.19/api/questions"
-  NEXT_PUBLIC_API_MATCHING_URL: "http://34.8.234.19/api/matching"
-  NEXT_PUBLIC_WS_COLLAB_URL: "ws://34.8.234.19/api/collaboration"
-  NEXT_PUBLIC_MATCHING_WS_URL: "ws://34.8.234.19/api/matching/ws"
+  NEXT_PUBLIC_API_URL: 'http://34.8.234.19'
+  NEXT_PUBLIC_API_USER_URL: 'http://34.8.234.19/api/users'
+  NEXT_PUBLIC_API_QUESTION_URL: 'http://34.8.234.19/api/questions'
+  NEXT_PUBLIC_API_MATCHING_URL: 'http://34.8.234.19/api/matching'
+  NEXT_PUBLIC_WS_COLLAB_URL: 'ws://34.8.234.19/api/collaboration'
+  NEXT_PUBLIC_MATCHING_WS_URL: 'ws://34.8.234.19/api/matching/ws'

@@ -12,6 +12,6 @@ spec:
   connectionDraining:
     drainingTimeoutSec: 60
   sessionAffinity:
-    affinityType: "CLIENT_IP"
+    affinityType: 'CLIENT_IP'
     affinityCookieTtlSec: 10800
   timeoutSec: 30

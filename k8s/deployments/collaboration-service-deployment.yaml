@@ -15,36 +15,36 @@ spec:
       labels:
         app: collaboration-service
     spec:
-      serviceAccountName: collaboration-service-sa  # Workload Identity for Secret Manager
+      serviceAccountName: collaboration-service-sa # Workload Identity for Secret Manager
       containers:
-      - name: collaboration-service
-        image: gcr.io/peerprep-475911/collaboration-service:v1.3
-        ports:
-        - containerPort: 8002
-          name: http
-        envFrom:
-        - configMapRef:
-            name: collaboration-service-config
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8002
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8002
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
+        - name: collaboration-service
+          image: gcr.io/peerprep-475911/collaboration-service:v1.3
+          ports:
+            - containerPort: 8002
+              name: http
+          envFrom:
+            - configMapRef:
+                name: collaboration-service-config
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3

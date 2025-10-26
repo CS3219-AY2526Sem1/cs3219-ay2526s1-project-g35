@@ -10,10 +10,10 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: http
-    port: 80
-    protocol: TCP
-    targetPort: 80
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 80
 ---
 apiVersion: v1
 kind: Endpoints
@@ -22,7 +22,7 @@ metadata:
   namespace: peerprep
 subsets:
   - addresses:
-      - ip: 34.124.186.128  # Kong LoadBalancer external IP
+      - ip: 34.124.186.128 # Kong LoadBalancer external IP
     ports:
       - name: http
         port: 80

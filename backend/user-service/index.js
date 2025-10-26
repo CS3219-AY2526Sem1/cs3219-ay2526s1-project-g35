@@ -37,7 +37,7 @@ const limiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { trustProxy: false }, 
+  validate: { trustProxy: false },
 });
 
 const authLimiter = rateLimit({
@@ -47,7 +47,7 @@ const authLimiter = rateLimit({
     error: 'Too many authentication attempts, please try again later.',
   },
   skipSuccessfulRequests: true,
-  validate: { trustProxy: false }, 
+  validate: { trustProxy: false },
 });
 
 app.use(limiter);
@@ -75,7 +75,7 @@ const corsOptions = {
 
     // Add origins from environment variable (from ConfigMap)
     if (process.env.ALLOWED_ORIGINS) {
-      const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim());
+      const envOrigins = process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim());
       allowedOrigins.push(...envOrigins);
     }
 

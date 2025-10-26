@@ -12,7 +12,7 @@ spec:
   selector:
     app: matching-service
   ports:
-  - port: 8003
-    targetPort: 8003
-    protocol: TCP
-    name: websocket
+    - port: 8003
+      targetPort: 8003
+      protocol: TCP
+      name: websocket

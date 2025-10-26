@@ -15,36 +15,36 @@ spec:
       labels:
         app: question-service
     spec:
-      serviceAccountName: question-service-sa  # Workload Identity for Secret Manager
+      serviceAccountName: question-service-sa # Workload Identity for Secret Manager
       containers:
-      - name: question-service
-        image: gcr.io/peerprep-475911/question-service:v1.3
-        ports:
-        - containerPort: 8001
-          name: http
-        envFrom:
-        - configMapRef:
-            name: question-service-config
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8001
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 8001
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
+        - name: question-service
+          image: gcr.io/peerprep-475911/question-service:v1.3
+          ports:
+            - containerPort: 8001
+              name: http
+          envFrom:
+            - configMapRef:
+                name: question-service-config
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3

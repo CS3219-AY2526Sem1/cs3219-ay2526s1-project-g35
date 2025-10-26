@@ -6,7 +6,7 @@ metadata:
 data:
   kong.yml: |
     _format_version: "3.0"
-    
+
     services:
     # User Service - Users Routes
     - name: user-service-users
@@ -23,7 +23,7 @@ data:
         - PATCH
         - DELETE
         - OPTIONS
-    
+
     # User Service - Auth Routes
     - name: user-service-auth
       url: http://user-service.peerprep.svc.cluster.local:8000/auth
@@ -38,7 +38,7 @@ data:
         - PUT
         - DELETE
         - OPTIONS
-    
+
     # Question Service
     - name: question-service
       url: http://question-service.peerprep.svc.cluster.local:8001
@@ -54,7 +54,7 @@ data:
         - PATCH
         - DELETE
         - OPTIONS
-    
+
     # Collaboration Service (supports WebSocket upgrade)
     - name: collaboration-service
       url: http://collaboration-service.peerprep.svc.cluster.local:8002
@@ -70,7 +70,7 @@ data:
         - GET
         - POST
         - OPTIONS
-    
+
     # Matching Service (HTTP endpoints only, not direct WebSocket)
     - name: matching-service-http
       url: http://matching-service.peerprep.svc.cluster.local:8003
@@ -83,7 +83,7 @@ data:
         - GET
         - POST
         - OPTIONS
-    
+
     # Global plugins
     plugins:
     - name: cors
@@ -114,7 +114,7 @@ data:
         - Set-Cookie
         credentials: true
         max_age: 3600
-    
+
     - name: rate-limiting
       config:
         minute: 1000

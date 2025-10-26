@@ -10,7 +10,7 @@ spec:
   selector:
     app: question-service
   ports:
-  - port: 8001
-    targetPort: 8001
-    protocol: TCP
-    name: http
+    - port: 8001
+      targetPort: 8001
+      protocol: TCP
+      name: http

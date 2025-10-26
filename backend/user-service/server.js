@@ -22,7 +22,7 @@ const initializeServices = async () => {
 
     // Connect to MongoDB and Redis
     await Promise.all([connectToDB(), baseRedisService.connect()]);
-    
+
     console.log('MongoDB Connected!');
     console.log('Redis Service initialized!');
 
@@ -35,7 +35,9 @@ const initializeServices = async () => {
     // Start server anyway for graceful degradation
     server.listen(port);
     console.log(
-      'User service server listening on http://localhost:' + port + ' (Some services may not be available)',
+      'User service server listening on http://localhost:' +
+        port +
+        ' (Some services may not be available)',
     );
   }
 };
