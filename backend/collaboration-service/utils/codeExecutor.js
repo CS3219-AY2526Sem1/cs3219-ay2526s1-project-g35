@@ -6,7 +6,7 @@ const crypto = require('crypto');
 /**
  * Code Executor Utility
  * Executes user code and runs test cases
- * 
+ *
  * WARNING: This is a simple implementation for development.
  * For production, use a proper sandboxed execution environment.
  */
@@ -77,11 +77,11 @@ class CodeExecutor {
         // Parse input string like "nums = [2,7,11,15], target = 9"
         const numsMatch = tc.input.match(/nums\s*=\s*\[(.*?)\]/);
         const targetMatch = tc.input.match(/target\s*=\s*(\d+)/);
-        
+
         if (numsMatch && targetMatch) {
-          const nums = numsMatch[1].split(',').map(n => parseInt(n.trim()));
+          const nums = numsMatch[1].split(',').map((n) => parseInt(n.trim()));
           const target = parseInt(targetMatch[1]);
-          
+
           return {
             input: nums,
             target: target,
@@ -89,7 +89,7 @@ class CodeExecutor {
           };
         }
       }
-      
+
       return tc;
     });
   }
@@ -111,17 +111,17 @@ class CodeExecutor {
     try {
       // Create a temporary Python file
       const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.py`);
-      
+
       // Wrap the code with test execution
       const wrappedCode = this.wrapPythonCode(code, testCases);
-      
+
       await fs.writeFile(tempFile, wrappedCode);
 
       // No need for separate syntax check - Python will handle errors during execution
 
       // Execute the Python file
       const output = await this.executeCommand(`python3 ${tempFile}`, 10000);
-      
+
       // Parse results
       try {
         const result = JSON.parse(output.stdout);
@@ -130,20 +130,23 @@ class CodeExecutor {
         results.failed = result.failed || 0;
         results.testResults = result.testResults || [];
         results.output = result.output || '';
-        
+
         // Check if there are errors in test results
-        if (result.testResults && result.testResults.some(tr => tr.status === 'ERROR')) {
-          results.error = result.testResults.find(tr => tr.status === 'ERROR')?.error;
+        if (result.testResults && result.testResults.some((tr) => tr.status === 'ERROR')) {
+          results.error = result.testResults.find((tr) => tr.status === 'ERROR')?.error;
         }
       } catch (parseError) {
         // Failed to parse - check if there's actual error output
         results.success = false;
         results.error = output.stderr || output.stdout || parseError.message;
-        results.testResults = [{
-          test: 1,
-          status: 'ERROR',
-          error: output.stderr || output.stdout || parseError.message || 'Compilation/runtime error'
-        }];
+        results.testResults = [
+          {
+            test: 1,
+            status: 'ERROR',
+            error:
+              output.stderr || output.stdout || parseError.message || 'Compilation/runtime error',
+          },
+        ];
       }
 
       // Clean up
@@ -152,12 +155,14 @@ class CodeExecutor {
       // Catch execution errors (timeout, file errors, etc.)
       results.success = false;
       results.error = error.stderr || error.message || 'Code execution failed';
-      results.testResults = [{
-        test: 1,
-        status: 'ERROR',
-        error: error.stderr || error.message || 'Code execution failed'
-      }];
-      
+      results.testResults = [
+        {
+          test: 1,
+          status: 'ERROR',
+          error: error.stderr || error.message || 'Code execution failed',
+        },
+      ];
+
       // Clean up on error
       try {
         const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.py`);
@@ -285,10 +290,10 @@ except Exception as e:
       try {
         // Compile Java code
         await this.executeCommand(`javac ${javaFile}`, 15000);
-        
+
         // Execute compiled Java code
         const output = await this.executeCommand(`java -cp ${tempDir} SolutionTests`, 10000);
-        
+
         // Parse results
         const result = JSON.parse(output.stdout);
         results.success = true;
@@ -299,11 +304,13 @@ except Exception as e:
       } catch (execError) {
         results.success = false;
         results.error = execError.stderr || execError.message;
-        results.testResults = [{
-          test: 1,
-          status: 'ERROR',
-          error: execError.stderr || execError.message || 'Compilation or runtime error'
-        }];
+        results.testResults = [
+          {
+            test: 1,
+            status: 'ERROR',
+            error: execError.stderr || execError.message || 'Compilation or runtime error',
+          },
+        ];
       }
 
       // Clean up
@@ -311,11 +318,13 @@ except Exception as e:
     } catch (error) {
       results.success = false;
       results.error = error.message;
-      results.testResults = [{
-        test: 1,
-        status: 'ERROR',
-        error: error.message
-      }];
+      results.testResults = [
+        {
+          test: 1,
+          status: 'ERROR',
+          error: error.message,
+        },
+      ];
     }
 
     return results;
@@ -329,7 +338,7 @@ except Exception as e:
     const toJavaArray = (arr) => {
       return `new int[]{${arr.join(',')}}`;
     };
-    
+
     return `
 ${code}
 
@@ -340,7 +349,9 @@ class SolutionTests {
             int passed = 0;
             int failed = 0;
             
-            ${testCases.map((tc, idx) => `
+            ${testCases
+              .map(
+                (tc, idx) => `
             // Test ${idx + 1}
             int[] test${idx}_nums = ${toJavaArray(tc.input)};
             int test${idx}_target = ${tc.target};
@@ -350,17 +361,23 @@ class SolutionTests {
                                         ((test${idx}_result[0] == test${idx}_expected[0] && test${idx}_result[1] == test${idx}_expected[1]) ||
                                          (test${idx}_result[0] == test${idx}_expected[1] && test${idx}_result[1] == test${idx}_expected[0]));
             if (test${idx}_matches) passed++; else failed++;
-            `).join('')}
+            `,
+              )
+              .join('')}
             
             // Build JSON output
             System.out.print("{");
             System.out.print("\\"passed\\":" + passed + ",");
             System.out.print("\\"failed\\":" + failed + ",");
             System.out.print("\\"testResults\\":[");
-            ${testCases.map((tc, idx) => `
+            ${testCases
+              .map(
+                (tc, idx) => `
             ${idx > 0 ? 'System.out.print(",");' : ''}
             System.out.print("{\\"test\\":" + ${idx + 1} + ",\\"status\\":\\"" + (test${idx}_matches ? "PASSED" : "FAILED") + "\\"}");
-            `).join('')}
+            `,
+              )
+              .join('')}
             System.out.print("],\\"output\\":\\"\\"");
             System.out.println("}");
             
@@ -399,10 +416,10 @@ class SolutionTests {
       try {
         // Compile C++ code
         await this.executeCommand(`g++ -o ${tempDir}/solution ${cppFile} -std=c++11`, 15000);
-        
+
         // Execute compiled C++ code
         const output = await this.executeCommand(`${tempDir}/solution`, 10000);
-        
+
         // Parse results
         const result = JSON.parse(output.stdout);
         results.success = true;
@@ -413,11 +430,13 @@ class SolutionTests {
       } catch (execError) {
         results.success = false;
         results.error = execError.stderr || execError.message;
-        results.testResults = [{
-          test: 1,
-          status: 'ERROR',
-          error: execError.stderr || execError.message || 'Compilation or runtime error'
-        }];
+        results.testResults = [
+          {
+            test: 1,
+            status: 'ERROR',
+            error: execError.stderr || execError.message || 'Compilation or runtime error',
+          },
+        ];
       }
 
       // Clean up
@@ -425,11 +444,13 @@ class SolutionTests {
     } catch (error) {
       results.success = false;
       results.error = error.message;
-      results.testResults = [{
-        test: 1,
-        status: 'ERROR',
-        error: error.message
-      }];
+      results.testResults = [
+        {
+          test: 1,
+          status: 'ERROR',
+          error: error.message,
+        },
+      ];
     }
 
     return results;
@@ -476,16 +497,16 @@ int main() {
     try {
       // Create a temporary JavaScript file
       const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.js`);
-      
+
       // Wrap the code with test execution
       const wrappedCode = this.wrapJavaScriptCode(code, testCases);
-      
+
       await fs.writeFile(tempFile, wrappedCode);
 
       try {
         // Execute the JavaScript file
         const output = await this.executeCommand(`node ${tempFile}`, 10000);
-        
+
         // Parse results
         const result = JSON.parse(output.stdout);
         results.success = true;
@@ -496,11 +517,13 @@ int main() {
       } catch (execError) {
         results.success = false;
         results.error = execError.stderr || execError.message;
-        results.testResults = [{
-          test: 1,
-          status: 'ERROR',
-          error: execError.stderr || execError.message || 'Runtime error'
-        }];
+        results.testResults = [
+          {
+            test: 1,
+            status: 'ERROR',
+            error: execError.stderr || execError.message || 'Runtime error',
+          },
+        ];
       }
 
       // Clean up
@@ -508,11 +531,13 @@ int main() {
     } catch (error) {
       results.success = false;
       results.error = error.message;
-      results.testResults = [{
-        test: 1,
-        status: 'ERROR',
-        error: error.message
-      }];
+      results.testResults = [
+        {
+          test: 1,
+          status: 'ERROR',
+          error: error.message,
+        },
+      ];
     }
 
     return results;
@@ -639,4 +664,3 @@ try {
 }
 
 module.exports = new CodeExecutor();
-

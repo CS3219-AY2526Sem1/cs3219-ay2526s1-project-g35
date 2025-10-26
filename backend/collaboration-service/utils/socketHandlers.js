@@ -13,7 +13,9 @@ const setupSocketHandlers = (io, sessionManager) => {
       try {
         const { sessionId, userId, userInfo } = data;
 
-        console.log(`Join request: userId=${userId}, socketId=${socket.id}, sessionId=${sessionId}`);
+        console.log(
+          `Join request: userId=${userId}, socketId=${socket.id}, sessionId=${sessionId}`,
+        );
 
         if (!sessionId || !userId) {
           console.error(`Missing required fields: sessionId=${sessionId}, userId=${userId}`);
@@ -50,8 +52,8 @@ const setupSocketHandlers = (io, sessionManager) => {
           });
 
           // Notify the joining user about other users already in the session
-          const otherUsers = sessionData.users.filter(u => u.userId !== userId);
-          otherUsers.forEach(otherUser => {
+          const otherUsers = sessionData.users.filter((u) => u.userId !== userId);
+          otherUsers.forEach((otherUser) => {
             socket.emit('user-joined', {
               userId: otherUser.userId,
               username: otherUser.username || `User${otherUser.userId}`,
@@ -100,10 +102,12 @@ const setupSocketHandlers = (io, sessionManager) => {
 
         // Verify user is in the session they claim to be in
         if (userSessionId !== sessionId) {
-          console.error(`Authorization failed for code-change: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`);
+          console.error(
+            `Authorization failed for code-change: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`,
+          );
           return;
         }
-        
+
         console.log(`Code change from user ${userId} in session ${sessionId}`);
 
         // Update code in session manager
@@ -130,7 +134,9 @@ const setupSocketHandlers = (io, sessionManager) => {
         const userSessionId = sessionManager.getSessionBySocketId(socket.id);
 
         if (userSessionId !== sessionId) {
-          console.error(`Authorization failed for cursor-position: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`);
+          console.error(
+            `Authorization failed for cursor-position: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`,
+          );
           return;
         }
 
@@ -185,7 +191,9 @@ const setupSocketHandlers = (io, sessionManager) => {
         const userSessionId = sessionManager.getSessionBySocketId(socket.id);
 
         if (userSessionId !== sessionId) {
-          console.error(`Authorization failed for chat-message: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`);
+          console.error(
+            `Authorization failed for chat-message: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`,
+          );
           return;
         }
 
@@ -309,7 +317,7 @@ const setupSocketHandlers = (io, sessionManager) => {
 
         // Send results back to the socket
         io.to(socket.id).emit('code-execution-result', result);
-        
+
         // Also notify other users in the session
         socket.to(sessionId).emit('code-execution-result', {
           userId,

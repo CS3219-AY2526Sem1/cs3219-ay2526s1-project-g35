@@ -12,8 +12,8 @@ const httpAuthMiddleware = (req, res, next) => {
   try {
     // Extract token from Authorization header or cookies
     const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
       : req.cookies?.accessToken;
 
     if (!token) {
@@ -24,17 +24,17 @@ const httpAuthMiddleware = (req, res, next) => {
         req.userId = req.headers['x-service-user'] || 'service';
         return next();
       }
-      
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Authentication token required' 
+
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication token required',
       });
     }
 
     // Verify JWT token
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-      
+
       // Attach user info to request
       req.userId = decoded.id || decoded.userId;
       req.user = {
@@ -43,33 +43,33 @@ const httpAuthMiddleware = (req, res, next) => {
         email: decoded.email,
         isAdmin: decoded.isAdmin,
       };
-      
+
       next();
     } catch (verifyError) {
       console.error('Token verification failed:', verifyError.message);
-      
+
       if (process.env.NODE_ENV !== 'production') {
         console.log('Invalid token, allowing request in development mode');
         req.userId = req.headers['x-service-user'] || 'service';
         return next();
       }
-      
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Invalid or expired token' 
+
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired token',
       });
     }
   } catch (error) {
     console.error('Auth middleware error:', error);
-    
+
     if (process.env.NODE_ENV !== 'production') {
       req.userId = req.headers['x-service-user'] || 'service';
       return next();
     }
-    
-    return res.status(401).json({ 
-      success: false, 
-      error: 'Authentication failed' 
+
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication failed',
     });
   }
 };
@@ -80,8 +80,8 @@ const httpAuthMiddleware = (req, res, next) => {
 const httpAuthMiddlewareDev = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
+    const token = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
       : req.cookies?.accessToken;
     const userId = req.headers['x-service-user'] || req.headers['x-user-id'];
 
@@ -122,4 +122,3 @@ module.exports = {
   httpAuthMiddleware,
   httpAuthMiddlewareDev,
 };
-

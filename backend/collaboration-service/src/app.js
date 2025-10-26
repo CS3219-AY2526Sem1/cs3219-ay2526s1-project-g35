@@ -59,9 +59,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Select auth middleware based on environment
-const httpAuth = process.env.NODE_ENV === 'production' 
-  ? httpAuthMiddleware 
-  : httpAuthMiddlewareDev;
+const httpAuth = process.env.NODE_ENV === 'production' ? httpAuthMiddleware : httpAuthMiddlewareDev;
 
 // Health check endpoint (public, no auth required)
 app.get('/health', (req, res) => {

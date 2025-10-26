@@ -67,8 +67,10 @@ class SessionManager {
       lastActivity: Date.now(),
       isMatchedSession: true,
     });
-    
-    console.log(`Created matched session with ${questionDetails?.testCases?.length || 0} test cases`);
+
+    console.log(
+      `Created matched session with ${questionDetails?.testCases?.length || 0} test cases`,
+    );
 
     // Store as pending session until users join
     this.pendingSessions.set(sessionId, {
@@ -104,8 +106,10 @@ class SessionManager {
    * Add a user to a session
    */
   joinSession(sessionId, userId, socketId, userInfo = {}) {
-    console.log(`joinSession called: sessionId=${sessionId}, userId=${userId}, socketId=${socketId}`);
-    
+    console.log(
+      `joinSession called: sessionId=${sessionId}, userId=${userId}, socketId=${socketId}`,
+    );
+
     // Check if session exists, create if it doesn't
     if (!this.sessions.has(sessionId)) {
       console.log(`Creating new session: ${sessionId}`);
@@ -116,7 +120,9 @@ class SessionManager {
 
     // For matched sessions, check if user is authorized
     if (session.isMatchedSession && !this.isUserAuthorizedForSession(sessionId, userId)) {
-      console.error(`Authorization failed for matched session ${sessionId}: userId ${userId} not in matchedUserIds ${session.matchedUserIds}`);
+      console.error(
+        `Authorization failed for matched session ${sessionId}: userId ${userId} not in matchedUserIds ${session.matchedUserIds}`,
+      );
       return {
         success: false,
         error: 'User not authorized for this matched session',
@@ -130,14 +136,18 @@ class SessionManager {
       // Update the mapping for the old socket ID
       const oldSocketId = existingUser.socketId;
       this.userToSession.delete(oldSocketId);
-      
+
       existingUser.socketId = socketId;
       existingUser.reconnectedAt = Date.now();
-      console.log(`User reconnected: ${userId} to session ${sessionId}, updating from socket ${oldSocketId} to ${socketId}`);
-      
+      console.log(
+        `User reconnected: ${userId} to session ${sessionId}, updating from socket ${oldSocketId} to ${socketId}`,
+      );
+
       // Track the new socket
       this.userToSession.set(socketId, sessionId);
-      console.log(`Mapped socket ${socketId} to session ${sessionId} for user ${userId} (reconnected)`);
+      console.log(
+        `Mapped socket ${socketId} to session ${sessionId} for user ${userId} (reconnected)`,
+      );
       session.lastActivity = Date.now();
 
       // If this is a matched session and both users have joined, remove from pending
@@ -157,7 +167,9 @@ class SessionManager {
 
     // User is new - check if session is full
     if (session.users.length >= this.MAX_USERS_PER_SESSION) {
-      console.error(`Session ${sessionId} is full (${session.users.length}/${this.MAX_USERS_PER_SESSION}), cannot add user ${userId}`);
+      console.error(
+        `Session ${sessionId} is full (${session.users.length}/${this.MAX_USERS_PER_SESSION}), cannot add user ${userId}`,
+      );
       return {
         success: false,
         error: 'Session is full',
