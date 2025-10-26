@@ -57,7 +57,7 @@ interface TestResult {
 }
 
 const Session = (): React.ReactElement => {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('java');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('python');
   const [activeTab, setActiveTab] = useState<'testCases' | 'testResults'>('testCases');
   const [selectedTestCase, setSelectedTestCase] = useState<string>('Case 1');
   const [code, setCode] = useState<string>('');
@@ -407,8 +407,8 @@ const Session = (): React.ReactElement => {
           </div>
 
           {/* Chat Section */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex justify-between items-center px-5 py-4 border-b border-border bg-muted h-15">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex justify-between items-center px-5 py-4 border-b border-border bg-muted h-15 flex-shrink-0">
               <h3 className="text-base font-semibold">Messages</h3>
               <div className="flex items-center gap-2">
                 <div
@@ -423,7 +423,7 @@ const Session = (): React.ReactElement => {
               </div>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3">
+            <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-3 min-h-0">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -439,7 +439,7 @@ const Session = (): React.ReactElement => {
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-border">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-border flex-shrink-0">
               <input
                 type="text"
                 value={newMessage}
