@@ -54,13 +54,13 @@ function MainNavbar() {
       // Leave the session via socket service
       await socketService.leaveSession();
       console.log('Left session successfully');
-      
+
       // Disconnect from socket
       socketService.disconnect();
-      
+
       // Close dialog
       setShowLeaveDialog(false);
-      
+
       // Redirect to home page
       router.push('/home');
     } catch (error) {
@@ -96,7 +96,8 @@ function MainNavbar() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Leave Session?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to leave this session? Your partner will be notified and you&apos;ll be disconnected from the collaboration.
+                  Are you sure you want to leave this session? Your partner will be notified and
+                  you&apos;ll be disconnected from the collaboration.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

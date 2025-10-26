@@ -89,7 +89,7 @@ const Session = (): React.ReactElement => {
   const [partnerInfo, setPartnerInfo] = useState<{ userId: string; username: string } | null>(null);
   const [questionTitle, setQuestionTitle] = useState<string>('Two Sum');
   const [questionDescription, setQuestionDescription] = useState<string>(
-    'Given an an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.'
+    'Given an an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.',
   );
   const [questionExamples, setQuestionExamples] = useState<QuestionExample[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -120,7 +120,6 @@ const Session = (): React.ReactElement => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-
   // Set up socket event listeners
   const setupSocketListeners = useCallback(() => {
     // Remove all existing listeners first to prevent duplicates
@@ -129,35 +128,37 @@ const Session = (): React.ReactElement => {
     socketService.off('chat-message');
     socketService.off('user-joined');
     socketService.off('user-left');
-    
+
     // Listen for matched session ready with question data
     socketService.on('matched-session-ready', (data) => {
       console.log('Matched session ready with question data:', data);
       const matchedData = data as MatchedSessionData;
-      
+
       if (matchedData.question) {
         // Update question title and description
         setQuestionTitle(matchedData.question.title || 'Two Sum');
         setQuestionDescription(matchedData.question.description || '');
-        
+
         // Update code with starter code if available
         if (matchedData.question.starterCode) {
           setCode(matchedData.question.starterCode);
         }
-        
+
         // Update examples if available
         if (matchedData.question.examples && Array.isArray(matchedData.question.examples)) {
           setQuestionExamples(matchedData.question.examples);
         }
-        
+
         // Update test cases if available
         if (matchedData.question.testCases && Array.isArray(matchedData.question.testCases)) {
-          setTestCases(matchedData.question.testCases.map((tc, index: number) => ({
-            id: `Case ${index + 1}`,
-            nums: tc.input || '',
-            target: '', // Will need to extract from test case
-            expected: tc.expected || '',
-          })));
+          setTestCases(
+            matchedData.question.testCases.map((tc, index: number) => ({
+              id: `Case ${index + 1}`,
+              nums: tc.input || '',
+              target: '', // Will need to extract from test case
+              expected: tc.expected || '',
+            })),
+          );
         }
       }
     });
@@ -221,7 +222,14 @@ const Session = (): React.ReactElement => {
     // Listen for code execution results
     socketService.on('code-execution-result', (data: unknown) => {
       console.log('Code execution result:', data);
-      const rawResult = data as { success: boolean; passed?: number; failed?: number; total?: number; testResults?: Array<Record<string, unknown>>; error?: string };
+      const rawResult = data as {
+        success: boolean;
+        passed?: number;
+        failed?: number;
+        total?: number;
+        testResults?: Array<Record<string, unknown>>;
+        error?: string;
+      };
       const result = {
         ...rawResult,
         testResults: rawResult.testResults as TestResult[] | undefined,
@@ -239,7 +247,7 @@ const Session = (): React.ReactElement => {
         const urlParams = new URLSearchParams(window.location.search);
         const sessionIdFromUrl = urlParams.get('sessionId');
         const sessionIdFromStorage = sessionStorage.getItem('collaborationSessionId');
-        
+
         let finalSessionId;
         if (sessionIdFromUrl) {
           finalSessionId = sessionIdFromUrl;
@@ -276,7 +284,7 @@ const Session = (): React.ReactElement => {
             // Wait for connection to be established
             await waitForConnection();
             console.log('Connection established, attempting to join session:', finalSessionId);
-            
+
             // Join the session with the determined session ID - use userId directly
             await socketService.joinSession(finalSessionId, userId, { username: userId });
             console.log('Successfully joined session:', finalSessionId);
@@ -305,7 +313,7 @@ const Session = (): React.ReactElement => {
       socketService.off('user-joined');
       socketService.off('user-left');
       socketService.off('matched-session-ready');
-      
+
       if (isConnected) {
         socketService.leaveSession();
         socketService.disconnect();
@@ -391,7 +399,9 @@ const Session = (): React.ReactElement => {
 
             <div className="p-5">
               <h2 className="text-2xl font-bold mb-4">{questionTitle}</h2>
-              <p className="text-sm text-secondary-foreground mb-5 whitespace-pre-wrap">{questionDescription}</p>
+              <p className="text-sm text-secondary-foreground mb-5 whitespace-pre-wrap">
+                {questionDescription}
+              </p>
 
               {questionExamples.map((example, index: number) => (
                 <div key={index} className="mb-5">
@@ -575,7 +585,9 @@ const Session = (): React.ReactElement => {
                     </div>
                     {currentTestCase.expected && (
                       <div className="flex items-center mt-3">
-                        <span className="mr-2 text-secondary-foreground font-medium">expected =</span>
+                        <span className="mr-2 text-secondary-foreground font-medium">
+                          expected =
+                        </span>
                         <span className="font-mono px-2 py-1">{currentTestCase.expected}</span>
                       </div>
                     )}
@@ -597,56 +609,69 @@ const Session = (): React.ReactElement => {
                   <>
                     <div className="flex items-center gap-4 mb-4">
                       <div className="text-sm">
-                        <span className="text-green-600 font-semibold">{executionResults.passed || 0}</span> passed
+                        <span className="text-green-600 font-semibold">
+                          {executionResults.passed || 0}
+                        </span>{' '}
+                        passed
                       </div>
                       <div className="text-sm">
-                        <span className="text-red-600 font-semibold">{executionResults.failed || 0}</span> failed
+                        <span className="text-red-600 font-semibold">
+                          {executionResults.failed || 0}
+                        </span>{' '}
+                        failed
                       </div>
                       <div className="text-sm">
-                        <span className="text-muted-foreground">{executionResults.total || 0}</span> total
+                        <span className="text-muted-foreground">{executionResults.total || 0}</span>{' '}
+                        total
                       </div>
                     </div>
 
                     {executionResults.error ? (
                       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                         <p className="text-red-600 dark:text-red-400 font-semibold mb-2">Error:</p>
-                        <p className="text-sm text-red-700 dark:text-red-300 font-mono">{executionResults.error}</p>
+                        <p className="text-sm text-red-700 dark:text-red-300 font-mono">
+                          {executionResults.error}
+                        </p>
                       </div>
                     ) : null}
 
                     {executionResults.testResults && executionResults.testResults.length > 0 ? (
                       <div className="space-y-2">
-                        {executionResults.testResults.map((testResult: TestResult, index: number) => (
-                          <div
-                            key={index}
-                            className={`p-4 rounded-lg border ${
-                              testResult.status === 'PASSED'
-                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold">Test {testResult.test}</span>
-                              <span className={`text-sm px-2 py-1 rounded ${
+                        {executionResults.testResults.map(
+                          (testResult: TestResult, index: number) => (
+                            <div
+                              key={index}
+                              className={`p-4 rounded-lg border ${
                                 testResult.status === 'PASSED'
-                                  ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
-                                  : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
-                              }`}>
-                                {testResult.status}
-                              </span>
+                                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold">Test {testResult.test}</span>
+                                <span
+                                  className={`text-sm px-2 py-1 rounded ${
+                                    testResult.status === 'PASSED'
+                                      ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
+                                      : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                                  }`}
+                                >
+                                  {testResult.status}
+                                </span>
+                              </div>
+                              {testResult.got !== undefined && (
+                                <div className="text-sm font-mono">
+                                  Output: {JSON.stringify(testResult.got)}
+                                </div>
+                              )}
+                              {testResult.error !== undefined && testResult.error && (
+                                <div className="text-sm text-red-600 dark:text-red-400">
+                                  {String(testResult.error)}
+                                </div>
+                              )}
                             </div>
-                            {testResult.got !== undefined && (
-                              <div className="text-sm font-mono">
-                                Output: {JSON.stringify(testResult.got)}
-                              </div>
-                            )}
-                            {testResult.error !== undefined && testResult.error && (
-                              <div className="text-sm text-red-600 dark:text-red-400">
-                                {String(testResult.error)}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          ),
+                        )}
                       </div>
                     ) : null}
                   </>
