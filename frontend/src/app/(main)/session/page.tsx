@@ -22,34 +22,55 @@ interface TestCase {
   expected?: string;
 }
 
+interface QuestionExample {
+  input?: string;
+  output?: string;
+  explanation?: string;
+}
+
+interface QuestionData {
+  title?: string;
+  description?: string;
+  starterCode?: string;
+  examples?: QuestionExample[];
+  testCases?: Array<{
+    input?: string;
+    expected?: string;
+  }>;
+}
+
+interface MatchedSessionData {
+  question?: QuestionData;
+  sessionId?: string;
+  questionId?: string;
+  users?: Array<{ userId: string; username: string }>;
+}
+
 const Session = (): React.ReactElement => {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('java');
   const [activeTab, setActiveTab] = useState<'testCases' | 'testResults'>('testCases');
   const [selectedTestCase, setSelectedTestCase] = useState<string>('Case 1');
-  const [code, setCode] = useState<string>(`class Solution {
-    public int[] twoSum(int[] nums, int target) {
-        // Your code here
-        return new int[0];
-    }
-}`);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: 'Hello! Nice to meet you!', sender: 'me' },
-    {
-      id: 2,
-      text: "Hi! Let's get started! I'm thinking that we can probably use a HashMap for this question, what do you think?",
-      sender: 'partner',
-    },
-    {
-      id: 3,
-      text: "Yeah I think that's a good idea, let's try it! So I guess the next step for us would be to see how we can minimise the number of times we have to look through the array.",
-      sender: 'me',
-    },
-  ]);
+  const [code, setCode] = useState<string>('');
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState<string>('');
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [sessionId] = useState<string>('session-' + Date.now());
-  const [userId] = useState<string>('user-' + Math.random().toString(36).substr(2, 9));
+  const [sessionId, setSessionId] = useState<string>('');
+  const [userId] = useState<string>(() => {
+    // Try to get the matched user ID from session storage
+    const matchedUserId = sessionStorage.getItem('matchedUserId');
+    if (matchedUserId) {
+      return matchedUserId;
+    }
+    // Fallback to random user ID for development
+    return 'user-' + Math.random().toString(36).substr(2, 9);
+  });
   const [partnerInfo, setPartnerInfo] = useState<{ userId: string; username: string } | null>(null);
+  const [questionTitle, setQuestionTitle] = useState<string>('Two Sum');
+  const [questionDescription, setQuestionDescription] = useState<string>(
+    'Given an an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.'
+  );
+  const [questionExamples, setQuestionExamples] = useState<QuestionExample[]>([]);
+  const [testCases, setTestCases] = useState<TestCase[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages: string[] = ['C++', 'Java', 'Python', 'JavaScript'];
@@ -68,8 +89,48 @@ const Session = (): React.ReactElement => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+
   // Set up socket event listeners
   const setupSocketListeners = useCallback(() => {
+    // Remove all existing listeners first to prevent duplicates
+    socketService.off('code-update');
+    socketService.off('language-update');
+    socketService.off('chat-message');
+    socketService.off('user-joined');
+    socketService.off('user-left');
+    
+    // Listen for matched session ready with question data
+    socketService.on('matched-session-ready', (data) => {
+      console.log('📋 Matched session ready with question data:', data);
+      const matchedData = data as MatchedSessionData;
+      
+      if (matchedData.question) {
+        // Update question title and description
+        setQuestionTitle(matchedData.question.title || 'Two Sum');
+        setQuestionDescription(matchedData.question.description || '');
+        
+        // Update code with starter code if available
+        if (matchedData.question.starterCode) {
+          setCode(matchedData.question.starterCode);
+        }
+        
+        // Update examples if available
+        if (matchedData.question.examples && Array.isArray(matchedData.question.examples)) {
+          setQuestionExamples(matchedData.question.examples);
+        }
+        
+        // Update test cases if available
+        if (matchedData.question.testCases && Array.isArray(matchedData.question.testCases)) {
+          setTestCases(matchedData.question.testCases.map((tc, index: number) => ({
+            id: `Case ${index + 1}`,
+            nums: tc.input || '',
+            target: '', // Will need to extract from test case
+            expected: tc.expected || '',
+          })));
+        }
+      }
+    });
+
     // Listen for code updates from partner
     socketService.onCodeUpdate((data) => {
       if (data.userId !== userId) {
@@ -91,7 +152,7 @@ const Session = (): React.ReactElement => {
     socketService.onChatMessage((data) => {
       if (data.userId !== userId) {
         const newMessage: Message = {
-          id: messages.length + 1,
+          id: Date.now(), // Use timestamp for unique IDs
           text: data.message,
           sender: 'partner',
         };
@@ -105,7 +166,7 @@ const Session = (): React.ReactElement => {
       if (data.userId !== userId) {
         setPartnerInfo({ userId: data.userId, username: data.username });
         const welcomeMessage: Message = {
-          id: messages.length + 1,
+          id: Date.now(), // Use timestamp for unique IDs
           text: `${data.username} joined the session!`,
           sender: 'partner',
         };
@@ -117,7 +178,7 @@ const Session = (): React.ReactElement => {
     socketService.onUserLeft((data) => {
       if (data.userId !== userId) {
         const leaveMessage: Message = {
-          id: messages.length + 1,
+          id: Date.now(), // Use timestamp for unique IDs
           text: `${data.username} left the session.`,
           sender: 'partner',
         };
@@ -125,22 +186,65 @@ const Session = (): React.ReactElement => {
         setPartnerInfo(null);
       }
     });
-  }, [userId, messages.length, languageMap]);
+  }, [userId, languageMap]);
 
   // Initialize collaboration session
   useEffect(() => {
     const initCollaboration = async () => {
       try {
+        // Get session ID from URL parameters, sessionStorage, or create a test session
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionIdFromUrl = urlParams.get('sessionId');
+        const sessionIdFromStorage = sessionStorage.getItem('collaborationSessionId');
+        
+        let finalSessionId;
+        if (sessionIdFromUrl) {
+          finalSessionId = sessionIdFromUrl;
+        } else if (sessionIdFromStorage) {
+          finalSessionId = sessionIdFromStorage;
+        } else {
+          // Create a test session for development
+          finalSessionId = 'test-session-' + Date.now();
+        }
+
+        // Set the session ID
+        setSessionId(finalSessionId);
+
         // Connect to collaboration service
         const socket = socketService.connect('test-token', userId);
 
         if (socket) {
-          // Join the session
-          await socketService.joinSession(sessionId, userId, { username: 'SessionUser' });
-          setIsConnected(true);
+          // Wait for connection to be established before joining session
+          const waitForConnection = () => {
+            return new Promise<void>((resolve) => {
+              const checkConnection = () => {
+                if (socketService.isConnected()) {
+                  setIsConnected(true);
+                  resolve();
+                } else {
+                  setTimeout(checkConnection, 100);
+                }
+              };
+              checkConnection();
+            });
+          };
 
-          // Set up event listeners
-          setupSocketListeners();
+          try {
+            // Wait for connection to be established
+            await waitForConnection();
+            console.log('🔗 Connection established, attempting to join session:', finalSessionId);
+            
+            // Join the session with the determined session ID
+            await socketService.joinSession(finalSessionId, userId, { username: 'SessionUser' });
+            console.log('✅ Successfully joined session:', finalSessionId);
+
+            // Set up event listeners
+            setupSocketListeners();
+          } catch (error) {
+            console.error('❌ Failed to join session:', error);
+            // Still try to set up listeners even if join fails
+            setupSocketListeners();
+          }
         }
       } catch (error) {
         console.error('Failed to initialize collaboration:', error);
@@ -151,38 +255,25 @@ const Session = (): React.ReactElement => {
 
     // Cleanup on unmount
     return () => {
+      // Remove all listeners
+      socketService.off('code-update');
+      socketService.off('language-update');
+      socketService.off('chat-message');
+      socketService.off('user-joined');
+      socketService.off('user-left');
+      socketService.off('matched-session-ready');
+      
       if (isConnected) {
         socketService.leaveSession();
         socketService.disconnect();
       }
     };
-  }, [isConnected, sessionId, userId, setupSocketListeners]);
+  }, [userId, setupSocketListeners, isConnected]);
 
   // Auto-scroll when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-  const testCases: TestCase[] = [
-    {
-      id: 'Case 1',
-      nums: '[2,7,11,15]',
-      target: '9',
-      expected: '[0,1]',
-    },
-    {
-      id: 'Case 2',
-      nums: '[3,2,4]',
-      target: '6',
-      expected: '[1,2]',
-    },
-    {
-      id: 'Case 3',
-      nums: '[3,3]',
-      target: '6',
-      expected: '[0,1]',
-    },
-  ];
-
   // Handle code changes with real-time sync
   const handleCodeChange = (newCode: string) => {
     setCode(newCode);
@@ -212,8 +303,7 @@ const Session = (): React.ReactElement => {
 
     // Add message to local state
     setMessages((prev) => {
-      const nextId = (prev?.length ?? 0) + 1;
-      const next: Message = { id: nextId, text: messageToSend, sender: 'me' };
+      const next: Message = { id: Date.now(), text: messageToSend, sender: 'me' };
       return [...prev, next];
     });
 
@@ -257,40 +347,31 @@ const Session = (): React.ReactElement => {
             </div>
 
             <div className="p-5">
-              <h2 className="text-2xl font-bold mb-4">Two Sum</h2>
-              <p className="text-sm text-secondary-foreground mb-5">
-                Given an an array of integers nums and an integer target, return indices of the two
-                numbers such that they add up to target. You may assume that each input would have
-                exactly one solution, and you may not use the same element twice. You can return the
-                answer in any order.
-              </p>
+              <h2 className="text-2xl font-bold mb-4">{questionTitle}</h2>
+              <p className="text-sm text-secondary-foreground mb-5 whitespace-pre-wrap">{questionDescription}</p>
 
-              <div className="mb-5">
-                <h4 className="text-base font-semibold mb-2">Example 1:</h4>
-                <div className="bg-muted p-3 rounded border-l-4 border-attention">
-                  <p className="text-sm mb-2">
-                    <strong>Input:</strong> nums = [2,7,11,15], target = 9
-                  </p>
-                  <p className="text-sm mb-2">
-                    <strong>Output:</strong> [0,1]
-                  </p>
-                  <p className="text-sm">
-                    <strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we return [0, 1].
-                  </p>
+              {questionExamples.map((example, index: number) => (
+                <div key={index} className="mb-5">
+                  <h4 className="text-base font-semibold mb-2">Example {index + 1}:</h4>
+                  <div className="bg-muted p-3 rounded border-l-4 border-attention">
+                    {example.input && (
+                      <p className="text-sm mb-2">
+                        <strong>Input:</strong> {example.input}
+                      </p>
+                    )}
+                    {example.output && (
+                      <p className="text-sm mb-2">
+                        <strong>Output:</strong> {example.output}
+                      </p>
+                    )}
+                    {example.explanation && (
+                      <p className="text-sm">
+                        <strong>Explanation:</strong> {example.explanation}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              <div className="mb-6">
-                <h4 className="text-base font-semibold mb-2">Example 2:</h4>
-                <div className="bg-muted p-3 rounded border-l-4 border-attention">
-                  <p className="text-sm mb-2">
-                    <strong>Input:</strong> nums = [3,2,4], target = 6
-                  </p>
-                  <p className="text-sm">
-                    <strong>Output:</strong> [1,2]
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 

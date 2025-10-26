@@ -9,6 +9,7 @@ require('dotenv').config();
 const SessionManager = require('../models/SessionManager');
 const { setupSocketHandlers } = require('../utils/socketHandlers');
 const { socketAuthMiddleware, socketAuthMiddlewareDev } = require('../middleware/socketAuth');
+const { httpAuthMiddleware, httpAuthMiddlewareDev } = require('../middleware/httpAuth');
 const { initRedis, closeRedis } = require('../config/redis');
 const ServiceIntegration = require('../utils/serviceIntegration');
 
@@ -32,10 +33,13 @@ const io = socketIo(server, {
 
 // Use authentication middleware for socket connections
 // Use dev mode if NODE_ENV is not production
-if (process.env.NODE_ENV === 'production') io.use(socketAuthMiddleware);
-// } else {
-//   io.use(socketAuthMiddlewareDev);
-// }
+if (process.env.NODE_ENV === 'production') {
+  io.use(socketAuthMiddleware);
+  console.log('Using production authentication middleware');
+} else {
+  io.use(socketAuthMiddlewareDev);
+  console.log('Using development authentication middleware');
+}
 
 // Setup socket event handlers
 setupSocketHandlers(io, sessionManager);
@@ -54,7 +58,12 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// Select auth middleware based on environment
+const httpAuth = process.env.NODE_ENV === 'production' 
+  ? httpAuthMiddleware 
+  : httpAuthMiddlewareDev;
+
+// Health check endpoint (public, no auth required)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -143,8 +152,8 @@ app.post('/api/sessions', (req, res) => {
   }
 });
 
-// Create a matched session from matching service
-app.post('/api/sessions/matched', async (req, res) => {
+// Create a matched session from matching service (requires auth)
+app.post('/api/sessions/matched', httpAuth, async (req, res) => {
   try {
     const { userIds, questionId } = req.body;
 
@@ -246,7 +255,7 @@ const startServer = async () => {
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
-  console.log('\n🔴 Shutting down gracefully...');
+  console.log('\nShutting down gracefully...');
 
   // Close socket connections
   io.close(() => {

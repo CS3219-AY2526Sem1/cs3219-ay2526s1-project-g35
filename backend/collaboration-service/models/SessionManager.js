@@ -101,8 +101,11 @@ class SessionManager {
    * Add a user to a session
    */
   joinSession(sessionId, userId, socketId, userInfo = {}) {
+    console.log(`joinSession called: sessionId=${sessionId}, userId=${userId}, socketId=${socketId}`);
+    
     // Check if session exists, create if it doesn't
     if (!this.sessions.has(sessionId)) {
+      console.log(`Creating new session: ${sessionId}`);
       this.createSession(sessionId);
     }
 
@@ -110,14 +113,48 @@ class SessionManager {
 
     // For matched sessions, check if user is authorized
     if (session.isMatchedSession && !this.isUserAuthorizedForSession(sessionId, userId)) {
+      console.error(`Authorization failed for matched session ${sessionId}: userId ${userId} not in matchedUserIds ${session.matchedUserIds}`);
       return {
         success: false,
         error: 'User not authorized for this matched session',
       };
     }
 
-    // Check if session is full
+    // Check if user is already in this session (reconnect scenario)
+    const existingUser = session.users.find((u) => u.userId === userId);
+    if (existingUser) {
+      // Update socket ID (user reconnecting)
+      // Update the mapping for the old socket ID
+      const oldSocketId = existingUser.socketId;
+      this.userToSession.delete(oldSocketId);
+      
+      existingUser.socketId = socketId;
+      existingUser.reconnectedAt = Date.now();
+      console.log(`User reconnected: ${userId} to session ${sessionId}, updating from socket ${oldSocketId} to ${socketId}`);
+      
+      // Track the new socket
+      this.userToSession.set(socketId, sessionId);
+      console.log(`Mapped socket ${socketId} to session ${sessionId} for user ${userId} (reconnected)`);
+      session.lastActivity = Date.now();
+
+      // If this is a matched session and both users have joined, remove from pending
+      if (session.isMatchedSession && session.users.length === 2) {
+        this.pendingSessions.delete(sessionId);
+        console.log(`Matched session ${sessionId} is now active with both users`);
+      }
+
+      return {
+        success: true,
+        session: this.getSessionData(sessionId),
+        userCount: session.users.length,
+        isMatchedSession: session.isMatchedSession || false,
+        isReconnect: true,
+      };
+    }
+
+    // User is new - check if session is full
     if (session.users.length >= this.MAX_USERS_PER_SESSION) {
+      console.error(`Session ${sessionId} is full (${session.users.length}/${this.MAX_USERS_PER_SESSION}), cannot add user ${userId}`);
       return {
         success: false,
         error: 'Session is full',
@@ -125,26 +162,18 @@ class SessionManager {
       };
     }
 
-    // Check if user is already in this session
-    const existingUser = session.users.find((u) => u.userId === userId);
-    if (existingUser) {
-      // Update socket ID (user reconnecting)
-      existingUser.socketId = socketId;
-      existingUser.reconnectedAt = Date.now();
-      console.log(`User reconnected: ${userId} to session ${sessionId}`);
-    } else {
-      // Add new user
-      session.users.push({
-        userId,
-        socketId,
-        username: userInfo.username || `User${userId}`,
-        joinedAt: Date.now(),
-      });
-      console.log(`👤 User joined: ${userId} to session ${sessionId}`);
-    }
+    // Add new user
+    session.users.push({
+      userId,
+      socketId,
+      username: userInfo.username || `User${userId}`,
+      joinedAt: Date.now(),
+    });
+    console.log(`User joined: ${userId} to session ${sessionId}`);
 
     // Track user's session
     this.userToSession.set(socketId, sessionId);
+    console.log(`Mapped socket ${socketId} to session ${sessionId} for user ${userId}`);
     session.lastActivity = Date.now();
 
     // If this is a matched session and both users have joined, remove from pending
@@ -158,6 +187,7 @@ class SessionManager {
       session: this.getSessionData(sessionId),
       userCount: session.users.length,
       isMatchedSession: session.isMatchedSession || false,
+      isReconnect: false,
     };
   }
 
@@ -182,7 +212,7 @@ class SessionManager {
 
     if (userIndex !== -1) {
       removedUser = session.users.splice(userIndex, 1)[0];
-      console.log(`👋 User left: ${removedUser.userId} from session ${sessionId}`);
+      console.log(`User left: ${removedUser.userId} from session ${sessionId}`);
     }
 
     this.userToSession.delete(socketId);
@@ -313,7 +343,11 @@ class SessionManager {
    * Get session ID by socket ID
    */
   getSessionBySocketId(socketId) {
-    return this.userToSession.get(socketId);
+    const sessionId = this.userToSession.get(socketId);
+    if (!sessionId) {
+      console.warn(`No session found for socketId ${socketId}`);
+    }
+    return sessionId;
   }
 
   /**

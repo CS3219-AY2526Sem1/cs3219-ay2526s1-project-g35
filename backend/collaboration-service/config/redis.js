@@ -133,7 +133,7 @@ const getAllSessions = async () => {
 const closeRedis = async () => {
   if (redisClient && redisClient.isOpen) {
     await redisClient.quit();
-    console.log('🔴 Redis connection closed');
+    console.log('Redis connection closed');
   }
 };
 

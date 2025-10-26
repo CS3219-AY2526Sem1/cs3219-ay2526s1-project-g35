@@ -58,8 +58,21 @@ services:
     build: ./backend/matching-service
     ports:
       - "8004:8004"
-    environment:
-      - NODE_ENV=development
+      - "8005:8005"
+    env_file:
+      - ./backend/matching-service/.env.docker
+    depends_on:
+      collaboration-service:
+        condition: service_healthy
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
   
   # Collaboration service - Real-time collaboration and WebSocket
   collaboration-service:

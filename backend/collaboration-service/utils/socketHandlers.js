@@ -13,7 +13,10 @@ const setupSocketHandlers = (io, sessionManager) => {
       try {
         const { sessionId, userId, userInfo } = data;
 
+        console.log(`Join request: userId=${userId}, socketId=${socket.id}, sessionId=${sessionId}`);
+
         if (!sessionId || !userId) {
+          console.error(`Missing required fields: sessionId=${sessionId}, userId=${userId}`);
           return callback?.({
             success: false,
             error: 'Session ID and User ID are required',
@@ -24,8 +27,11 @@ const setupSocketHandlers = (io, sessionManager) => {
         const result = sessionManager.joinSession(sessionId, userId, socket.id, userInfo);
 
         if (!result.success) {
+          console.error(`Failed to join session:`, result.error);
           return callback?.(result);
         }
+
+        console.log(`Successfully joined session: ${sessionId}, userCount: ${result.userCount}`);
 
         // Join the socket.io room
         socket.join(sessionId);
@@ -33,13 +39,16 @@ const setupSocketHandlers = (io, sessionManager) => {
         // Get current session data
         const sessionData = sessionManager.getSessionData(sessionId);
 
-        // Notify others in the room that a new user joined
-        socket.to(sessionId).emit('user-joined', {
-          userId,
-          username: userInfo?.username || `User${userId}`,
-          userCount: sessionData.userCount,
-          timestamp: Date.now(),
-        });
+        // Only notify others if this is a NEW user (not a reconnect)
+        if (!result.isReconnect) {
+          // Notify others in the room that a new user joined
+          socket.to(sessionId).emit('user-joined', {
+            userId,
+            username: userInfo?.username || `User${userId}`,
+            userCount: sessionData.userCount,
+            timestamp: Date.now(),
+          });
+        }
 
         // Send current session state to the joining user
         callback?.({
@@ -80,8 +89,11 @@ const setupSocketHandlers = (io, sessionManager) => {
 
         // Verify user is in the session they claim to be in
         if (userSessionId !== sessionId) {
+          console.error(`Authorization failed for code-change: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`);
           return;
         }
+        
+        console.log(`Code change from user ${userId} in session ${sessionId}`);
 
         // Update code in session manager
         sessionManager.updateCode(sessionId, code, cursorPosition);
@@ -107,6 +119,7 @@ const setupSocketHandlers = (io, sessionManager) => {
         const userSessionId = sessionManager.getSessionBySocketId(socket.id);
 
         if (userSessionId !== sessionId) {
+          console.error(`Authorization failed for cursor-position: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`);
           return;
         }
 
@@ -161,6 +174,7 @@ const setupSocketHandlers = (io, sessionManager) => {
         const userSessionId = sessionManager.getSessionBySocketId(socket.id);
 
         if (userSessionId !== sessionId) {
+          console.error(`Authorization failed for chat-message: socket ${socket.id} claims session ${sessionId} but is actually in ${userSessionId}`);
           return;
         }
 
@@ -240,7 +254,7 @@ const setupSocketHandlers = (io, sessionManager) => {
         }
 
         callback?.(result);
-        console.log(`👋 User left session ${sessionId}`);
+        console.log(`User left session ${sessionId}`);
       } catch (error) {
         console.error('Error in leave-session:', error);
         callback?.({ success: false, error: error.message });

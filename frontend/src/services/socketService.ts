@@ -91,7 +91,7 @@ class SocketService {
    * Connect to the collaboration service
    */
   connect(token: string, userId: string): Socket | undefined {
-    const serverUrl = process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'http://localhost:8000';
+    const serverUrl = process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'http://localhost:8002';
 
     this.userId = userId;
 
@@ -324,6 +324,13 @@ class SocketService {
         }
       });
     });
+  }
+
+  /**
+   * Generic event listener
+   */
+  on(eventName: string, callback: (...args: unknown[]) => void): void {
+    this.socket?.on(eventName, callback);
   }
 
   /**

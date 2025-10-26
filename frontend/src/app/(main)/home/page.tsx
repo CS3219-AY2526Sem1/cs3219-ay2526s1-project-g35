@@ -53,7 +53,8 @@ export default function HomePage() {
       JSON.stringify({
         topics: selectedTopicNames,
         difficulty: selectedDifficulty,
-        port: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
+        userId: 'user-' + Math.random().toString(36).substr(2, 9),
+        username: 'User' + Math.floor(Math.random() * 1000),
       }),
     );
 

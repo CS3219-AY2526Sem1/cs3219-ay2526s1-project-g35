@@ -11,8 +11,8 @@ RUN npm ci --only=production
 # Copy source code
 COPY . .
 
-# Expose port
-EXPOSE 8004
+# Expose ports
+EXPOSE 8004 8005
 
 # Start the application
 CMD ["node", "src/app.js"]

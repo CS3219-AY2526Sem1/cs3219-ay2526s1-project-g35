@@ -61,7 +61,7 @@ const socketAuthMiddlewareDev = (socket, next) => {
       socket.username = `Guest ${socket.id.substring(0, 4)}`;
     }
 
-    console.log(`🔓 Socket connected (dev mode): ${socket.userId}`);
+    console.log(`Socket connected (dev mode): ${socket.userId}`);
     next();
   } catch (error) {
     console.error('Socket auth error:', error.message);
