@@ -8,12 +8,9 @@ data:
   NODE_ENV: "production"
   PORT: "8001"
   
-  # MongoDB Configuration
-  MONGODB_URI: "mongodb://admin:adminpassword@mongodb-service:27017/questiondb?authSource=admin"
-  
   # CORS Configuration (will be updated after you get domain/IP)
   # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: "http://34.8.2.71"
+  ALLOWED_ORIGINS: "http://34.8.234.19"
   
   # GCP Configuration
   GCP_PROJECT_ID: "peerprep-475911"

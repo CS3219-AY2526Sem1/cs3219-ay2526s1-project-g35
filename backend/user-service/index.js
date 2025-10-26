@@ -147,7 +147,10 @@ app.get('/debug/email-status', async (req, res) => {
     });
   }
 });
-// Routes
+// Routes - handle both /api prefix (from ingress) and direct paths (for local dev)
+app.use('/api/users', userRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+// Legacy routes for backward compatibility
 app.use('/users', userRoutes);
 app.use('/auth', authLimiter, authRoutes);
 

@@ -6,7 +6,6 @@ metadata:
   labels:
     app: api-gateway
   annotations:
-    cloud.google.com/backend-config: '{"default": "api-gateway-backend-config"}'
     cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: ClusterIP

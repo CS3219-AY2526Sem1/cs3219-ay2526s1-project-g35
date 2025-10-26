@@ -32,7 +32,7 @@ data:
   
   # CORS Configuration (will be updated after you get domain/IP)
   # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: "http://34.36.96.229,http://34.124.186.128,http://localhost:3000"
+  ALLOWED_ORIGINS: "http://34.8.234.19,http://localhost:3000"
   
   # Rate Limiting
   RATE_LIMIT_WINDOW_MS: "900000"

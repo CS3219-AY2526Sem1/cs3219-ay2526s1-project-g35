@@ -11,10 +11,10 @@ data:
   # Next.js Configuration
   NEXT_TELEMETRY_DISABLED: "1"
   
-  # API URLs - Direct to Kong Gateway LoadBalancer
-  NEXT_PUBLIC_API_URL: "http://34.124.186.128/api"  # Base URL for auth service
-  NEXT_PUBLIC_API_USER_URL: "http://34.124.186.128/api/users"
-  NEXT_PUBLIC_API_QUESTION_URL: "http://34.124.186.128/api/questions"
-  NEXT_PUBLIC_API_MATCHING_URL: "http://34.124.186.128/api/matching"
-  NEXT_PUBLIC_WS_COLLAB_URL: "ws://34.124.186.128/api/collaboration"
-  NEXT_PUBLIC_MATCHING_WS_URL: "ws://34.124.186.128/api/matching/ws"  # WebSocket through gateway
+  # API URLs - Through Ingress (same domain as frontend for cookies to work)
+  NEXT_PUBLIC_API_URL: "http://34.8.234.19"
+  NEXT_PUBLIC_API_USER_URL: "http://34.8.234.19/api/users"
+  NEXT_PUBLIC_API_QUESTION_URL: "http://34.8.234.19/api/questions"
+  NEXT_PUBLIC_API_MATCHING_URL: "http://34.8.234.19/api/matching"
+  NEXT_PUBLIC_WS_COLLAB_URL: "ws://34.8.234.19/api/collaboration"
+  NEXT_PUBLIC_MATCHING_WS_URL: "ws://34.8.234.19/api/matching/ws"

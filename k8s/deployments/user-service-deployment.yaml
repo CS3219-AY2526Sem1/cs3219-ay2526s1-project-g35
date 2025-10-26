@@ -18,7 +18,8 @@ spec:
       serviceAccountName: user-service-sa  # Workload Identity for Secret Manager
       containers:
       - name: user-service
-        image: gcr.io/peerprep-475911/user-service:v1.6
+        image: gcr.io/peerprep-475911/user-service:v2.1
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
           name: http

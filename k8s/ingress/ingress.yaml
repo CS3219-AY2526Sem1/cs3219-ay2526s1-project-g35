@@ -6,6 +6,7 @@ metadata:
   namespace: peerprep
   annotations:
     kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "peerprep-static-ip"
 spec:
   defaultBackend:
     service:
@@ -16,7 +17,51 @@ spec:
   rules:
   - http:
       paths:
-      # Frontend - all paths (API calls go directly to Kong LoadBalancer)
+      # User Service - authentication and user management
+      - path: /api/users/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 8000
+      
+      - path: /api/auth/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: user-service
+            port:
+              number: 8000
+      
+      # Question Service
+      - path: /api/questions/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: question-service
+            port:
+              number: 8001
+      
+      # Collaboration Service
+      - path: /api/collaboration/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: collaboration-service
+            port:
+              number: 8002
+      
+      # Matching Service
+      - path: /api/matching/*
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: matching-service
+            port:
+              number: 8003
+      
+      # Frontend - all other paths (must be last)
       - path: /*
         pathType: ImplementationSpecific
         backend:
