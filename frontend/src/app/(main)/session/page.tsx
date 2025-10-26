@@ -66,12 +66,24 @@ const Session = (): React.ReactElement => {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string>('');
   const [userId] = useState<string>(() => {
-    // Try to get the matched user ID from session storage
+    // Try to get the matched user ID from session storage (set when match found)
     const matchedUserId = sessionStorage.getItem('matchedUserId');
     if (matchedUserId) {
       return matchedUserId;
     }
-    // Fallback to random user ID for development
+    // Fallback to search userId from waiting room
+    const matchingSearchStr = sessionStorage.getItem('matchingSearch');
+    if (matchingSearchStr) {
+      try {
+        const searchData = JSON.parse(matchingSearchStr);
+        if (searchData.userId) {
+          return searchData.userId;
+        }
+      } catch (e) {
+        console.warn('Failed to parse matchingSearch:', e);
+      }
+    }
+    // Last resort: random user ID for development
     return 'user-' + Math.random().toString(36).substr(2, 9);
   });
   const [partnerInfo, setPartnerInfo] = useState<{ userId: string; username: string } | null>(null);
@@ -120,7 +132,7 @@ const Session = (): React.ReactElement => {
     
     // Listen for matched session ready with question data
     socketService.on('matched-session-ready', (data) => {
-      console.log('📋 Matched session ready with question data:', data);
+      console.log('Matched session ready with question data:', data);
       const matchedData = data as MatchedSessionData;
       
       if (matchedData.question) {
@@ -208,7 +220,7 @@ const Session = (): React.ReactElement => {
 
     // Listen for code execution results
     socketService.on('code-execution-result', (data: unknown) => {
-      console.log('📊 Code execution result:', data);
+      console.log('Code execution result:', data);
       const rawResult = data as { success: boolean; passed?: number; failed?: number; total?: number; testResults?: Array<Record<string, unknown>>; error?: string };
       const result = {
         ...rawResult,
@@ -263,16 +275,16 @@ const Session = (): React.ReactElement => {
           try {
             // Wait for connection to be established
             await waitForConnection();
-            console.log('🔗 Connection established, attempting to join session:', finalSessionId);
+            console.log('Connection established, attempting to join session:', finalSessionId);
             
-            // Join the session with the determined session ID
-            await socketService.joinSession(finalSessionId, userId, { username: 'SessionUser' });
-            console.log('✅ Successfully joined session:', finalSessionId);
+            // Join the session with the determined session ID - use userId directly
+            await socketService.joinSession(finalSessionId, userId, { username: userId });
+            console.log('Successfully joined session:', finalSessionId);
 
             // Set up event listeners
             setupSocketListeners();
           } catch (error) {
-            console.error('❌ Failed to join session:', error);
+            console.error('Failed to join session:', error);
             // Still try to set up listeners even if join fails
             setupSocketListeners();
           }
@@ -374,7 +386,7 @@ const Session = (): React.ReactElement => {
           <div className="h-3/5 min-h-[400px] overflow-y-auto border-b border-border">
             <div className="flex justify-between items-center px-5 py-4 border-b border-border bg-muted h-15">
               <h3 className="text-base font-semibold">Description</h3>
-              <div className="text-lg cursor-pointer">☰</div>
+              <div className="text-lg cursor-pointer">&equiv;</div>
             </div>
 
             <div className="p-5">
@@ -531,7 +543,7 @@ const Session = (): React.ReactElement => {
                   : 'bg-green-500 hover:bg-green-600'
               } text-primary-foreground`}
             >
-              <span className="text-sm">{isExecuting ? '⏳' : '▶'}</span>
+              <span className="text-sm">{isExecuting ? '...' : '>'}</span>
               {isExecuting ? 'Running...' : 'Run'}
             </button>
           </div>

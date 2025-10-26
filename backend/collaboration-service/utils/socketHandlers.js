@@ -48,6 +48,17 @@ const setupSocketHandlers = (io, sessionManager) => {
             userCount: sessionData.userCount,
             timestamp: Date.now(),
           });
+
+          // Notify the joining user about other users already in the session
+          const otherUsers = sessionData.users.filter(u => u.userId !== userId);
+          otherUsers.forEach(otherUser => {
+            socket.emit('user-joined', {
+              userId: otherUser.userId,
+              username: otherUser.username || `User${otherUser.userId}`,
+              userCount: sessionData.userCount,
+              timestamp: Date.now(),
+            });
+          });
         }
 
         // Send current session state to the joining user
