@@ -18,7 +18,8 @@ spec:
       serviceAccountName: matching-service-sa  # Workload Identity for Secret Manager
       containers:
       - name: matching-service
-        image: gcr.io/peerprep-475911/matching-service:v1.4
+        image: gcr.io/peerprep-475911/matching-service:v2.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8003
           name: http
@@ -33,14 +34,16 @@ spec:
             memory: "512Mi"
             cpu: "500m"
         livenessProbe:
-          tcpSocket:
+          httpGet:
+            path: /health
             port: 8003
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
-          tcpSocket:
+          httpGet:
+            path: /health
             port: 8003
           initialDelaySeconds: 10
           periodSeconds: 5

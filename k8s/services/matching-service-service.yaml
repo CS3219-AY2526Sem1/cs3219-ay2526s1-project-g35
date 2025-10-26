@@ -5,8 +5,10 @@ metadata:
   namespace: peerprep
   labels:
     app: matching-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "matching-websocket-config"}'
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: matching-service
   ports:

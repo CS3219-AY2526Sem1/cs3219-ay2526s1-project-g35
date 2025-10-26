@@ -1,9 +1,23 @@
+import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 
 const PORT = process.env.PORT || 8003;
 
+// Create HTTP server for health checks
+const server = http.createServer((req, res) => {
+  // Handle health check requests
+  if (req.url === '/' || req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', service: 'matching-service' }));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
+});
+
+// Create WebSocket server attached to HTTP server
 const wss = new WebSocketServer({
-  port: PORT,
+  server,
   // Allow connections from any origin (for development)
   verifyClient: () => true,
 });
@@ -13,7 +27,9 @@ let activePairs = [];
 
 const TIMEOUT_MS = 60000; // 1 minute
 
-console.log(`Matching WebSocket server running on port ${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Matching HTTP server with WebSocket running on port ${PORT}`);
+});
 
 wss.on('connection', (ws) => {
   console.log('New connection');
