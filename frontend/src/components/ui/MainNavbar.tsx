@@ -36,7 +36,7 @@ function MainNavbar() {
   useEffect(() => {
     // Check if user is in a session
     setIsInSession(pathName === '/session');
-    
+
     // Determine partner role based on userId stored in sessionStorage
     if (pathName === '/session') {
       const matchedUserId = sessionStorage.getItem('matchedUserId');

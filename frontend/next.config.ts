@@ -18,8 +18,7 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_API_MATCHING_URL || 'http://localhost:8004/api/matching',
     NEXT_PUBLIC_WS_COLLAB_URL:
       process.env.NEXT_PUBLIC_WS_COLLAB_URL || 'ws://localhost:8002/api/collaboration',
-    NEXT_PUBLIC_MATCHING_WS_URL:
-      process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8004',
+    NEXT_PUBLIC_MATCHING_WS_URL: process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8004',
   },
 
   async rewrites() {

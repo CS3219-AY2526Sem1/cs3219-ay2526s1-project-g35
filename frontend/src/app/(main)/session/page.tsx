@@ -579,7 +579,9 @@ const Session = (): React.ReactElement => {
                     {currentTestCase.input && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Input:</p>
-                        <p className="font-mono text-sm whitespace-pre-wrap">{currentTestCase.input}</p>
+                        <p className="font-mono text-sm whitespace-pre-wrap">
+                          {currentTestCase.input}
+                        </p>
                       </div>
                     )}
                     {currentTestCase.expected && (
