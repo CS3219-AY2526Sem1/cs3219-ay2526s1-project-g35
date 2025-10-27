@@ -21,9 +21,11 @@ export default function WaitingRoomPage(): React.ReactElement {
   const [timedOut, setTimedOut] = useState(false);
   const [matchFound, setMatchFound] = useState(false);
   const [matchData, setMatchData] = useState<{
-    partnerPort: number;
+    sessionId: string;
+    partnerUserId: string;
+    partnerUsername: string;
     sharedTopics: number;
-    questionId: string;
+    difficulty: string;
   } | null>(null);
   const timerRef = useRef<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -76,7 +78,7 @@ export default function WaitingRoomPage(): React.ReactElement {
     // Connect to matching service
     let ws: WebSocket;
     try {
-      const wsUrl = process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8004';
+      const wsUrl = process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8005';
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
     } catch {
@@ -90,7 +92,8 @@ export default function WaitingRoomPage(): React.ReactElement {
         type: 'search',
         topics: searchData.topics,
         difficulty: searchData.difficulty,
-        port: searchData.port,
+        userId: searchData.userId,
+        username: searchData.username,
       };
 
       ws.send(JSON.stringify(message));
@@ -106,6 +109,9 @@ export default function WaitingRoomPage(): React.ReactElement {
       if (data.type === 'match') {
         setMatchData(data);
         setMatchFound(true);
+        // Store session ID and user ID for the session page
+        sessionStorage.setItem('collaborationSessionId', data.sessionId);
+        sessionStorage.setItem('matchedUserId', searchData.userId);
         if (timerRef.current) {
           clearTimeout(timerRef.current);
           timerRef.current = null;
@@ -212,10 +218,9 @@ export default function WaitingRoomPage(): React.ReactElement {
           <AlertDialogOverlay />
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Match Found! 🎉</AlertDialogTitle>
+              <AlertDialogTitle>Match Found!</AlertDialogTitle>
               <AlertDialogDescription>
-                We found you a match! You&apos;ll be paired with someone at port{' '}
-                {matchData?.partnerPort}.
+                We found you a match! You&apos;ll be paired with {matchData?.partnerUsername}.
                 {matchData?.sharedTopics && matchData.sharedTopics > 0 && (
                   <> You have {matchData.sharedTopics} topic(s) in common!</>
                 )}

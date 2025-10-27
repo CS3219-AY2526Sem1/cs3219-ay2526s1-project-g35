@@ -1,7 +1,7 @@
 FROM node:18-alpine
 
 # Install system dependencies
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ openjdk11-jre openjdk11-jdk nodejs npm
 
 WORKDIR /app
 

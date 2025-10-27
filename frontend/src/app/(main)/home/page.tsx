@@ -21,12 +21,12 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   const topics = [
-    'Two Pointers',
-    'Sliding Window',
-    'Sorting',
-    'Binary Search',
+    'Arrays',
+    'Algorithms',
+    'Data Structures',
     'Dynamic Programming',
-    'Greedy Algorithms',
+    'Sliding Window',
+    'Strings',
   ];
 
   const difficulties = ['Easy', 'Medium', 'Hard'];
@@ -53,7 +53,8 @@ export default function HomePage() {
       JSON.stringify({
         topics: selectedTopicNames,
         difficulty: selectedDifficulty,
-        port: Math.floor(Math.random() * 10000) + 4000, // Random port for demo
+        userId: 'user-' + Math.random().toString(36).substr(2, 9),
+        username: 'User' + Math.floor(Math.random() * 1000),
       }),
     );
 

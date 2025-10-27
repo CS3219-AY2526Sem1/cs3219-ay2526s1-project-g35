@@ -91,7 +91,7 @@ class SocketService {
    * Connect to the collaboration service
    */
   connect(token: string, userId: string): Socket | undefined {
-    const serverUrl = process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'http://localhost:8000';
+    const serverUrl = process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'http://localhost:8002';
 
     this.userId = userId;
 
@@ -121,19 +121,19 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Connected to collaboration service:', this.socket?.id);
+      console.log('Connected to collaboration service:', this.socket?.id);
     });
 
     this.socket.on('connect_error', (error: Error) => {
-      console.error('❌ Connection error:', error.message);
+      console.error('Connection error:', error.message);
     });
 
     this.socket.on('disconnect', (reason: string) => {
-      console.log('🔌 Disconnected:', reason);
+      console.log('Disconnected:', reason);
     });
 
     this.socket.on('reconnect', (attemptNumber: number) => {
-      console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
+      console.log(`Reconnected after ${attemptNumber} attempts`);
       // Rejoin session if we were in one
       if (this.sessionId && this.userId) {
         this.joinSession(this.sessionId, this.userId);
@@ -161,10 +161,10 @@ class SocketService {
 
       this.socket.emit('join-session', data, (response: JoinSessionResponse) => {
         if (response.success) {
-          console.log('✅ Joined session:', sessionId);
+          console.log('Joined session:', sessionId);
           resolve(response);
         } else {
-          console.error('❌ Failed to join session:', response.error);
+          console.error('Failed to join session:', response.error);
           reject(new Error(response.error || 'Failed to join session'));
         }
       });
@@ -327,6 +327,13 @@ class SocketService {
   }
 
   /**
+   * Generic event listener
+   */
+  on(eventName: string, callback: (...args: unknown[]) => void): void {
+    this.socket?.on(eventName, callback);
+  }
+
+  /**
    * Event listeners
    */
   onCodeUpdate(callback: (data: CodeChangeData) => void): void {
@@ -384,7 +391,7 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.sessionId = null;
-      console.log('🔴 Disconnected from collaboration service');
+      console.log('Disconnected from collaboration service');
     }
   }
 

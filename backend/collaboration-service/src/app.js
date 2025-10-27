@@ -9,6 +9,7 @@ require('dotenv').config();
 const SessionManager = require('../models/SessionManager');
 const { setupSocketHandlers } = require('../utils/socketHandlers');
 const { socketAuthMiddleware, socketAuthMiddlewareDev } = require('../middleware/socketAuth');
+const { httpAuthMiddleware, httpAuthMiddlewareDev } = require('../middleware/httpAuth');
 const { initRedis, closeRedis } = require('../config/redis');
 const ServiceIntegration = require('../utils/serviceIntegration');
 
@@ -32,10 +33,13 @@ const io = socketIo(server, {
 
 // Use authentication middleware for socket connections
 // Use dev mode if NODE_ENV is not production
-if (process.env.NODE_ENV === 'production') io.use(socketAuthMiddleware);
-// } else {
-//   io.use(socketAuthMiddlewareDev);
-// }
+if (process.env.NODE_ENV === 'production') {
+  io.use(socketAuthMiddleware);
+  console.log('Using production authentication middleware');
+} else {
+  io.use(socketAuthMiddlewareDev);
+  console.log('Using development authentication middleware');
+}
 
 // Setup socket event handlers
 setupSocketHandlers(io, sessionManager);
@@ -54,7 +58,10 @@ app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// Select auth middleware based on environment
+const httpAuth = process.env.NODE_ENV === 'production' ? httpAuthMiddleware : httpAuthMiddlewareDev;
+
+// Health check endpoint (public, no auth required)
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -66,7 +73,7 @@ app.get('/health', (req, res) => {
 });
 
 // Get pending sessions (for debugging/admin) - MUST be before /api/sessions/:sessionId
-app.get('/api/sessions/pending', (req, res) => {
+app.get('/api/sessions/pending', httpAuth, (req, res) => {
   try {
     const pendingSessions = sessionManager.getPendingSessions();
     res.json({ success: true, pendingSessions });
@@ -76,7 +83,7 @@ app.get('/api/sessions/pending', (req, res) => {
 });
 
 // Get session by user ID (for matched sessions) - MUST be before /api/sessions/:sessionId
-app.get('/api/sessions/user/:userId', (req, res) => {
+app.get('/api/sessions/user/:userId', httpAuth, (req, res) => {
   try {
     const { userId } = req.params;
     const sessionId = sessionManager.getSessionByUserId(userId);
@@ -93,7 +100,7 @@ app.get('/api/sessions/user/:userId', (req, res) => {
 });
 
 // Get session info (REST endpoint) - MUST be after specific routes
-app.get('/api/sessions/:sessionId', (req, res) => {
+app.get('/api/sessions/:sessionId', httpAuth, (req, res) => {
   try {
     const { sessionId } = req.params;
     const sessionData = sessionManager.getSessionData(sessionId);
@@ -109,7 +116,7 @@ app.get('/api/sessions/:sessionId', (req, res) => {
 });
 
 // Get all active sessions (admin endpoint)
-app.get('/api/sessions', (req, res) => {
+app.get('/api/sessions', httpAuth, (req, res) => {
   try {
     const stats = sessionManager.getStats();
     res.json({ success: true, stats });
@@ -119,7 +126,7 @@ app.get('/api/sessions', (req, res) => {
 });
 
 // Create a new session (REST endpoint)
-app.post('/api/sessions', (req, res) => {
+app.post('/api/sessions', httpAuth, (req, res) => {
   try {
     const { sessionId, code, language, problem } = req.body;
 
@@ -143,8 +150,8 @@ app.post('/api/sessions', (req, res) => {
   }
 });
 
-// Create a matched session from matching service
-app.post('/api/sessions/matched', async (req, res) => {
+// Create a matched session from matching service (requires auth)
+app.post('/api/sessions/matched', httpAuth, async (req, res) => {
   try {
     const { userIds, questionId } = req.body;
 
@@ -246,7 +253,7 @@ const startServer = async () => {
 
 // Graceful shutdown
 const gracefulShutdown = async () => {
-  console.log('\n🔴 Shutting down gracefully...');
+  console.log('\nShutting down gracefully...');
 
   // Close socket connections
   io.close(() => {

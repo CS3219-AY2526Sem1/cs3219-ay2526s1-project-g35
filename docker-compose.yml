@@ -58,8 +58,28 @@ services:
     build: ./backend/matching-service
     ports:
       - "8004:8004"
+      - "8005:8005"
     environment:
-      - NODE_ENV=development
+      - PORT=8004
+      - COLLABORATION_SERVICE_URL=http://collaboration-service:8002
+      - QUESTION_SERVICE_URL=http://question-service:8001
+      - NODE_ENV=production
+      - MATCHING_TIMEOUT_MS=60000
+      - WEBSOCKET_PORT=8005
+    depends_on:
+      collaboration-service:
+        condition: service_healthy
+      question-service:
+        condition: service_healthy
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
   
   # Collaboration service - Real-time collaboration and WebSocket
   collaboration-service:
