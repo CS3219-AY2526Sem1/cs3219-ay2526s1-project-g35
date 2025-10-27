@@ -1,8 +1,10 @@
 const Question = require('../models/question-model');
+const cache = require('../utils/cacheService');
 
 /**
  * Question Controller
  * Handles HTTP requests and responses for question endpoints
+ * Includes Redis caching for improved performance
  */
 
 const QuestionController = {
@@ -30,10 +32,23 @@ const QuestionController = {
   /**
    * Get a single question by ID
    * GET /api/questions/:id
+   * Uses Redis cache for improved performance
    */
   async getQuestionById(req, res, next) {
     try {
       const { id } = req.params;
+
+      // Try to get from cache first
+      const cachedQuestion = await cache.getQuestion(id);
+      if (cachedQuestion) {
+        return res.status(200).json({
+          success: true,
+          data: cachedQuestion,
+          cached: true,
+        });
+      }
+
+      // Cache miss - get from database
       const question = await Question.getById(id);
 
       if (!question) {
@@ -43,9 +58,13 @@ const QuestionController = {
         });
       }
 
+      // Store in cache for future requests
+      await cache.setQuestion(id, question);
+
       res.status(200).json({
         success: true,
         data: question,
+        cached: false,
       });
     } catch (error) {
       // Pass error to error handler middleware
@@ -96,6 +115,10 @@ const QuestionController = {
         constraints: constraints || [],
       });
 
+      // Cache the new question and invalidate random caches
+      await cache.setQuestion(newQuestion._id.toString(), newQuestion);
+      await cache.invalidateRandomCaches(); // New question affects random selection
+
       res.status(201).json({
         success: true,
         message: 'Question created successfully',
@@ -145,6 +168,10 @@ const QuestionController = {
         });
       }
 
+      // Update cache with new data and invalidate random caches
+      await cache.setQuestion(id, updatedQuestion);
+      await cache.invalidateRandomCaches(); // Updated question may affect random selection
+
       res.status(200).json({
         success: true,
         message: 'Question updated successfully',
@@ -183,6 +210,10 @@ const QuestionController = {
           error: `Question with id ${id} not found`,
         });
       }
+
+      // Remove from cache and invalidate random caches
+      await cache.deleteQuestion(id);
+      await cache.invalidateRandomCaches(); // Deleted question affects random selection
 
       res.status(200).json({
         success: true,
@@ -295,6 +326,7 @@ const QuestionController = {
   /**
    * Get random question by topic and difficulty (for matching)
    * GET /api/questions/random?topic=X&difficulty=Y
+   * Returns question ID and caches full question for efficient retrieval
    */
   async getRandomQuestion(req, res) {
     try {
@@ -316,6 +348,17 @@ const QuestionController = {
         });
       }
 
+      // Check if we have a cached random question ID
+      const cachedQuestionId = await cache.getRandomQuestion(topic, difficulty);
+      if (cachedQuestionId) {
+        return res.status(200).json({
+          success: true,
+          questionId: cachedQuestionId,
+          cached: true,
+        });
+      }
+
+      // Get a random question from database
       const question = await Question.getRandomByTopicAndDifficulty(topic, difficulty);
 
       if (!question) {
@@ -325,9 +368,16 @@ const QuestionController = {
         });
       }
 
+      const questionId = question._id.toString();
+
+      // Cache both the question ID (for random selection) and full question (for retrieval)
+      await cache.setRandomQuestion(topic, difficulty, questionId);
+      await cache.setQuestion(questionId, question);
+
       res.status(200).json({
         success: true,
-        questionId: question._id,
+        questionId,
+        cached: false,
       });
     } catch (error) {
       console.error('Error getting random question:', error);

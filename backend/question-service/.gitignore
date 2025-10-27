@@ -58,3 +58,9 @@ Thumbs.db
 dist/
 build/
 
+# Test artifacts
+*cookies*.txt
+test-cookies.txt
+quick-test-cookies.txt
+test-cookies-regular.txt
+
