@@ -23,9 +23,9 @@ const serviceIntegration = new ServiceIntegration();
 // Socket.IO setup with CORS
 const io = socketIo(server, {
   cors: {
-    origin: '*', // Allow all origins for development/testing
+    origin: process.env.CORS_ORIGIN || '*', // Use environment variable or allow all
     methods: ['GET', 'POST'],
-    credentials: false,
+    credentials: true,
   },
   pingTimeout: 60000,
   pingInterval: 25000,
@@ -50,8 +50,8 @@ const PORT = process.env.PORT || 8000;
 app.use(helmet());
 app.use(
   cors({
-    origin: '*', // Allow all origins for development/testing
-    credentials: false,
+    origin: process.env.CORS_ORIGIN || '*', // Use environment variable or allow all
+    credentials: true,
   }),
 );
 app.use(morgan('combined'));

@@ -1,15 +1,24 @@
 const app = require('./index');
 const { connectDB } = require('./config/database');
+const { initializeSecrets } = require('./config/secretManager');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 8000;
 
 /**
  * Start Server
- * Connect to MongoDB first, then start the Express server
+ * Load secrets from Secret Manager, connect to MongoDB, then start the Express server
  */
 const startServer = async () => {
   try {
+    // Load secrets from Google Secret Manager (if enabled)
+    if (process.env.USE_SECRET_MANAGER === 'true') {
+      console.log('USE_SECRET_MANAGER is enabled, loading secrets...');
+      await initializeSecrets();
+    } else {
+      console.log('USE_SECRET_MANAGER is not enabled, skipping secret loading');
+    }
+
     // Connect to MongoDB
     await connectDB();
 

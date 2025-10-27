@@ -1,3 +1,4 @@
+import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import express from 'express';
 import cors from 'cors';
@@ -32,8 +33,12 @@ const collaborationServiceClient = axios.create({
   },
 });
 
+// Create HTTP server and attach Express app
+const server = http.createServer(app);
+
+// Create WebSocket server attached to HTTP server
 const wss = new WebSocketServer({
-  port: 8005, // Use different port for WebSocket to avoid conflict with HTTP
+  server,
   // Allow connections from any origin (for development)
   verifyClient: () => true,
 });
@@ -304,17 +309,16 @@ function startTimeout(user) {
   }, TIMEOUT_MS);
 }
 
-// Start HTTP server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════╗
 ║   Matching Service Started                 ║
 ╠════════════════════════════════════════════╣
 ║   HTTP Port: ${PORT.toString().padEnd(36)}║
-║   WebSocket Port: 8005                    ║
+║   WebSocket Port: ${PORT}                    ║
 ║   Environment: ${(process.env.NODE_ENV || 'development').padEnd(27)}║
 ╚════════════════════════════════════════════╝
   `);
 });
 
-console.log('Matching WebSocket server running on port 8005');
+console.log('Matching WebSocket server running on port ' + PORT);
