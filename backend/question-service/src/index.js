@@ -13,10 +13,12 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true, // Allow cookies to be sent
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true, // Allow cookies to be sent
+  }),
+);
 app.use(morgan('combined'));
 app.use(cookieParser()); // Parse cookies from requests
 app.use(express.json());

@@ -38,7 +38,11 @@ router.get('/difficulty/:difficulty', verifyToken, QuestionController.getQuestio
 router.get('/topic/:topic', verifyToken, QuestionController.getQuestionsByTopic);
 
 // GET /api/questions/random/difficulty/:difficulty - Get random question by difficulty
-router.get('/random/difficulty/:difficulty', verifyToken, QuestionController.getRandomQuestionByDifficulty);
+router.get(
+  '/random/difficulty/:difficulty',
+  verifyToken,
+  QuestionController.getRandomQuestionByDifficulty,
+);
 
 // GET /api/questions/categories - Get all categories/topics
 router.get('/categories', verifyToken, QuestionController.getAllCategories);
