@@ -7,6 +7,8 @@ import {
   AuthResponse,
   LoginCredentials,
   RegisterCredentials,
+  SendOTPResponse,
+  VerifyOTPResponse,
   VerifyTokenResponse,
 } from '@/types/auth.types';
 import { AxiosResponse } from 'axios';
@@ -83,6 +85,35 @@ class AuthService {
   async resetTTL(): Promise<void> {
     try {
       await apiClient.post(`${this.AUTH_BASE_PATH}/reset-ttl`);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Send OTP to the authenticated user's email
+   */
+  async sendOTP(): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/send-otp`,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Verify OTP code
+   */
+  async verifyOTP(otp: string): Promise<VerifyOTPResponse> {
+    try {
+      const response: AxiosResponse<VerifyOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/verify-otp`,
+        { otp },
+      );
+      return response.data;
     } catch (error) {
       throw this.handleError(error);
     }

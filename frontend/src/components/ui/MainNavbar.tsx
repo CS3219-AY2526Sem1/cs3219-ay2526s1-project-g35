@@ -1,12 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/DropdownMenu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +10,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
 import { useAuth } from '@/contexts/AuthContext';
+import socketService from '@/services/socketService';
 import { MessagesSquare, UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import socketService from '@/services/socketService';
 import ModeToggle from './ModeToggle';
 
 function MainNavbar() {
@@ -134,7 +134,7 @@ function MainNavbar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-44" align="end" sideOffset={10}>
             <DropdownMenuItem asChild>
-              <Link href={`/profile/${user?.username ?? user?.email}`}>Manage Profile</Link>
+              <Link href={`/profile?${user?.username ?? user?.email}`}>Manage Profile</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/history">History</Link>
