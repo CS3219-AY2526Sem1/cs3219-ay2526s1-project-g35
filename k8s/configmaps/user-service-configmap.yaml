@@ -10,7 +10,7 @@ data:
   ENV: 'PROD'
 
   # Redis Configuration
-  REDIS_URL: 'redis://redis-service:6379'
+  REDIS_URL: 'redis://user-service-redis-service:6379'
 
   # JWT Configuration (timeouts only, secrets from Secret Manager)
   JWT_EXPIRES_IN: '900'

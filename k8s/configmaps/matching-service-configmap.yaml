@@ -9,7 +9,7 @@ data:
   PORT: '8003'
 
   # Redis Configuration
-  REDIS_URL: 'redis://redis-service:6379'
+  REDIS_URL: 'redis://matching-service-redis-service:6381'
 
   # CORS Configuration (will be updated after you get domain/IP)
   # For now allowing all, update after deployment for security
