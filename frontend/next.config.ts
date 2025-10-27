@@ -9,17 +9,17 @@ const nextConfig: NextConfig = {
 
   // Environment variables - these will be available at runtime
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://34.124.186.128',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
     NEXT_PUBLIC_API_USER_URL:
-      process.env.NEXT_PUBLIC_API_USER_URL || 'http://34.124.186.128/api/users',
+      process.env.NEXT_PUBLIC_API_USER_URL || 'http://localhost:8000/api/users',
     NEXT_PUBLIC_API_QUESTION_URL:
-      process.env.NEXT_PUBLIC_API_QUESTION_URL || 'http://34.124.186.128/api/questions',
+      process.env.NEXT_PUBLIC_API_QUESTION_URL || 'http://localhost:8001/api/questions',
     NEXT_PUBLIC_API_MATCHING_URL:
-      process.env.NEXT_PUBLIC_API_MATCHING_URL || 'http://34.124.186.128/api/matching',
+      process.env.NEXT_PUBLIC_API_MATCHING_URL || 'http://localhost:8004/api/matching',
     NEXT_PUBLIC_WS_COLLAB_URL:
-      process.env.NEXT_PUBLIC_WS_COLLAB_URL || 'ws://34.124.186.128/api/collaboration',
+      process.env.NEXT_PUBLIC_WS_COLLAB_URL || 'ws://localhost:8002/api/collaboration',
     NEXT_PUBLIC_MATCHING_WS_URL:
-      process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://34.124.186.128/api/matching/ws',
+      process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8004',
   },
 
   async rewrites() {

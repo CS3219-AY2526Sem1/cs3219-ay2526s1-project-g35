@@ -73,7 +73,7 @@ app.get('/health', (req, res) => {
 });
 
 // Get pending sessions (for debugging/admin) - MUST be before /api/sessions/:sessionId
-app.get('/api/sessions/pending', (req, res) => {
+app.get('/api/sessions/pending', httpAuth, (req, res) => {
   try {
     const pendingSessions = sessionManager.getPendingSessions();
     res.json({ success: true, pendingSessions });
@@ -83,7 +83,7 @@ app.get('/api/sessions/pending', (req, res) => {
 });
 
 // Get session by user ID (for matched sessions) - MUST be before /api/sessions/:sessionId
-app.get('/api/sessions/user/:userId', (req, res) => {
+app.get('/api/sessions/user/:userId', httpAuth, (req, res) => {
   try {
     const { userId } = req.params;
     const sessionId = sessionManager.getSessionByUserId(userId);
@@ -100,7 +100,7 @@ app.get('/api/sessions/user/:userId', (req, res) => {
 });
 
 // Get session info (REST endpoint) - MUST be after specific routes
-app.get('/api/sessions/:sessionId', (req, res) => {
+app.get('/api/sessions/:sessionId', httpAuth, (req, res) => {
   try {
     const { sessionId } = req.params;
     const sessionData = sessionManager.getSessionData(sessionId);
@@ -116,7 +116,7 @@ app.get('/api/sessions/:sessionId', (req, res) => {
 });
 
 // Get all active sessions (admin endpoint)
-app.get('/api/sessions', (req, res) => {
+app.get('/api/sessions', httpAuth, (req, res) => {
   try {
     const stats = sessionManager.getStats();
     res.json({ success: true, stats });
@@ -126,7 +126,7 @@ app.get('/api/sessions', (req, res) => {
 });
 
 // Create a new session (REST endpoint)
-app.post('/api/sessions', (req, res) => {
+app.post('/api/sessions', httpAuth, (req, res) => {
   try {
     const { sessionId, code, language, problem } = req.body;
 

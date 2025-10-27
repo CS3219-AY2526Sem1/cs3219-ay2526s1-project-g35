@@ -17,9 +17,9 @@ interface Message {
 
 interface TestCase {
   id: string;
-  nums: string;
-  target: string;
+  input?: string;
   expected?: string;
+  explanation?: string;
 }
 
 interface QuestionExample {
@@ -36,6 +36,7 @@ interface QuestionData {
   testCases?: Array<{
     input?: string;
     expected?: string;
+    explanation?: string;
   }>;
 }
 
@@ -154,9 +155,9 @@ const Session = (): React.ReactElement => {
           setTestCases(
             matchedData.question.testCases.map((tc, index: number) => ({
               id: `Case ${index + 1}`,
-              nums: tc.input || '',
-              target: '', // Will need to extract from test case
+              input: tc.input || '',
               expected: tc.expected || '',
+              explanation: tc.explanation || '',
             })),
           );
         }
@@ -575,20 +576,22 @@ const Session = (): React.ReactElement => {
 
                 {currentTestCase && (
                   <div className="bg-muted p-4 rounded-2xl">
-                    <div className="flex items-center mb-3">
-                      <span className="mr-2 text-secondary-foreground font-medium">nums =</span>
-                      <span className="font-mono px-2 py-1">{currentTestCase.nums}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="mr-2 text-secondary-foreground font-medium">target =</span>
-                      <span className="font-mono px-2 py-1">{currentTestCase.target}</span>
-                    </div>
+                    {currentTestCase.input && (
+                      <div className="mb-3">
+                        <p className="text-sm text-secondary-foreground mb-1">Input:</p>
+                        <p className="font-mono text-sm whitespace-pre-wrap">{currentTestCase.input}</p>
+                      </div>
+                    )}
                     {currentTestCase.expected && (
-                      <div className="flex items-center mt-3">
-                        <span className="mr-2 text-secondary-foreground font-medium">
-                          expected =
-                        </span>
-                        <span className="font-mono px-2 py-1">{currentTestCase.expected}</span>
+                      <div className="mb-3">
+                        <p className="text-sm text-secondary-foreground mb-1">Expected Output:</p>
+                        <p className="font-mono text-sm">{currentTestCase.expected}</p>
+                      </div>
+                    )}
+                    {currentTestCase.explanation && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <p className="text-sm text-secondary-foreground mb-1">Explanation:</p>
+                        <p className="text-sm">{currentTestCase.explanation}</p>
                       </div>
                     )}
                   </div>
