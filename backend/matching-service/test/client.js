@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import readline from 'readline';
 
-const SERVER_URL = 'ws://localhost:8004'; // Change to hosting server url
+const SERVER_URL = 'ws://localhost:8003'; // Change to hosting server url
 
 const ws = new WebSocket(SERVER_URL);
 

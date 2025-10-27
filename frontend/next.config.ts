@@ -15,10 +15,10 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_API_QUESTION_URL:
       process.env.NEXT_PUBLIC_API_QUESTION_URL || 'http://localhost:8001/api/questions',
     NEXT_PUBLIC_API_MATCHING_URL:
-      process.env.NEXT_PUBLIC_API_MATCHING_URL || 'http://localhost:8004/api/matching',
+      process.env.NEXT_PUBLIC_API_MATCHING_URL || 'http://localhost:8003/api/matching',
     NEXT_PUBLIC_WS_COLLAB_URL:
       process.env.NEXT_PUBLIC_WS_COLLAB_URL || 'ws://localhost:8002/api/collaboration',
-    NEXT_PUBLIC_MATCHING_WS_URL: process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8004',
+    NEXT_PUBLIC_MATCHING_WS_URL: process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8003',
   },
 
   async rewrites() {
