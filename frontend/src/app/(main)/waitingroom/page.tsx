@@ -78,7 +78,7 @@ export default function WaitingRoomPage(): React.ReactElement {
     // Connect to matching service
     let ws: WebSocket;
     try {
-      const wsUrl = process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8005';
+      const wsUrl = process.env.NEXT_PUBLIC_MATCHING_WS_URL || 'ws://localhost:8003';
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;
     } catch {
