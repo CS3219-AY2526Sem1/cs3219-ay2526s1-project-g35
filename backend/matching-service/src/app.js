@@ -81,7 +81,7 @@ app.post('/api/sessions/ready', (req, res) => {
             sessionId,
             questionId,
             partnerUserId: user2.userId,
-            partnerUsername: user2.username,
+            partnerUsername: user2.userId, // Use userId as username for consistency
           }),
         );
 
@@ -91,7 +91,7 @@ app.post('/api/sessions/ready', (req, res) => {
             sessionId,
             questionId,
             partnerUserId: user1.userId,
-            partnerUsername: user1.username,
+            partnerUsername: user1.userId, // Use userId as username for consistency
           }),
         );
 
@@ -215,7 +215,7 @@ wss.on('connection', (ws) => {
                 type: 'match',
                 sessionId,
                 partnerUserId: bestMatch.userId,
-                partnerUsername: bestMatch.username,
+                partnerUsername: bestMatch.userId, // Use userId as username for consistency
                 sharedTopics: maxShared,
                 difficulty: user.difficulty,
               }),
@@ -226,7 +226,7 @@ wss.on('connection', (ws) => {
                 type: 'match',
                 sessionId,
                 partnerUserId: user.userId,
-                partnerUsername: user.username,
+                partnerUsername: user.userId, // Use userId as username for consistency
                 sharedTopics: maxShared,
                 difficulty: user.difficulty,
               }),

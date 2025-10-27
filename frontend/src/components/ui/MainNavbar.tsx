@@ -31,10 +31,21 @@ function MainNavbar() {
   const router = useRouter();
   const [isInSession, setIsInSession] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [partnerRole, setPartnerRole] = useState<string>('Partner 1');
 
   useEffect(() => {
     // Check if user is in a session
     setIsInSession(pathName === '/session');
+    
+    // Determine partner role based on userId stored in sessionStorage
+    if (pathName === '/session') {
+      const matchedUserId = sessionStorage.getItem('matchedUserId');
+      if (matchedUserId) {
+        // Use a simple hash of userId to determine if user is Partner 1 or 2
+        const hash = matchedUserId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        setPartnerRole(hash % 2 === 0 ? 'Partner 1' : 'Partner 2');
+      }
+    }
   }, [pathName]);
 
   const handleLogout = async () => {
@@ -85,7 +96,7 @@ function MainNavbar() {
           <div className="flex items-center gap-4 mr-16">
             <div className="flex items-center gap-2 text-sm">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
-              <span>Partner 1</span>
+              <span>{partnerRole}</span>
             </div>
             <Button variant="destructive" onClick={handleLeaveSessionClick}>
               Leave Session
