@@ -77,6 +77,17 @@ class AuthService {
     }
   }
 
+  /**
+   * Reset token TTL to extend user session
+   */
+  async resetTTL(): Promise<void> {
+    try {
+      await apiClient.post(`${this.AUTH_BASE_PATH}/reset-ttl`);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   private handleError(error: unknown): AuthError {
     if (this.isAxiosError(error) && error.response) {
       const message =
