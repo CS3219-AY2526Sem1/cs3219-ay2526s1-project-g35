@@ -88,18 +88,56 @@ jobs:
           EOF
           
           echo "Verifying .env.docker files were created..."
-          ls -la backend/question-service/.env.docker
-          ls -la backend/user-service/.env.docker
-          ls -la backend/collaboration-service/.env.docker
-          ls -la frontend/.env.docker
+          ls -la backend/question-service/.env.docker || echo "question-service .env.docker NOT FOUND"
+          ls -la backend/user-service/.env.docker || echo "user-service .env.docker NOT FOUND"
+          ls -la backend/collaboration-service/.env.docker || echo "collaboration-service .env.docker NOT FOUND"
+          ls -la frontend/.env.docker || echo "frontend .env.docker NOT FOUND"
+          
+          echo "Showing contents of question-service/.env.docker (first 3 lines):"
+          head -3 backend/question-service/.env.docker || echo "Cannot read file"
+          
+      - name: Verify files before build
+        run: |
+          echo "Checking if .env.docker files exist..."
+          test -f backend/question-service/.env.docker && echo "✓ question-service/.env.docker exists" || echo "✗ question-service/.env.docker missing"
+          test -f backend/user-service/.env.docker && echo "✓ user-service/.env.docker exists" || echo "✗ user-service/.env.docker missing"
+          test -f backend/collaboration-service/.env.docker && echo "✓ collaboration-service/.env.docker exists" || echo "✗ collaboration-service/.env.docker missing"
+          test -f frontend/.env.docker && echo "✓ frontend/.env.docker exists" || echo "✗ frontend/.env.docker missing"
       
       - name: Build all services
         run: docker compose build
+        env:
+          # Question Service env vars
+          QS_MONGODB_URI: ${{ secrets.QS_MONGODB_URI }}
+          QS_JWT_SECRET: ${{ secrets.QS_JWT_SECRET }}
+          # User Service env vars
+          US_DB_CLOUD_URI: ${{ secrets.US_DB_CLOUD_URI }}
+          US_DB_LOCAL_URI: ${{ secrets.US_DB_LOCAL_URI }}
+          US_JWT_SECRET: ${{ secrets.US_JWT_SECRET }}
+          US_JWT_REFRESH_SECRET: ${{ secrets.US_JWT_REFRESH_SECRET }}
+          # Collaboration Service env vars
+          COLLAB_JWT_SECRET: ${{ secrets.COLLAB_JWT_SECRET }}
+          # Email service
+          MAILTRAP_USER: ${{ secrets.MAILTRAP_USER }}
+          MAILTRAP_PASS: ${{ secrets.MAILTRAP_PASS }}
       
       - name: Start all services
         run: docker compose up -d
         env:
           NODE_ENV: test
+          # Question Service env vars
+          QS_MONGODB_URI: ${{ secrets.QS_MONGODB_URI }}
+          QS_JWT_SECRET: ${{ secrets.QS_JWT_SECRET }}
+          # User Service env vars
+          US_DB_CLOUD_URI: ${{ secrets.US_DB_CLOUD_URI }}
+          US_DB_LOCAL_URI: ${{ secrets.US_DB_LOCAL_URI }}
+          US_JWT_SECRET: ${{ secrets.US_JWT_SECRET }}
+          US_JWT_REFRESH_SECRET: ${{ secrets.US_JWT_REFRESH_SECRET }}
+          # Collaboration Service env vars
+          COLLAB_JWT_SECRET: ${{ secrets.COLLAB_JWT_SECRET }}
+          # Email service
+          MAILTRAP_USER: ${{ secrets.MAILTRAP_USER }}
+          MAILTRAP_PASS: ${{ secrets.MAILTRAP_PASS }}
       
       - name: Wait for services to be ready
         run: |
@@ -202,6 +240,73 @@ jobs:
       
       - name: Create Docker network
         run: docker network create peerprep-network || true
+      
+      - name: Create .env.docker files for testing
+        run: |
+          mkdir -p backend/question-service backend/user-service backend/collaboration-service frontend
+
+          # Question Service
+          cat > backend/question-service/.env.docker << 'EOF'
+          NODE_ENV=production
+          PORT=8001
+          MONGODB_URI=${{ secrets.QS_MONGODB_URI }}
+          JWT_SECRET=${{ secrets.QS_JWT_SECRET }}
+          USER_SERVICE_URL=http://user-service:8000
+          CORS_ORIGIN=http://localhost:3000
+          USE_SECRET_MANAGER=false
+          REDIS_HOST=question-service-redis
+          REDIS_PORT=6380
+          EOF
+
+          # User Service
+          cat > backend/user-service/.env.docker << 'EOF'
+          NODE_ENV=production
+          PORT=8000
+          DB_CLOUD_URI=${{ secrets.US_DB_CLOUD_URI }}
+          DB_LOCAL_URI=${{ secrets.US_DB_LOCAL_URI }}
+          ENV=PROD
+          JWT_SECRET=${{ secrets.US_JWT_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.US_JWT_REFRESH_SECRET }}
+          USE_SECRET_MANAGER=false
+          REDIS_URL=redis://user-service-redis:6379
+          COOKIE_DOMAIN=localhost
+          COOKIE_SECURE=false
+          COOKIE_SAME_SITE=lax
+          ARGON2_MEMORY_COST=65536
+          ARGON2_TIME_COST=3
+          ARGON2_PARALLELISM=4
+          ALLOWED_ORIGINS=http://localhost:3000
+          EMAIL_ENABLED=false
+          EMAIL_PROVIDER=mailtrap
+          MAILTRAP_HOST=sandbox.smtp.mailtrap.io
+          MAILTRAP_PORT=2525
+          MAILTRAP_USER=${{ secrets.MAILTRAP_USER }}
+          MAILTRAP_PASS=${{ secrets.MAILTRAP_PASS }}
+          RATE_LIMIT_WINDOW_MS=900000
+          RATE_LIMIT_MAX=100
+          AUTH_RATE_LIMIT_MAX=5
+          EOF
+
+          # Collaboration Service
+          cat > backend/collaboration-service/.env.docker << 'EOF'
+          NODE_ENV=production
+          PORT=8002
+          REDIS_ENABLED=true
+          REDIS_URL=redis://collaboration-service-redis:6382
+          JWT_SECRET=${{ secrets.COLLAB_JWT_SECRET }}
+          CORS_ORIGIN=http://localhost:3000
+          USE_SECRET_MANAGER=false
+          EOF
+
+          # Frontend (public, non-sensitive)
+          cat > frontend/.env.docker << 'EOF'
+          NEXT_PUBLIC_API_URL=http://localhost:8000
+          NEXT_PUBLIC_API_USER_URL=http://localhost:8000
+          NEXT_PUBLIC_API_QUESTION_URL=http://localhost:8001
+          NEXT_PUBLIC_API_MATCHING_URL=http://localhost:8003
+          NEXT_PUBLIC_WS_COLLAB_URL=http://localhost:8002
+          NEXT_PUBLIC_MATCHING_WS_URL=ws://localhost:8003
+          EOF
       
       - name: Start services
         run: docker compose up -d
