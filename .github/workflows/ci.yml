@@ -56,6 +56,26 @@ jobs:
     name: Test User Service
     runs-on: ubuntu-latest
     
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,6 +92,21 @@ jobs:
       - name: Run tests
         working-directory: backend/user-service
         run: npm test || true
+        env:
+          DB_LOCAL_URI: mongodb://localhost:27017/user-service-test
+          DB_CLOUD_URI: ${{ secrets.US_DB_CLOUD_URI || 'mongodb://localhost:27017/user-service-test' }}
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: ${{ secrets.US_JWT_SECRET || 'test-jwt-secret-default' }}
+          JWT_REFRESH_SECRET: ${{ secrets.US_JWT_REFRESH_SECRET || 'test-jwt-refresh-secret-default' }}
+          NODE_ENV: test
+          EMAIL_ENABLED: false
+          MAILTRAP_USER: ${{ secrets.MAILTRAP_USER || '' }}
+          MAILTRAP_PASS: ${{ secrets.MAILTRAP_PASS || '' }}
+          MAILTRAP_HOST: sandbox.smtp.mailtrap.io
+          MAILTRAP_PORT: 2525
+          RATE_LIMIT_WINDOW_MS: 900000
+          RATE_LIMIT_MAX: 100
+          AUTH_RATE_LIMIT_MAX: 5
       
       - name: Run ESLint (if available)
         working-directory: backend/user-service
@@ -89,6 +124,15 @@ jobs:
           - 27017:27017
         options: >-
           --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -111,6 +155,10 @@ jobs:
         run: npm test
         env:
           MONGODB_URI: mongodb://localhost:27017/question-service-test
+          JWT_SECRET: ${{ secrets.QS_JWT_SECRET || 'test-jwt-secret-default' }}
+          REDIS_HOST: localhost
+          REDIS_PORT: 6380
+          NODE_ENV: test
       
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
