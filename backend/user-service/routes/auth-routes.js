@@ -6,9 +6,7 @@ import {
   handleLogout,
   handleRefreshToken,
   handleResetTokenTTL,
-  handleSendLogin2FAOTP,
   handleSendVerificationOTP,
-  handleVerifyLogin2FAOTP,
   handleVerifyOTP,
   handleVerifyToken,
 } from '../controller/auth-controller.js';
@@ -45,14 +43,5 @@ router.post('/reset-ttl', verifyToken, handleResetTokenTTL);
 router.post('/send-otp', verifyToken, handleSendVerificationOTP);
 router.post('/verify-otp', verifyToken, validate(userSchemas.verifyOTPOnly), handleVerifyOTP);
 router.get('/verification-status', verifyToken, handleCheckVerificationStatus);
-
-// Login 2FA endpoints (for two-factor authentication on login)
-router.post('/send-login-2fa', verifyToken, handleSendLogin2FAOTP);
-router.post(
-  '/verify-login-2fa',
-  verifyToken,
-  validate(userSchemas.verifyOTPOnly),
-  handleVerifyLogin2FAOTP,
-);
 
 export default router;
