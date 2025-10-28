@@ -8,28 +8,58 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/Carousel';
+import { fetchCategories, fetchDifficulties } from '@/services/question.service';
 import Autoplay from 'embla-carousel-autoplay';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
   const router = useRouter();
 
-  // Support selecting multiple topics
-  const [selectedTopics, setSelectedTopics] = useState<number[]>([0]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  // Data from Question Service
+  const [topics, setTopics] = useState<string[]>([]);
+  const [difficulties, setDifficulties] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const topics = [
-    'Arrays',
-    'Algorithms',
-    'Data Structures',
-    'Dynamic Programming',
-    'Sliding Window',
-    'Strings',
-  ];
+  // Selections (support multiple topics)
+  const [selectedTopics, setSelectedTopics] = useState<number[]>([]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
 
-  const difficulties = ['Easy', 'Medium', 'Hard'];
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    Promise.all([fetchCategories(), fetchDifficulties()])
+      .then(([cats, diffs]) => {
+        if (cancelled) return;
+        setTopics(cats);
+
+        // Sort difficulties in desired order
+        const difficultyOrder = ['Easy', 'Medium', 'Hard'];
+        const sortedDiffs = diffs.sort((a, b) => {
+          const indexA = difficultyOrder.indexOf(a);
+          const indexB = difficultyOrder.indexOf(b);
+          return indexA - indexB;
+        });
+
+        setDifficulties(sortedDiffs);
+
+        // Default-select first topic for convenience
+        if (cats.length > 0) setSelectedTopics([0]);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        console.error('Failed to load topics/difficulties:', e);
+        setError('Failed to load topics and difficulties. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const goWaiting = () => {
     // Validate selections
@@ -45,7 +75,9 @@ export default function HomePage() {
     setError(null);
 
     // Get selected topic names
-    const selectedTopicNames = selectedTopics.map((i) => topics[i]);
+    const selectedTopicNames = selectedTopics
+      .map((i) => topics[i])
+      .filter((t) => typeof t === 'string' && t.length > 0);
 
     // Store search data for waiting room page
     sessionStorage.setItem(
@@ -85,6 +117,12 @@ export default function HomePage() {
         </div>
       )}
 
+      {loading && (
+        <div className="w-full max-w-[600px] p-4 text-sm text-center text-(--muted-foreground) border border-border rounded-md">
+          Loading topics and difficulties...
+        </div>
+      )}
+
       <section id="topics" className="w-full">
         <h2 className="text-3xl text-center">Which topic(s) would you like to practice today?</h2>
         <Carousel
@@ -97,7 +135,7 @@ export default function HomePage() {
             }),
           ]}
         >
-          {/* topics mapped from array */}
+          {/* topics mapped from API */}
           <CarouselContent className="-ml-6">
             {topics.map((t, i) => (
               <CarouselItem key={t} className="basis-1/3 lg:basis-1/4 pl-6 py-2 h-50">
@@ -125,7 +163,7 @@ export default function HomePage() {
         <h2 className="text-3xl text-center">
           Select your desired difficulty level for the questions
         </h2>
-        {/* difficulties mapped from array */}
+        {/* difficulties mapped from API */}
         <div className="w-3/4 mt-14 max-w-[1050px] mx-auto flex justify-center h-50 py-2">
           {difficulties.map((d) => (
             <div
