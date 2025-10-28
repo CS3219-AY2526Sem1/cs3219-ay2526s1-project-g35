@@ -44,8 +44,6 @@ services:
       - "8001:8001"
     env_file:
       - ./backend/question-service/.env.docker
-    environment:
-      - REDIS_URL=redis://question-service-redis:6380
     depends_on:
       question-service-redis:
         condition: service_healthy
@@ -123,7 +121,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6379", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -141,7 +139,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6380", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6380", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -159,7 +157,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6381", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6381", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -177,7 +175,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6382", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6382", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
