@@ -101,3 +101,6 @@ Thumbs.db
 
 # Redis dump
 dump.rdb
+
+# Test cookies
+*cookies*.txt

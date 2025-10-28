@@ -1,13 +1,14 @@
 const app = require('./index');
 const { connectDB } = require('./config/database');
 const { initializeSecrets } = require('./config/secretManager');
+const { initRedis, closeRedis } = require('./config/redis');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 8000;
 
 /**
  * Start Server
- * Load secrets from Secret Manager, connect to MongoDB, then start the Express server
+ * Load secrets from Secret Manager, connect to MongoDB and Redis, then start the Express server
  */
 const startServer = async () => {
   try {
@@ -22,10 +23,37 @@ const startServer = async () => {
     // Connect to MongoDB
     await connectDB();
 
+    // Connect to Redis (graceful degradation if fails)
+    try {
+      await initRedis();
+      console.log('✓ Redis caching enabled');
+    } catch (error) {
+      console.warn('⚠ Redis connection failed - running without cache:', error.message);
+    }
+
     // Start Express server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Question Service running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, closing server gracefully...');
+      await closeRedis();
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', async () => {
+      console.log('SIGINT received, closing server gracefully...');
+      await closeRedis();
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
     });
   } catch (error) {
     console.error('Failed to start server:', error);

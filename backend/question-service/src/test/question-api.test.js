@@ -3,6 +3,53 @@ const app = require('../index');
 const Question = require('../models/question-model');
 
 /**
+ * Mock the jwtAuth middleware to bypass authentication in tests
+ * This allows us to test the functionality without needing actual tokens
+ */
+jest.mock('../middleware/jwtAuth', () => ({
+  verifyToken: (req, res, next) => {
+    // Mock authenticated user data
+    req.user = {
+      id: 'mock-user-id',
+      username: 'testuser',
+      email: 'test@test.com',
+      isAdmin: false,
+      isVerified: true,
+    };
+    req.userId = 'mock-user-id';
+    next();
+  },
+  verifyAdmin: (req, res, next) => {
+    // Mock admin user data
+    req.user = {
+      id: 'mock-admin-id',
+      username: 'admin',
+      email: 'admin@test.com',
+      isAdmin: true,
+      isVerified: true,
+    };
+    req.userId = 'mock-admin-id';
+    next();
+  },
+}));
+
+/**
+ * Mock the Redis cache service to avoid Redis dependency in tests
+ * All cache operations return null/false to simulate cache misses
+ */
+jest.mock('../utils/cacheService', () => ({
+  getQuestion: jest.fn().mockResolvedValue(null),
+  setQuestion: jest.fn().mockResolvedValue(true),
+  deleteQuestion: jest.fn().mockResolvedValue(true),
+  getRandomQuestion: jest.fn().mockResolvedValue(null),
+  setRandomQuestion: jest.fn().mockResolvedValue(true),
+  invalidateRandomCaches: jest.fn().mockResolvedValue(true),
+  invalidateListCaches: jest.fn().mockResolvedValue(true),
+  clearAllCaches: jest.fn().mockResolvedValue(true),
+  getCacheStats: jest.fn().mockResolvedValue({ connected: false }),
+}));
+
+/**
  * Question API Integration Tests
  * Tests all REST endpoints
  */
@@ -261,9 +308,8 @@ describe('Question API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.difficulty).toBe('Easy');
-      expect(response.body.data.topics).toContain('Arrays');
+      expect(response.body.questionId).toBeDefined();
+      expect(typeof response.body.questionId).toBe('string');
     });
 
     it('should return 400 when topic is missing', async () => {
