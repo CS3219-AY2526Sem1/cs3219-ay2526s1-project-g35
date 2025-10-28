@@ -25,6 +25,8 @@ services:
     environment:
       - REDIS_URL=redis://user-service-redis:6379
     depends_on:
+      user-service-mongodb:
+        condition: service_healthy
       user-service-redis:
         condition: service_healthy
     networks:
@@ -48,6 +50,8 @@ services:
       - REDIS_HOST=question-service-redis
       - REDIS_PORT=6380
     depends_on:
+      question-service-mongodb:
+        condition: service_healthy
       question-service-redis:
         condition: service_healthy
     networks:
@@ -110,6 +114,45 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
+
+  # MongoDB instances for services that need databases
+  user-service-mongodb:
+    container_name: user-service-mongodb
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=userdb
+    volumes:
+      - user_mongodb_data:/data/db
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  question-service-mongodb:
+    container_name: question-service-mongodb
+    image: mongo:7
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=questiondb
+    volumes:
+      - question_mongodb_data:/data/db
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     restart: unless-stopped
 
   # Redis instances for each service - separated for scalability
@@ -190,6 +233,8 @@ networks:
     driver: bridge
 
 volumes:
+  user_mongodb_data:
+  question_mongodb_data:
   user_redis_data:
   question_redis_data:
   matching_redis_data:
