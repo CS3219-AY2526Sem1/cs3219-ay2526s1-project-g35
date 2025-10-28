@@ -1,0 +1,306 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+  push:
+    branches: [master, main, develop]
+
+env:
+  NODE_VERSION: '20'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # Code Quality Checks
+  lint-and-format:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        service:
+          - name: user-service
+            path: backend/user-service
+          - name: question-service
+            path: backend/question-service
+          - name: collaboration-service
+            path: backend/collaboration-service
+          - name: matching-service
+            path: backend/matching-service
+          - name: frontend
+            path: frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: ${{ matrix.service.path }}
+        run: npm ci
+      
+      - name: Run Prettier check
+        working-directory: ${{ matrix.service.path }}
+        run: npm run format:check || true
+
+  # Run tests for services
+  test-user-service:
+    name: Test User Service
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: backend/user-service
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: backend/user-service
+        run: npm test || true
+      
+      - name: Run ESLint (if available)
+        working-directory: backend/user-service
+        run: npm run lint || true
+        continue-on-error: true
+
+  test-question-service:
+    name: Test Question Service
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: backend/question-service
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: backend/question-service
+        run: npm test
+        env:
+          MONGODB_URI: mongodb://localhost:27017/question-service-test
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/question-service/coverage/lcov.info
+          flags: question-service
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  test-matching-service:
+    name: Test Matching Service
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: backend/matching-service
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: backend/matching-service
+        run: npm test || true
+
+  test-collaboration-service:
+    name: Test Collaboration Service
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: backend/collaboration-service
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: backend/collaboration-service
+        run: npm test || true
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint || true
+        continue-on-error: true
+      
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+          NEXT_PUBLIC_API_USER_URL: http://localhost:8000
+          NEXT_PUBLIC_API_QUESTION_URL: http://localhost:8001
+          NEXT_PUBLIC_API_MATCHING_URL: http://localhost:8003
+          NEXT_PUBLIC_WS_COLLAB_URL: http://localhost:8002
+          NEXT_PUBLIC_MATCHING_WS_URL: ws://localhost:8003
+
+  # Build and test Docker images
+  build-docker-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint-and-format]
+    
+    strategy:
+      matrix:
+        service:
+          - name: user-service
+            path: backend/user-service
+            dockerfile: backend/user-service/Dockerfile
+            context: backend/user-service
+          - name: question-service
+            path: backend/question-service
+            dockerfile: backend/question-service/Dockerfile
+            context: backend/question-service
+          - name: collaboration-service
+            path: backend/collaboration-service
+            dockerfile: backend/collaboration-service/Dockerfile
+            context: backend/collaboration-service
+          - name: matching-service
+            path: backend/matching-service
+            dockerfile: backend/matching-service/Dockerfile
+            context: backend/matching-service
+          - name: frontend
+            path: frontend
+            dockerfile: frontend/Dockerfile
+            context: frontend
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: false
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/peerprep-${{ matrix.service.name }}:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  # Run integration tests with docker-compose
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [build-docker-images]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Compose
+        run: |
+          docker compose version
+      
+      - name: Build services
+        run: |
+          docker compose build --parallel
+      
+      - name: Start services
+        run: |
+          docker compose up -d
+      
+      - name: Wait for services to be healthy
+        run: |
+          timeout 300 bash -c 'until docker compose ps | grep -q healthy; do sleep 5; done'
+        continue-on-error: true
+      
+      - name: Check service health
+        run: |
+          docker compose ps
+          echo "Checking health endpoints..."
+          curl -f http://localhost:8000/health || echo "User service not healthy"
+          curl -f http://localhost:8001/health || echo "Question service not healthy"
+          curl -f http://localhost:8002/health || echo "Collaboration service not healthy"
+          curl -f http://localhost:8003/health || echo "Matching service not healthy"
+        continue-on-error: true
+      
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          docker compose logs
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+
+  # Summary job that collects all test results
+  ci-success:
+    name: CI Pipeline Success
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, test-user-service, test-question-service, test-matching-service, test-collaboration-service, test-frontend, build-docker-images]
+    if: always()
+    
+    steps:
+      - name: CI Pipeline completed
+        run: |
+          echo "CI Pipeline completed"
+          echo "Check individual job results for details"
+

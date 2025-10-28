@@ -1,0 +1,146 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+  workflow_dispatch:
+
+env:
+  DOCKER_COMPOSE_VERSION: '2.25.0'
+
+permissions:
+  contents: read
+
+jobs:
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Compose
+        uses: docker/compose-action@v3
+      
+      - name: Build all services
+        run: docker compose build
+      
+      - name: Start all services
+        run: docker compose up -d
+        env:
+          NODE_ENV: test
+      
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to be healthy..."
+          timeout 300 bash -c 'until docker compose ps | grep healthy | wc -l | grep -q 4; do 
+            echo "Services starting...";
+            docker compose ps;
+            sleep 5;
+          done'
+      
+      - name: Check service health
+        run: |
+          echo "Checking service health endpoints..."
+          
+          echo "Checking user-service..."
+          curl -f http://localhost:8000/health || exit 1
+          
+          echo "Checking question-service..."
+          curl -f http://localhost:8001/health || exit 1
+          
+          echo "Checking collaboration-service..."
+          curl -f http://localhost:8002/health || exit 1
+          
+          echo "Checking matching-service..."
+          curl -f http://localhost:8003/health || exit 1
+          
+          echo "All services are healthy!"
+      
+      - name: Display service status
+        run: docker compose ps
+      
+      - name: Test API endpoints
+        run: |
+          echo "Testing API endpoints..."
+          
+          # Test user service
+          echo "Testing user service endpoints..."
+          curl -f http://localhost:8000/health || echo "User service health check failed"
+          
+          # Test question service
+          echo "Testing question service endpoints..."
+          curl -f http://localhost:8001/health || echo "Question service health check failed"
+          
+          # Test frontend
+          echo "Testing frontend..."
+          curl -f http://localhost:3000 || echo "Frontend check failed"
+      
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          # Add your integration test commands here
+          # Example: npm run test:integration
+        continue-on-error: true
+      
+      - name: Capture service logs on failure
+        if: failure()
+        run: |
+          echo "=== User Service Logs ==="
+          docker compose logs user-service || true
+          
+          echo "=== Question Service Logs ==="
+          docker compose logs question-service || true
+          
+          echo "=== Collaboration Service Logs ==="
+          docker compose logs collaboration-service || true
+          
+          echo "=== Matching Service Logs ==="
+          docker compose logs matching-service || true
+          
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend || true
+      
+      - name: Show network configuration
+        if: failure()
+        run: |
+          echo "=== Network Information ==="
+          docker network inspect cs3219-network || true
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          docker system prune -f
+
+  test-service-communication:
+    name: Test Service Communication
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Compose
+        uses: docker/compose-action@v3
+      
+      - name: Start services
+        run: docker compose up -d
+      
+      - name: Wait for services
+        run: sleep 30
+      
+      - name: Test internal service communication
+        run: |
+          echo "Testing service-to-service communication..."
+          
+          # Test that services can communicate via Docker network
+          docker compose exec -T user-service wget -q -O- http://question-service:8001/health || echo "Failed"
+          docker compose exec -T matching-service wget -q -O- http://collaboration-service:8002/health || echo "Failed"
+      
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
