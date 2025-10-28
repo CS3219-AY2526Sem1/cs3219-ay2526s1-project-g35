@@ -139,9 +139,6 @@ function MainNavbar() {
             <DropdownMenuItem asChild>
               <Link href="/history">History</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/settings">Settings</Link>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
               Logout
             </DropdownMenuItem>

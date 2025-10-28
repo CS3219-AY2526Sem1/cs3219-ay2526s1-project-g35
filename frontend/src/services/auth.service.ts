@@ -91,7 +91,7 @@ class AuthService {
   }
 
   /**
-   * Send OTP to the authenticated user's email
+   * Send OTP to the authenticated user's email for email verification
    */
   async sendOTP(): Promise<SendOTPResponse> {
     try {
@@ -105,12 +105,43 @@ class AuthService {
   }
 
   /**
-   * Verify OTP code
+   * Verify OTP code for email verification
    */
   async verifyOTP(otp: string): Promise<VerifyOTPResponse> {
     try {
       const response: AxiosResponse<VerifyOTPResponse> = await apiClient.post(
         `${this.AUTH_BASE_PATH}/verify-otp`,
+        { otp },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Send login 2FA OTP to the authenticated user's email
+   * Used for two-factor authentication during login
+   */
+  async sendLogin2FA(): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/send-login-2fa`,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Verify login 2FA OTP code
+   * Used to complete the two-factor authentication process during login
+   */
+  async verifyLogin2FA(otp: string): Promise<VerifyOTPResponse> {
+    try {
+      const response: AxiosResponse<VerifyOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/verify-login-2fa`,
         { otp },
       );
       return response.data;

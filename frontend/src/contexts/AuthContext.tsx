@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Send OTP for 2FA
+   * Send OTP for email verification (registration)
    */
   const sendOTP = useCallback(async () => {
     try {
@@ -94,13 +94,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Verify OTP and complete authentication
+   * Verify OTP for email verification (registration)
    */
   const verifyOTP = useCallback(async (otp: string) => {
     try {
       setAuthState((prev: AuthState) => ({ ...prev, error: null }));
 
       const response = await authService.verifyOTP(otp);
+
+      // Update user with verified status
+      setAuthState((prev: AuthState) => ({
+        ...prev,
+        user: response.data.user,
+        error: null,
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      setAuthState((prev: AuthState) => ({
+        ...prev,
+        error: errorMessage,
+      }));
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Send login 2FA OTP
+   */
+  const sendLogin2FA = useCallback(async () => {
+    try {
+      setAuthState((prev: AuthState) => ({ ...prev, error: null }));
+      await authService.sendLogin2FA();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send login code';
+      setAuthState((prev: AuthState) => ({
+        ...prev,
+        error: errorMessage,
+      }));
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Verify login 2FA OTP and complete authentication
+   */
+  const verifyLogin2FA = useCallback(async (otp: string) => {
+    try {
+      setAuthState((prev: AuthState) => ({ ...prev, error: null }));
+
+      const response = await authService.verifyLogin2FA(otp);
 
       // Now mark as fully authenticated
       setAuthState((prev: AuthState) => ({
@@ -110,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: null,
       }));
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      const errorMessage = error instanceof Error ? error.message : 'Login verification failed';
       setAuthState((prev: AuthState) => ({
         ...prev,
         error: errorMessage,
@@ -184,6 +226,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     verifySession,
     sendOTP,
     verifyOTP,
+    sendLogin2FA,
+    verifyLogin2FA,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

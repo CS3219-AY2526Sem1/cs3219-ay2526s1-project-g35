@@ -1,11 +1,11 @@
-import { UserRepository } from '../model/user-repository.js';
-import { formatUserResponse } from './user-controller.js';
 import { AUTH_ERRORS, sendErrorResponse } from '../errors/index.js';
+import { UserRepository } from '../model/user-repository.js';
 import * as authService from '../services/auth-service.js';
+import { otpService } from '../services/otp-service.js';
 import * as tokenService from '../services/token-service.js';
 import * as verificationService from '../services/verification-service.js';
-import { otpService } from '../services/otp-service.js';
-import { setAuthCookies, clearAuthCookies } from '../utils/cookie-helper.js';
+import { clearAuthCookies, setAuthCookies } from '../utils/cookie-helper.js';
+import { formatUserResponse } from './user-controller.js';
 
 export async function handleLogin(req, res) {
   const { email, password } = req.body;
@@ -247,6 +247,96 @@ export async function handleCheckVerificationStatus(req, res) {
     });
   } catch (error) {
     console.error('Check verification status error:', error);
+    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
+  }
+}
+
+/**
+ * ============================================================================
+ * LOGIN 2FA HANDLERS (separate from email verification)
+ * ============================================================================
+ */
+
+/**
+ * Generate and send login 2FA OTP
+ * This is used for two-factor authentication during login
+ * Works for all users (verified or not)
+ */
+export async function handleSendLogin2FAOTP(req, res) {
+  try {
+    const userId = req.userId;
+    const user = req.user;
+
+    const result = await verificationService.sendLogin2FAOTP(userId, user);
+
+    return res.status(200).json({
+      message: 'Login verification code sent successfully to your email address.',
+      data: {
+        email: result.email,
+        expiryMinutes: result.expiryMinutes,
+      },
+    });
+  } catch (error) {
+    console.error('Error generating login 2FA OTP:', error);
+
+    if (error.message === 'OTP_COOLDOWN' && error.cooldownInfo) {
+      const { message, retryAfterSeconds } = error.cooldownInfo;
+      return res.status(400).json({
+        message,
+        error: AUTH_ERRORS.OTP_ALREADY_SENT.code,
+        retryAfterSeconds,
+      });
+    }
+
+    if (error.message === 'STORAGE_ERROR') {
+      return sendErrorResponse(res, AUTH_ERRORS.STORAGE_ERROR);
+    }
+
+    if (error.message === 'EMAIL_ERROR') {
+      return sendErrorResponse(res, AUTH_ERRORS.EMAIL_ERROR);
+    }
+
+    return sendErrorResponse(res, AUTH_ERRORS.VERIFICATION_SERVER_ERROR);
+  }
+}
+
+/**
+ * Verify login 2FA OTP
+ * Validates the OTP code for completing the login process
+ */
+export async function handleVerifyLogin2FAOTP(req, res) {
+  try {
+    const { otp } = req.body;
+    const userId = req.userId;
+    const user = req.user;
+
+    const result = await verificationService.verifyLogin2FAOTP(userId, user, otp);
+
+    return res.status(200).json({
+      message: 'Login verification successful',
+      data: {
+        user: formatUserResponse(result.user),
+        verifiedAt: result.verifiedAt,
+      },
+    });
+  } catch (error) {
+    console.error('Login 2FA OTP verification error:', error);
+
+    if (error.message === 'MISSING_OTP') {
+      return sendErrorResponse(res, AUTH_ERRORS.MISSING_OTP);
+    }
+
+    if (error.message === 'INVALID_OTP' && error.validationResult) {
+      const { validationResult } = error;
+      const errorMessage = otpService.getErrorMessage(validationResult);
+
+      return res.status(400).json({
+        message: errorMessage,
+        error: validationResult.reason,
+        attemptsRemaining: validationResult.attemptsRemaining,
+      });
+    }
+
     return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }

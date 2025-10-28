@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 
 export default function TwoFactorPage(): React.ReactElement {
   const router = useRouter();
-  const { sendOTP, verifyOTP, clearError, user } = useAuth();
+  const { sendLogin2FA, verifyLogin2FA, clearError, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   // Send OTP when page loads
@@ -20,7 +20,7 @@ export default function TwoFactorPage(): React.ReactElement {
       }
 
       try {
-        await sendOTP();
+        await sendLogin2FA();
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP';
         setError(errorMessage);
@@ -28,7 +28,7 @@ export default function TwoFactorPage(): React.ReactElement {
     };
 
     sendCode();
-  }, [sendOTP, router, user]);
+  }, [sendLogin2FA, router, user]);
 
   const handleSubmit = async (code: string) => {
     if (code.length !== 6) {
@@ -39,7 +39,7 @@ export default function TwoFactorPage(): React.ReactElement {
     clearError();
 
     try {
-      await verifyOTP(code);
+      await verifyLogin2FA(code);
       // Redirect to home on success
       router.push('/home');
     } catch (err) {
@@ -53,7 +53,7 @@ export default function TwoFactorPage(): React.ReactElement {
     clearError();
 
     try {
-      await sendOTP();
+      await sendLogin2FA();
       setError('Code resent successfully');
       // Clear success message after 3 seconds
       setTimeout(() => setError(null), 3000);

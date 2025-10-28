@@ -81,4 +81,6 @@ export interface AuthContextType extends AuthState {
   verifySession: () => Promise<boolean>;
   sendOTP: () => Promise<void>;
   verifyOTP: (otp: string) => Promise<void>;
+  sendLogin2FA: () => Promise<void>;
+  verifyLogin2FA: (otp: string) => Promise<void>;
 }

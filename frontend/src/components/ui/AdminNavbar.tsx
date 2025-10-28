@@ -49,9 +49,6 @@ function AdminNavbar() {
             <DropdownMenuItem asChild>
               <Link href="/admin/questions">Question Bank</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href="/admin/settings">Settings</Link>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
               Logout
             </DropdownMenuItem>
