@@ -16,14 +16,14 @@ This guide explains how to set up and use the CI/CD pipeline for the PeerPrep pr
 
 The PeerPrep project uses GitHub Actions for CI/CD. The pipeline includes:
 
-- ✅ Automated code quality checks (Prettier)
-- ✅ Automated testing for all services
-- ✅ Docker image building and publishing
-- ✅ Security scanning (Trivy)
-- ✅ Integration testing with docker-compose
-- ✅ Automated deployment to Kubernetes
-- ✅ Dependency updates
-- ✅ Rollback capabilities
+- Automated code quality checks (Prettier)
+- Automated testing for all services
+- Docker image building and publishing
+- Security scanning (Trivy)
+- Integration testing with docker-compose
+- Automated deployment to Kubernetes
+- Dependency updates
+- Rollback capabilities
 
 ## Quick Start
 
