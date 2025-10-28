@@ -167,7 +167,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6379", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -185,7 +185,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6380", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6380", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -203,7 +203,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6381", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6381", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -221,7 +221,7 @@ services:
     networks:
       - peerprep-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6382", "ping"]
+      test: [ "CMD", "redis-cli", "-p", "6382", "ping" ]
       interval: 10s
       timeout: 3s
       retries: 3
