@@ -13,11 +13,14 @@ class ServiceIntegration {
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8000';
 
     // Create axios instances with default configs
+    const serviceToServiceToken = process.env.SERVICE_TO_SERVICE_TOKEN || 'internal-service-token';
+    
     this.questionServiceClient = axios.create({
       baseURL: this.questionServiceUrl,
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json',
+        'x-service-token': serviceToServiceToken, // Add service-to-service authentication
       },
     });
 
@@ -26,6 +29,7 @@ class ServiceIntegration {
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json',
+        'x-service-token': serviceToServiceToken,
       },
     });
 
@@ -34,6 +38,7 @@ class ServiceIntegration {
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json',
+        'x-service-token': serviceToServiceToken,
       },
     });
   }
