@@ -71,7 +71,7 @@ data:
         - POST
         - OPTIONS
 
-    # Matching Service (HTTP endpoints only, not direct WebSocket)
+    # Matching Service (HTTP endpoints + WebSocket support)
     - name: matching-service-http
       url: http://matching-service.peerprep.svc.cluster.local:8003
       routes:
@@ -79,6 +79,9 @@ data:
         paths:
         - /api/matching
         strip_path: true
+        protocols:
+        - http
+        - https
         methods:
         - GET
         - POST
@@ -89,7 +92,8 @@ data:
     - name: cors
       config:
         origins:
-        - "http://34.36.96.229"
+        - "http://34.8.234.19"
+        - "http://34.124.186.128"
         - "http://localhost:3000"
         - "http://127.0.0.1:3000"
         methods:
@@ -117,6 +121,6 @@ data:
 
     - name: rate-limiting
       config:
-        minute: 1000
-        hour: 10000
+        minute: 10000
+        hour: 100000
         policy: local

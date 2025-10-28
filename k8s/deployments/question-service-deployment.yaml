@@ -18,7 +18,8 @@ spec:
       serviceAccountName: question-service-sa # Workload Identity for Secret Manager
       containers:
         - name: question-service
-          image: gcr.io/peerprep-475911/question-service:v1.3
+          image: gcr.io/peerprep-475911/question-service:v1.5
+          imagePullPolicy: Always
           ports:
             - containerPort: 8001
               name: http
@@ -48,3 +49,4 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+

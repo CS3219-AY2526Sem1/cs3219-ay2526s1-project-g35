@@ -91,7 +91,7 @@ class SocketService {
    * Connect to the collaboration service
    */
   connect(token: string, userId: string): Socket | undefined {
-    const serverUrl = process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || 'http://localhost:8002';
+    const serverUrl = process.env.NEXT_PUBLIC_COLLABORATION_SERVICE_URL || process.env.NEXT_PUBLIC_WS_COLLAB_URL || 'http://34.8.234.19/api/collaboration';
 
     this.userId = userId;
 

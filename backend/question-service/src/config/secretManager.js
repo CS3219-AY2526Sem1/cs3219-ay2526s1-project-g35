@@ -40,6 +40,7 @@ async function loadSecrets() {
     const secrets = {
       // Database URI (SENSITIVE - contains credentials)
       MONGODB_URI: await accessSecretVersion('question-service-mongodb-uri'),
+      JWT_SECRET: await accessSecretVersion('question-service-jwt-secret'),
     };
 
     console.log('Secrets loaded successfully from Google Secret Manager');

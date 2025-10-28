@@ -7,6 +7,8 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: 'gce'
     kubernetes.io/ingress.global-static-ip-name: 'peerprep-static-ip'
+    # WebSocket support
+    nginx.ingress.kubernetes.io/websocket-services: 'matching-service,collaboration-service'
 spec:
   defaultBackend:
     service:
@@ -43,8 +45,17 @@ spec:
                 port:
                   number: 8001
 
-          # Collaboration Service
+          # Collaboration Service (HTTP endpoints)
           - path: /api/collaboration/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: collaboration-service
+                port:
+                  number: 8002
+
+          # Collaboration Service (Socket.IO WebSocket)
+          - path: /socket.io/*
             pathType: ImplementationSpecific
             backend:
               service:

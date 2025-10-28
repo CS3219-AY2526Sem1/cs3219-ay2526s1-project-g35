@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { initializeSecrets } from '../config/secretManager.js';
 
 dotenv.config();
 
@@ -309,8 +310,21 @@ function startTimeout(user) {
   }, TIMEOUT_MS);
 }
 
-server.listen(PORT, () => {
-  console.log(`
+// Initialize and start server
+async function startServer() {
+  try {
+    // Load secrets from Google Secret Manager if enabled
+    if (process.env.USE_SECRET_MANAGER === 'true') {
+      console.log('Loading secrets from Google Secret Manager...');
+      await initializeSecrets();
+      console.log('✓ Secrets loaded successfully');
+    } else {
+      console.log('Using environment variables from .env file');
+    }
+
+    // Start the server
+    server.listen(PORT, () => {
+      console.log(`
 ╔════════════════════════════════════════════╗
 ║   Matching Service Started                 ║
 ╠════════════════════════════════════════════╣
@@ -318,7 +332,15 @@ server.listen(PORT, () => {
 ║   WebSocket Port: ${PORT}                    ║
 ║   Environment: ${(process.env.NODE_ENV || 'development').padEnd(27)}║
 ╚════════════════════════════════════════════╝
-  `);
-});
+      `);
+    });
 
-console.log('Matching WebSocket server running on port ' + PORT);
+    console.log('Matching WebSocket server running on port ' + PORT);
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();

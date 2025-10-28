@@ -44,11 +44,11 @@ router.get(
   QuestionController.getRandomQuestionByDifficulty,
 );
 
-// GET /api/questions/categories - Get all categories/topics
-router.get('/categories', verifyToken, QuestionController.getAllCategories);
+// GET /api/questions/categories - Get all categories/topics (Public)
+router.get('/categories', QuestionController.getAllCategories);
 
-// GET /api/questions/difficulties - Get all difficulty levels
-router.get('/difficulties', verifyToken, QuestionController.getAllDifficulties);
+// GET /api/questions/difficulties - Get all difficulty levels (Public)
+router.get('/difficulties', QuestionController.getAllDifficulties);
 
 // GET /api/questions/:id - Get a single question by ID
 router.get('/:id', verifyToken, QuestionController.getQuestionById);

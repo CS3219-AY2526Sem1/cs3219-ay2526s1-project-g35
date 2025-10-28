@@ -13,8 +13,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: user-service
-  minReplicas: 3
-  maxReplicas: 15
+  minReplicas: 2
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
@@ -41,8 +41,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: question-service
-  minReplicas: 3
-  maxReplicas: 15
+  minReplicas: 2
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
@@ -69,8 +69,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: collaboration-service
-  minReplicas: 3
-  maxReplicas: 20 # More pods for WebSocket connections
+  minReplicas: 2
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
@@ -97,8 +97,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: matching-service
-  minReplicas: 3
-  maxReplicas: 20 # More pods for WebSocket connections
+  minReplicas: 2
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:
@@ -125,8 +125,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: frontend
-  minReplicas: 3
-  maxReplicas: 20
+  minReplicas: 2
+  maxReplicas: 4
   metrics:
     - type: Resource
       resource:

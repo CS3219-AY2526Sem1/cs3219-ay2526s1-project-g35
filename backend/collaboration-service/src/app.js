@@ -12,6 +12,7 @@ const { socketAuthMiddleware, socketAuthMiddlewareDev } = require('../middleware
 const { httpAuthMiddleware, httpAuthMiddlewareDev } = require('../middleware/httpAuth');
 const { initRedis, closeRedis } = require('../config/redis');
 const ServiceIntegration = require('../utils/serviceIntegration');
+const { initializeSecrets } = require('../config/secretManager');
 
 const app = express();
 const server = http.createServer(app);
@@ -150,8 +151,8 @@ app.post('/api/sessions', httpAuth, (req, res) => {
   }
 });
 
-// Create a matched session from matching service (requires auth)
-app.post('/api/sessions/matched', httpAuth, async (req, res) => {
+// Create a matched session from matching service (service-to-service endpoint - no auth required)
+app.post('/api/sessions/matched', async (req, res) => {
   try {
     const { userIds, questionId } = req.body;
 
@@ -230,6 +231,15 @@ app.use('*', (req, res) => {
 // Initialize Redis and start server
 const startServer = async () => {
   try {
+    // Load secrets from Google Secret Manager if enabled
+    if (process.env.USE_SECRET_MANAGER === 'true') {
+      console.log('Loading secrets from Google Secret Manager...');
+      await initializeSecrets();
+      console.log('✓ Secrets loaded successfully');
+    } else {
+      console.log('Using environment variables from .env file');
+    }
+
     // Initialize Redis (optional)
     await initRedis();
 

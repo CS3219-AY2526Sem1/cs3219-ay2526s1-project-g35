@@ -10,11 +10,17 @@ data:
 
   # CORS Configuration (will be updated after you get domain/IP)
   # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: 'http://34.8.234.19'
+  CORS_ORIGIN: 'http://34.8.234.19'
+  ALLOWED_ORIGINS: 'http://34.8.234.19,http://34.124.186.128,https://34.8.234.19,https://34.124.186.128'
 
   # Redis Configuration
-  REDIS_URL: 'redis://question-service-redis-service:6380'
+  REDIS_HOST: 'question-service-redis-service'
+  REDIS_PORT: '6380'
 
   # GCP Configuration
   GCP_PROJECT_ID: 'peerprep-475911'
   USE_SECRET_MANAGER: 'true'
+
+  # Logging Configuration - Reduced to minimize costs
+  LOG_LEVEL: 'error'
+  DISABLE_REQUEST_LOGGING: 'true'
