@@ -14,7 +14,7 @@ class ServiceIntegration {
 
     // Create axios instances with default configs
     const serviceToServiceToken = process.env.SERVICE_TO_SERVICE_TOKEN || 'internal-service-token';
-    
+
     this.questionServiceClient = axios.create({
       baseURL: this.questionServiceUrl,
       timeout: 5000,
