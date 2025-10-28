@@ -53,14 +53,6 @@ export interface SendOTPResponse {
   };
 }
 
-export interface VerifyOTPResponse {
-  message: string;
-  data: {
-    user: User;
-    verifiedAt: string;
-  };
-}
-
 export interface VerifyTokenResponse {
   message: string;
   data: User;
@@ -79,6 +71,7 @@ export interface AuthContextType extends AuthState {
   register: (credentials: RegisterCredentials) => Promise<void>;
   clearError: () => void;
   verifySession: () => Promise<boolean>;
-  sendOTP: () => Promise<void>;
-  verifyOTP: (otp: string) => Promise<void>;
+  initiateRegistration: (credentials: RegisterCredentials) => Promise<SendOTPResponse>;
+  completeRegistration: (email: string, otp: string) => Promise<AuthResponse>;
+  resendRegistrationOTP: (email: string) => Promise<SendOTPResponse>;
 }

@@ -31,7 +31,7 @@ type Errors = Partial<Record<keyof SignUpForm, string>>;
 
 export default function SignUpPage(): React.JSX.Element {
   const router = useRouter();
-  const { register, error: authError, clearError } = useAuth();
+  const { initiateRegistration, error: authError, clearError } = useAuth();
   const [formData, setFormData] = useState<SignUpForm>(initialForm);
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Partial<Record<keyof SignUpForm, boolean>>>({});
@@ -139,8 +139,11 @@ export default function SignUpPage(): React.JSX.Element {
         },
       };
 
-      await register(payload);
-      // Don't manually navigate - let the layout handle it when isAuthenticated changes
+      // Initiate registration - this will send OTP but not create user yet
+      await initiateRegistration(payload);
+
+      // Redirect to verification page with email as query param
+      router.push(`/verifyemail?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
       // Handle backend validation errors
       if (err instanceof AuthError && err.isValidationError) {

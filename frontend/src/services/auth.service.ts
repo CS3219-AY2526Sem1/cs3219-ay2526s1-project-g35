@@ -8,7 +8,6 @@ import {
   LoginCredentials,
   RegisterCredentials,
   SendOTPResponse,
-  VerifyOTPResponse,
   VerifyTokenResponse,
 } from '@/types/auth.types';
 import { AxiosResponse } from 'axios';
@@ -57,6 +56,51 @@ class AuthService {
     }
   }
 
+  /**
+   * Initiate registration - Step 1: Send registration data and receive OTP
+   */
+  async initiateRegistration(credentials: RegisterCredentials): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/register/initiate`,
+        credentials,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Complete registration - Step 2: Verify OTP and create user account
+   */
+  async completeRegistration(email: string, otp: string): Promise<AuthResponse> {
+    try {
+      const response: AxiosResponse<AuthResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/register/complete`,
+        { email, otp },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Resend registration OTP
+   */
+  async resendRegistrationOTP(email: string): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/register/resend-otp`,
+        { email },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   async logout(): Promise<void> {
     try {
       await apiClient.post(`${this.AUTH_BASE_PATH}/logout`);
@@ -85,35 +129,6 @@ class AuthService {
   async resetTTL(): Promise<void> {
     try {
       await apiClient.post(`${this.AUTH_BASE_PATH}/reset-ttl`);
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Send OTP to the authenticated user's email for email verification
-   */
-  async sendOTP(): Promise<SendOTPResponse> {
-    try {
-      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
-        `${this.AUTH_BASE_PATH}/send-otp`,
-      );
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Verify OTP code for email verification
-   */
-  async verifyOTP(otp: string): Promise<VerifyOTPResponse> {
-    try {
-      const response: AxiosResponse<VerifyOTPResponse> = await apiClient.post(
-        `${this.AUTH_BASE_PATH}/verify-otp`,
-        { otp },
-      );
-      return response.data;
     } catch (error) {
       throw this.handleError(error);
     }

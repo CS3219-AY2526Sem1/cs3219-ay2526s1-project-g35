@@ -1,15 +1,17 @@
 import express from 'express';
 
 import {
-  handleCheckVerificationStatus,
   handleLogin,
   handleLogout,
   handleRefreshToken,
   handleResetTokenTTL,
-  handleSendVerificationOTP,
-  handleVerifyOTP,
   handleVerifyToken,
 } from '../controller/auth-controller.js';
+import {
+  handleCompleteRegistration,
+  handleInitiateRegistration,
+  handleResendRegistrationOTP,
+} from '../controller/registration-controller.js';
 import { createUser } from '../controller/user-controller.js';
 import { verifyToken } from '../middleware/jwtAuth.js';
 import {
@@ -22,6 +24,23 @@ import {
 
 const router = express.Router();
 
+// New two-step registration endpoints
+router.post(
+  '/register/initiate',
+  normalizeEmail,
+  normalizeUsername,
+  validateCreateUser,
+  handleInitiateRegistration,
+);
+router.post(
+  '/register/complete',
+  normalizeEmail,
+  validate(userSchemas.completeRegistration),
+  handleCompleteRegistration,
+);
+router.post('/register/resend-otp', normalizeEmail, handleResendRegistrationOTP);
+
+// Old registration endpoint (kept for backward compatibility)
 router.post('/register', normalizeEmail, normalizeUsername, validateCreateUser, createUser);
 
 // Login endpoint
@@ -38,10 +57,5 @@ router.post('/logout', verifyToken, handleLogout);
 
 // Reset token TTL to full duration
 router.post('/reset-ttl', verifyToken, handleResetTokenTTL);
-
-// Email verification endpoints (for new user registration)
-router.post('/send-otp', verifyToken, handleSendVerificationOTP);
-router.post('/verify-otp', verifyToken, validate(userSchemas.verifyOTPOnly), handleVerifyOTP);
-router.get('/verification-status', verifyToken, handleCheckVerificationStatus);
 
 export default router;

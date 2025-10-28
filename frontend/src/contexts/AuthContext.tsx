@@ -77,14 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Send OTP for email verification (registration)
+   * Initiate registration - Step 1: Send registration data and OTP
    */
-  const sendOTP = useCallback(async () => {
+  const initiateRegistration = useCallback(async (credentials: RegisterCredentials) => {
     try {
       setAuthState((prev: AuthState) => ({ ...prev, error: null }));
-      await authService.sendOTP();
+      const response = await authService.initiateRegistration(credentials);
+      return response;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send OTP';
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setAuthState((prev: AuthState) => ({
         ...prev,
         error: errorMessage,
@@ -94,22 +95,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /**
-   * Verify OTP for email verification (registration)
+   * Complete registration - Step 2: Verify OTP and create account
    */
-  const verifyOTP = useCallback(async (otp: string) => {
+  const completeRegistration = useCallback(async (email: string, otp: string) => {
     try {
       setAuthState((prev: AuthState) => ({ ...prev, error: null }));
 
-      const response = await authService.verifyOTP(otp);
+      const response = await authService.completeRegistration(email, otp);
 
-      // Update user with verified status
       setAuthState((prev: AuthState) => ({
         ...prev,
         user: response.data.user,
+        isAuthenticated: true,
         error: null,
       }));
+
+      return response;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'OTP verification failed';
+      const errorMessage = error instanceof Error ? error.message : 'Verification failed';
+      setAuthState((prev: AuthState) => ({
+        ...prev,
+        error: errorMessage,
+      }));
+      throw error;
+    }
+  }, []);
+
+  /**
+   * Resend registration OTP
+   */
+  const resendRegistrationOTP = useCallback(async (email: string) => {
+    try {
+      setAuthState((prev: AuthState) => ({ ...prev, error: null }));
+      const response = await authService.resendRegistrationOTP(email);
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to resend OTP';
       setAuthState((prev: AuthState) => ({
         ...prev,
         error: errorMessage,
@@ -181,8 +202,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     clearError,
     verifySession,
-    sendOTP,
-    verifyOTP,
+    initiateRegistration,
+    completeRegistration,
+    resendRegistrationOTP,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
