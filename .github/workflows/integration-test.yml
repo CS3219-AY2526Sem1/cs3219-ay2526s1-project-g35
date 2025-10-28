@@ -25,7 +25,7 @@ jobs:
           mkdir -p backend/question-service backend/user-service backend/collaboration-service frontend
 
           # Question Service
-          cat > backend/question-service/.env.docker << EOF
+          cat > backend/question-service/.env.docker << 'EOF'
           NODE_ENV=production
           PORT=8001
           MONGODB_URI=${{ secrets.QS_MONGODB_URI }}
@@ -38,7 +38,7 @@ jobs:
           EOF
 
           # User Service
-          cat > backend/user-service/.env.docker << EOF
+          cat > backend/user-service/.env.docker << 'EOF'
           NODE_ENV=production
           PORT=8000
           DB_CLOUD_URI=${{ secrets.US_DB_CLOUD_URI }}
@@ -67,7 +67,7 @@ jobs:
           EOF
 
           # Collaboration Service
-          cat > backend/collaboration-service/.env.docker << EOF
+          cat > backend/collaboration-service/.env.docker << 'EOF'
           NODE_ENV=production
           PORT=8002
           REDIS_ENABLED=true
@@ -78,7 +78,7 @@ jobs:
           EOF
 
           # Frontend (public, non-sensitive)
-          cat > frontend/.env.docker << EOF
+          cat > frontend/.env.docker << 'EOF'
           NEXT_PUBLIC_API_URL=http://localhost:8000
           NEXT_PUBLIC_API_USER_URL=http://localhost:8000
           NEXT_PUBLIC_API_QUESTION_URL=http://localhost:8001
@@ -86,6 +86,12 @@ jobs:
           NEXT_PUBLIC_WS_COLLAB_URL=http://localhost:8002
           NEXT_PUBLIC_MATCHING_WS_URL=ws://localhost:8003
           EOF
+          
+          echo "Verifying .env.docker files were created..."
+          ls -la backend/question-service/.env.docker
+          ls -la backend/user-service/.env.docker
+          ls -la backend/collaboration-service/.env.docker
+          ls -la frontend/.env.docker
       
       - name: Build all services
         run: docker compose build
