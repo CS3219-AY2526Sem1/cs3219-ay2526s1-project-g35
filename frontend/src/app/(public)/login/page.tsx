@@ -34,8 +34,7 @@ const Login: React.FC = () => {
 
     try {
       await login(formData);
-      // After successful login, redirect to 2FA page
-      router.push('/2fa');
+      //Don't manually navigate, let layout handle when isAuthenticated changes
     } catch {
       // Error is already set in AuthContext and displayed in the UI
     }
