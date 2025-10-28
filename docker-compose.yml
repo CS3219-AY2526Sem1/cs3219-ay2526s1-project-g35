@@ -22,8 +22,10 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/user-service/.env.docker
+    environment:
+      - REDIS_URL=redis://user-service-redis:6379
     depends_on:
-      redis:
+      user-service-redis:
         condition: service_healthy
     networks:
       - peerprep-network
@@ -42,10 +44,10 @@ services:
       - "8001:8001"
     env_file:
       - ./backend/question-service/.env.docker
+    environment:
+      - REDIS_URL=redis://question-service-redis:6380
     depends_on:
-      user-service:
-        condition: service_healthy
-      question-redis:
+      question-service-redis:
         condition: service_healthy
     networks:
       - peerprep-network
@@ -69,10 +71,13 @@ services:
       - QUESTION_SERVICE_URL=http://question-service:8001
       - NODE_ENV=production
       - MATCHING_TIMEOUT_MS=60000
+      - REDIS_URL=redis://matching-service-redis:6381
     depends_on:
       collaboration-service:
         condition: service_healthy
       question-service:
+        condition: service_healthy
+      matching-service-redis:
         condition: service_healthy
     networks:
       - peerprep-network
@@ -91,8 +96,10 @@ services:
       - "8002:8002"
     env_file:
       - ./backend/collaboration-service/.env.docker
+    environment:
+      - REDIS_URL=redis://collaboration-service-redis:6382
     depends_on:
-      redis:
+      collaboration-service-redis:
         condition: service_healthy
     networks:
       - peerprep-network
@@ -104,36 +111,73 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # Redis - User service session storage
-  redis:
+  # Redis instances for each service - separated for scalability
+  user-service-redis:
     container_name: user-service-redis
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    command: redis-server --port 6379 --appendonly yes
     volumes:
-      - redis_data:/data
+      - user_redis_data:/data
     networks:
       - peerprep-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
       start_period: 5s
     restart: unless-stopped
 
-  # Redis - Question service caching
-  question-redis:
+  question-service-redis:
     container_name: question-service-redis
     image: redis:7-alpine
     ports:
-      - "6380:6379" # External port 6380, internal port 6379
+      - "6380:6380"
+    command: redis-server --port 6380 --appendonly yes
     volumes:
       - question_redis_data:/data
     networks:
       - peerprep-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "-p", "6380", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  matching-service-redis:
+    container_name: matching-service-redis
+    image: redis:7-alpine
+    ports:
+      - "6381:6381"
+    command: redis-server --port 6381 --appendonly yes
+    volumes:
+      - matching_redis_data:/data
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6381", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+
+  collaboration-service-redis:
+    container_name: collaboration-service-redis
+    image: redis:7-alpine
+    ports:
+      - "6382:6382"
+    command: redis-server --port 6382 --appendonly yes
+    volumes:
+      - collaboration_redis_data:/data
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6382", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -145,5 +189,7 @@ networks:
     driver: bridge
 
 volumes:
-  redis_data:
+  user_redis_data:
   question_redis_data:
+  matching_redis_data:
+  collaboration_redis_data:

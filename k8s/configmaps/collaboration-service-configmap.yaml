@@ -14,7 +14,7 @@ data:
 
   # Redis Configuration
   REDIS_ENABLED: 'true'
-  REDIS_URL: 'redis://redis-service:6379'
+  REDIS_URL: 'redis://collaboration-service-redis-service:6382'
 
   # Session Configuration
   SESSION_TIMEOUT: '3600000'

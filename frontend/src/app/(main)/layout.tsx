@@ -3,6 +3,7 @@
 import MainNavbar from '@/components/ui/MainNavbar';
 import Navbar from '@/components/ui/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTokenRefresh } from '@/hooks/useTokenRefresh';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import '../globals.css';
@@ -12,7 +13,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const hasChecked = useRef(false);
 
-  // Verify session once on mount for protected routes
+  useTokenRefresh();
+
   useEffect(() => {
     if (hasChecked.current) return;
     hasChecked.current = true;
@@ -33,7 +35,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Show loading spinner during session verification
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
