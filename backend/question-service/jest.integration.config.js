@@ -5,4 +5,6 @@ module.exports = {
   testMatch: ['**/src/test/integration/**/*.test.js'],
   verbose: true,
   collectCoverage: false,
+  setupFiles: ['<rootDir>/jest.integration.setup.js'], // Load environment variables
 };
+
