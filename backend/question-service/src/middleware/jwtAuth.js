@@ -46,7 +46,7 @@ const verifyToken = (req, res, next) => {
     // Allow internal service-to-service calls if service-to-service token is provided
     const serviceToken = req.headers['x-service-token'];
     const expectedServiceToken = process.env.SERVICE_TO_SERVICE_TOKEN || 'internal-service-token';
-    
+
     if (serviceToken === expectedServiceToken) {
       // Bypass authentication for internal service calls
       console.log('Internal service call authenticated');

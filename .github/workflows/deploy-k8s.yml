@@ -58,21 +58,22 @@ jobs:
           
           # Update deployment manifests with new image tags
           IMAGE_TAG="${{ github.sha }}"
+          IMAGE_PREFIX=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           
           # Update user-service deployment
-          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ github.repository_owner }}/peerprep-user-service:$IMAGE_TAG"' k8s/deployments/user-service-deployment.yaml || true
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-user-service:$IMAGE_TAG"' k8s/deployments/user-service-deployment.yaml || true
           
           # Update question-service deployment
-          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ github.repository_owner }}/peerprep-question-service:$IMAGE_TAG"' k8s/deployments/question-service-deployment.yaml || true
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-question-service:$IMAGE_TAG"' k8s/deployments/question-service-deployment.yaml || true
           
           # Update collaboration-service deployment
-          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ github.repository_owner }}/peerprep-collaboration-service:$IMAGE_TAG"' k8s/deployments/collaboration-service-deployment.yaml || true
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-collaboration-service:$IMAGE_TAG"' k8s/deployments/collaboration-service-deployment.yaml || true
           
           # Update matching-service deployment
-          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ github.repository_owner }}/peerprep-matching-service:$IMAGE_TAG"' k8s/deployments/matching-service-deployment.yaml || true
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-matching-service:$IMAGE_TAG"' k8s/deployments/matching-service-deployment.yaml || true
           
           # Update frontend deployment
-          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/${{ github.repository_owner }}/peerprep-frontend:$IMAGE_TAG"' k8s/deployments/frontend-deployment.yaml || true
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-frontend:$IMAGE_TAG"' k8s/deployments/frontend-deployment.yaml || true
       
       - name: Apply Kubernetes manifests
         run: |

@@ -5,9 +5,6 @@ on:
     branches: [master, main, develop]
   workflow_dispatch:
 
-env:
-  DOCKER_COMPOSE_VERSION: '2.25.0'
-
 permissions:
   contents: read
 
@@ -19,9 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Set up Docker Compose
-        uses: docker/compose-action@v3
       
       - name: Build all services
         run: docker compose build
@@ -122,9 +116,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Set up Docker Compose
-        uses: docker/compose-action@v3
       
       - name: Start services
         run: docker compose up -d
