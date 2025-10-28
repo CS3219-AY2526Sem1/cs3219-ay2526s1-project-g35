@@ -17,6 +17,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Create Docker network
+        run: docker network create peerprep-network || true
+
       - name: Create .env.docker files for testing
         run: |
           mkdir -p backend/question-service backend/user-service backend/collaboration-service frontend
@@ -167,12 +170,13 @@ jobs:
         if: failure()
         run: |
           echo "=== Network Information ==="
-          docker network inspect cs3219-network || true
+          docker network inspect peerprep-network || true
       
       - name: Cleanup
         if: always()
         run: |
           docker compose down -v
+          docker network rm peerprep-network || true
           docker system prune -f
 
   test-service-communication:
@@ -183,6 +187,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      
+      - name: Create Docker network
+        run: docker network create peerprep-network || true
       
       - name: Start services
         run: docker compose up -d
@@ -200,5 +207,7 @@ jobs:
       
       - name: Cleanup
         if: always()
-        run: docker compose down -v
+        run: |
+          docker compose down -v
+          docker network rm peerprep-network || true
 

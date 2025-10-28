@@ -7,4 +7,3 @@ module.exports = {
   collectCoverage: false,
   setupFiles: ['<rootDir>/jest.integration.setup.js'], // Load environment variables
 };
-

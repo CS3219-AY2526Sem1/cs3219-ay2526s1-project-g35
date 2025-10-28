@@ -115,7 +115,7 @@ questionSchema.statics.createQuestion = async function (questionData) {
 questionSchema.statics.updateQuestion = async function (id, questionData) {
   // Remove undefined fields to avoid overwriting with undefined
   const cleanData = {};
-  Object.keys(questionData).forEach(key => {
+  Object.keys(questionData).forEach((key) => {
     if (questionData[key] !== undefined) {
       cleanData[key] = questionData[key];
     }
