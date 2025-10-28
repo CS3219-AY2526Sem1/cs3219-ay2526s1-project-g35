@@ -98,11 +98,17 @@ jobs:
       - name: Wait for services to be ready
         run: |
           echo "Waiting for services to be healthy..."
-          timeout 300 bash -c 'until docker compose ps | grep healthy | wc -l | grep -q 4; do 
-            echo "Services starting...";
-            docker compose ps;
-            sleep 5;
-          done'
+          timeout 300 bash -c '
+            until \
+              curl -sf http://localhost:8000/health \
+              && curl -sf http://localhost:8001/health \
+              && curl -sf http://localhost:8002/health \
+              && curl -sf http://localhost:8003/health; do
+              echo "Services starting...";
+              docker compose ps;
+              sleep 5;
+            done
+          '
       
       - name: Check service health
         run: |
@@ -279,4 +285,3 @@ jobs:
         run: |
           docker compose down -v
           docker network rm peerprep-network || true
-
