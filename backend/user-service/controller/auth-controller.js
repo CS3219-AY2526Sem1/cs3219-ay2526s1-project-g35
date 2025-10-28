@@ -1,11 +1,9 @@
-import { UserRepository } from '../model/user-repository.js';
-import { formatUserResponse } from './user-controller.js';
 import { AUTH_ERRORS, sendErrorResponse } from '../errors/index.js';
+import { UserRepository } from '../model/user-repository.js';
 import * as authService from '../services/auth-service.js';
 import * as tokenService from '../services/token-service.js';
-import * as verificationService from '../services/verification-service.js';
-import { otpService } from '../services/otp-service.js';
-import { setAuthCookies, clearAuthCookies } from '../utils/cookie-helper.js';
+import { clearAuthCookies, setAuthCookies } from '../utils/cookie-helper.js';
+import { formatUserResponse } from './user-controller.js';
 
 export async function handleLogin(req, res) {
   const { email, password } = req.body;
@@ -135,118 +133,6 @@ export async function handleResetTokenTTL(req, res) {
       return sendErrorResponse(res, AUTH_ERRORS.TTL_RESET_FAILED);
     }
 
-    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
-  }
-}
-
-/**
- * Generate and send OTP for user verification
- * Uses access token from cookie to identify the user
- */
-export async function handleSendVerificationOTP(req, res) {
-  try {
-    const userId = req.userId;
-    const user = req.user;
-
-    const result = await verificationService.sendVerificationOTP(userId, user);
-
-    return res.status(200).json({
-      message: 'OTP sent successfully to your email address.',
-      data: {
-        email: result.email,
-        expiryMinutes: result.expiryMinutes,
-      },
-    });
-  } catch (error) {
-    console.error('Error generating verification OTP:', error);
-    if (error.message === 'ALREADY_VERIFIED') {
-      return sendErrorResponse(res, AUTH_ERRORS.ALREADY_VERIFIED);
-    }
-
-    if (error.message === 'OTP_COOLDOWN' && error.cooldownInfo) {
-      const { message, retryAfterSeconds } = error.cooldownInfo;
-      return res.status(400).json({
-        message,
-        error: AUTH_ERRORS.OTP_ALREADY_SENT.code,
-        retryAfterSeconds,
-      });
-    }
-
-    if (error.message === 'STORAGE_ERROR') {
-      return sendErrorResponse(res, AUTH_ERRORS.STORAGE_ERROR);
-    }
-
-    if (error.message === 'EMAIL_ERROR') {
-      return sendErrorResponse(res, AUTH_ERRORS.EMAIL_ERROR);
-    }
-
-    return sendErrorResponse(res, AUTH_ERRORS.VERIFICATION_SERVER_ERROR);
-  }
-}
-
-/**
- * Verify OTP for user verification
- */
-export async function handleVerifyOTP(req, res) {
-  try {
-    const { otp } = req.body;
-    const userId = req.userId;
-    const user = req.user;
-
-    const result = await verificationService.verifyOTP(userId, user, otp);
-
-    return res.status(200).json({
-      message: 'Email verified successfully',
-      data: {
-        user: formatUserResponse(result.user),
-        verifiedAt: result.verifiedAt,
-      },
-    });
-  } catch (error) {
-    console.error('OTP verification error:', error);
-    if (error.message === 'MISSING_OTP') {
-      return sendErrorResponse(res, AUTH_ERRORS.MISSING_OTP);
-    }
-
-    if (error.message === 'ALREADY_VERIFIED') {
-      return sendErrorResponse(res, AUTH_ERRORS.ALREADY_VERIFIED);
-    }
-
-    if (error.message === 'INVALID_OTP' && error.validationResult) {
-      const { validationResult } = error;
-      const errorMessage = otpService.getErrorMessage(validationResult);
-
-      return res.status(400).json({
-        message: errorMessage,
-        error: validationResult.reason,
-        attemptsRemaining: validationResult.attemptsRemaining,
-      });
-    }
-
-    if (error.message === 'USER_NOT_FOUND_UPDATE') {
-      return sendErrorResponse(res, AUTH_ERRORS.USER_NOT_FOUND_UPDATE);
-    }
-
-    return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
-  }
-}
-
-/**
- * Check current user's verification status
- */
-export async function handleCheckVerificationStatus(req, res) {
-  try {
-    const userId = req.userId;
-    const user = req.user;
-
-    const status = await verificationService.getVerificationStatus(userId, user);
-
-    return res.status(200).json({
-      message: 'Verification status retrieved',
-      data: status,
-    });
-  } catch (error) {
-    console.error('Check verification status error:', error);
     return sendErrorResponse(res, AUTH_ERRORS.SERVER_ERROR);
   }
 }
