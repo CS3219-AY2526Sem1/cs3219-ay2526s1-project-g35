@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const baseURL = process.env.NEXT_PUBLIC_QUESTION_SERVICE_URL || process.env.NEXT_PUBLIC_API_QUESTION_URL || 'http://34.8.234.19/api/questions';
+const baseURL =
+  process.env.NEXT_PUBLIC_QUESTION_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_API_QUESTION_URL ||
+  'http://34.8.234.19/api/questions';
 
 const questionApi = axios.create({
   baseURL,

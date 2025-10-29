@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import socketService from '@/services/socketService';
+import { getAccessToken } from '@/lib/cookies';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // Original React Code made by Basil - Enhanced with Collaboration
@@ -262,8 +263,16 @@ const Session = (): React.ReactElement => {
         // Set the session ID
         setSessionId(finalSessionId);
 
-        // Connect to collaboration service
-        const socket = socketService.connect('test-token', userId);
+        // Get the access token from cookies
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+          console.error('No access token found in cookies - using fallback for development');
+          // In production, this should redirect to login
+          // For now, continue with empty token (dev mode middleware will handle it)
+        }
+
+        // Connect to collaboration service with real token (or empty string for dev mode)
+        const socket = socketService.connect(accessToken || '', userId);
 
         if (socket) {
           // Wait for connection to be established before joining session
