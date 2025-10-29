@@ -29,19 +29,18 @@ async function accessSecretVersion(secretName, version = 'latest') {
 }
 
 /**
- * Load ONLY sensitive secrets from Google Secret Manager
- * Non-sensitive configuration should be in environment variables or ConfigMaps
+ * Load sensitive secrets from Google Secret Manager
  * @returns {Promise<Object>} - Object containing only secret values
  */
 async function loadSecrets() {
   try {
     console.log('Loading secrets from Google Secret Manager...');
-
+    
     const secrets = {
-      // JWT Secret (SENSITIVE - cryptographic key, MUST match user-service)
+      // JWT Secret
       JWT_SECRET: await accessSecretVersion('collaboration-service-jwt-secret'),
     };
-
+    
     console.log('Secrets loaded successfully from Google Secret Manager');
     return secrets;
   } catch (error) {
@@ -57,12 +56,12 @@ async function loadSecrets() {
 async function initializeSecrets() {
   try {
     const secrets = await loadSecrets();
-
+    
     // Set environment variables
-    Object.keys(secrets).forEach((key) => {
+    Object.keys(secrets).forEach(key => {
       process.env[key] = secrets[key];
     });
-
+    
     console.log('Environment variables initialized from Google Secret Manager');
   } catch (error) {
     console.error('Failed to initialize secrets:', error.message);

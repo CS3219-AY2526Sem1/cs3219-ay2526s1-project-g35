@@ -1,18 +1,23 @@
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: matching-websocket-config
+  name: peerprep-backend-config
   namespace: peerprep
 spec:
   connectionDraining:
     drainingTimeoutSec: 60
 
-  timeoutSec: 86400  # 24 hours for long-lived WebSocket connections
+  timeoutSec: 86400  # 24 hours for WebSocket connections
+
+  sessionAffinity:
+    affinityType: 'CLIENT_IP'
+    affinityCookieTtlSec: 10800
+
   healthCheck:
-    checkIntervalSec: 300
+    checkIntervalSec: 10
     timeoutSec: 5
     healthyThreshold: 2
     unhealthyThreshold: 3
     type: HTTP
     requestPath: /health
-    port: 8003
+    port: 8002

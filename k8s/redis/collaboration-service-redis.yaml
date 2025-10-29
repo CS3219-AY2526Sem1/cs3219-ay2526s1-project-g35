@@ -44,12 +44,12 @@ spec:
             tcpSocket:
               port: 6382
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 300
           readinessProbe:
             tcpSocket:
               port: 6382
             initialDelaySeconds: 5
-            periodSeconds: 5
+            periodSeconds: 300
   volumeClaimTemplates:
     - metadata:
         name: redis-data

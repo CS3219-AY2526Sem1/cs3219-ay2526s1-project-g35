@@ -5,6 +5,9 @@ metadata:
   namespace: peerprep
   labels:
     app: collaboration-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "collaboration-websocket-config"}'
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: ClusterIP
   selector:

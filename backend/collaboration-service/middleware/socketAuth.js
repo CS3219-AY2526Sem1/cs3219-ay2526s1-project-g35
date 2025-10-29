@@ -14,6 +14,7 @@ const socketAuthMiddleware = (socket, next) => {
     const token = socket.handshake.auth.token || socket.handshake.query.token;
 
     if (!token) {
+      console.error(`No token provided for socket ${socket.id}`);
       return next(new Error('Authentication token required'));
     }
 
@@ -25,10 +26,10 @@ const socketAuthMiddleware = (socket, next) => {
     socket.username = decoded.username || decoded.email;
     socket.userInfo = decoded;
 
-    console.log(`Socket authenticated: ${socket.userId}`);
+    console.log(`Socket authenticated: ${socket.userId} (${socket.username})`);
     next();
   } catch (error) {
-    console.error('Socket authentication failed:', error.message);
+    console.error(`Socket authentication failed for ${socket.id}:`, error.message);
     next(new Error('Authentication failed'));
   }
 };
@@ -38,6 +39,10 @@ const socketAuthMiddleware = (socket, next) => {
  */
 const socketAuthMiddlewareDev = (socket, next) => {
   try {
+    console.log(`New socket connection (DEV): ${socket.id}`);
+    console.log(`   Auth:`, socket.handshake.auth);
+    console.log(`   Query:`, socket.handshake.query);
+    
     const token = socket.handshake.auth.token || socket.handshake.query.token;
     const userId = socket.handshake.auth.userId || socket.handshake.query.userId;
 
@@ -47,8 +52,9 @@ const socketAuthMiddlewareDev = (socket, next) => {
         socket.userId = decoded.id || decoded.userId;
         socket.username = decoded.username || decoded.email;
         socket.userInfo = decoded;
+        console.log(`Token verified: ${socket.userId} (${socket.username})`);
       } catch (err) {
-        console.warn('Token verification failed, using fallback auth');
+        console.warn(`Token verification failed, using fallback: ${err.message}`);
         socket.userId = userId || `guest-${socket.id}`;
         socket.username = `Guest ${socket.id.substring(0, 4)}`;
       }
@@ -56,15 +62,17 @@ const socketAuthMiddlewareDev = (socket, next) => {
       // Allow connection with just userId in dev mode
       socket.userId = userId;
       socket.username = `User ${userId}`;
+      console.log(`Dev auth: ${socket.userId}`);
     } else {
       socket.userId = `guest-${socket.id}`;
       socket.username = `Guest ${socket.id.substring(0, 4)}`;
+      console.log(`Guest connection: ${socket.userId}`);
     }
 
     console.log(`Socket connected (dev mode): ${socket.userId}`);
     next();
   } catch (error) {
-    console.error('Socket auth error:', error.message);
+    console.error(`Socket auth error:`, error.message);
     next(new Error('Authentication failed'));
   }
 };

@@ -5,7 +5,7 @@ metadata:
   namespace: peerprep
 spec:
   healthCheck:
-    checkIntervalSec: 10
+    checkIntervalSec: 300
     port: 80
     type: HTTP
     requestPath: /api/users/health

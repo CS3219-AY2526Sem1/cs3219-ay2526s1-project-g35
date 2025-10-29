@@ -142,7 +142,7 @@ spec:
               port: 8001
               scheme: HTTP
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 300
             timeoutSeconds: 5
             successThreshold: 1
             failureThreshold: 3
@@ -152,7 +152,7 @@ spec:
               port: 8001
               scheme: HTTP
             initialDelaySeconds: 10
-            periodSeconds: 5
+            periodSeconds: 300
             timeoutSeconds: 3
             successThreshold: 1
             failureThreshold: 2
@@ -162,7 +162,7 @@ spec:
               path: /status
               port: 8001
             initialDelaySeconds: 0
-            periodSeconds: 5
+            periodSeconds: 300
             timeoutSeconds: 3
             successThreshold: 1
             failureThreshold: 12 # 60 seconds max startup time

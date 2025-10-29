@@ -7,8 +7,10 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: 'gce'
     kubernetes.io/ingress.global-static-ip-name: 'peerprep-static-ip'
-    # WebSocket support
-    nginx.ingress.kubernetes.io/websocket-services: 'matching-service,collaboration-service'
+    # WebSocket support for GCE ingress
+    cloud.google.com/backend-config: '{"default": "peerprep-backend-config"}'
+    # Connection timeout for WebSocket
+    ingress.kubernetes.io/connection-timeout: '86400'
 spec:
   defaultBackend:
     service:
@@ -63,9 +65,18 @@ spec:
                 port:
                   number: 8002
 
-          # Matching Service
+          # Matching Service (HTTP API)
           - path: /api/matching/*
             pathType: ImplementationSpecific
+            backend:
+              service:
+                name: matching-service
+                port:
+                  number: 8003
+
+          # Matching Service (WebSocket)
+          - path: /matching-ws
+            pathType: Prefix
             backend:
               service:
                 name: matching-service

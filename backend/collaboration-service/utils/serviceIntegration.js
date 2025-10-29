@@ -4,6 +4,7 @@
  */
 
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 
 class ServiceIntegration {
   constructor() {
@@ -11,6 +12,9 @@ class ServiceIntegration {
     this.questionServiceUrl = process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
     this.matchingServiceUrl = process.env.MATCHING_SERVICE_URL || 'http://matching-service:8003';
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8000';
+
+    // JWT secret for service-to-service authentication
+    this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
 
     // Create axios instances with default configs
     this.questionServiceClient = axios.create({
@@ -39,13 +43,62 @@ class ServiceIntegration {
   }
 
   /**
+   * Generate a service-to-service JWT token
+   * Used for internal service communication
+   */
+  generateServiceToken() {
+    try {
+      // Create a service account token with appropriate claims
+      const payload = {
+        id: 'collaboration-service',
+        userId: 'collaboration-service',
+        username: 'Collaboration Service',
+        email: 'collab-service@peerprep.internal',
+        isAdmin: false, // Services don't need admin access for reading questions
+        isVerified: true,
+        isService: true, // Flag to identify service-to-service calls
+      };
+
+      // Generate token with 1 hour expiration
+      const token = jwt.sign(payload, this.jwtSecret, {
+        expiresIn: '1h',
+      });
+
+      return token;
+    } catch (error) {
+      console.error('Error generating service token:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Get authorization headers with JWT token
+   */
+  getAuthHeaders() {
+    const token = this.generateServiceToken();
+    if (!token) {
+      console.warn('Failed to generate service token, proceeding without auth');
+      return {};
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
+  /**
    * Fetch question details from question service
    */
   async getQuestionDetails(questionId) {
     try {
       console.log(`Fetching question details for ID: ${questionId}`);
 
-      const response = await this.questionServiceClient.get(`/api/questions/${questionId}`);
+      // Get authorization headers with JWT token
+      const authHeaders = this.getAuthHeaders();
+
+      const response = await this.questionServiceClient.get(`/api/questions/${questionId}`, {
+        headers: authHeaders,
+      });
 
       if (response.data && response.data.success) {
         console.log(`Question details fetched successfully`);
@@ -88,7 +141,12 @@ class ServiceIntegration {
     try {
       console.log(`Fetching user details for ID: ${userId}`);
 
-      const response = await this.userServiceClient.get(`/api/users/${userId}`);
+      // Get authorization headers with JWT token
+      const authHeaders = this.getAuthHeaders();
+
+      const response = await this.userServiceClient.get(`/api/users/${userId}`, {
+        headers: authHeaders,
+      });
 
       if (response.data && response.data.success) {
         console.log(`User details fetched successfully`);

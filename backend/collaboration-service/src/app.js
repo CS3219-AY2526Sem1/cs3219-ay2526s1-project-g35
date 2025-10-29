@@ -30,6 +30,9 @@ const io = socketIo(server, {
   },
   pingTimeout: 60000,
   pingInterval: 25000,
+  path: '/socket.io/',  // Explicit path for Socket.IO
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true,
 });
 
 // Use authentication middleware for socket connections
