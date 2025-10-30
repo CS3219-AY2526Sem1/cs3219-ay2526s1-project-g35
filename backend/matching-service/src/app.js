@@ -45,6 +45,8 @@ const wss = new WebSocketServer({
 
 let waitingQueue = [];
 let activePairs = [];
+// Track connected userIds to prevent multiple simultaneous searches per account
+const connectedUsers = new Map(); // userId -> ws
 
 const TIMEOUT_MS = 60000; // 1 minute
 
@@ -123,6 +125,28 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'search') {
       const { topics, difficulty, userId, username } = msg;
+
+      // If this userId is already connected from another device/tab, reject this connection
+      if (connectedUsers.has(userId) && connectedUsers.get(userId) !== ws) {
+        try {
+          ws.send(
+            JSON.stringify({
+              type: 'already-queuing',
+              reason: 'duplicate-user',
+              message:
+                'You are already searching or matched from another device or tab. Close that session to try again.',
+            }),
+          );
+        } catch (e) {}
+        try {
+          ws.close(1000, 'Duplicate user connection');
+        } catch (e) {}
+        return;
+      }
+
+      // Mark this ws as belonging to userId and remember mapping
+      ws.userId = userId; // attach for cleanup on close
+      connectedUsers.set(userId, ws);
 
       // Create user entry
       const user = {
@@ -316,6 +340,10 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    // Remove mapping for this userId if set
+    if (ws.userId && connectedUsers.get(ws.userId) === ws) {
+      connectedUsers.delete(ws.userId);
+    }
     // Find and remove user from waiting queue
     const userIndex = waitingQueue.findIndex((u) => u.ws === ws);
     if (userIndex !== -1) {
