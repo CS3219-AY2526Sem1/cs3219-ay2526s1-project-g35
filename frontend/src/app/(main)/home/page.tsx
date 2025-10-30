@@ -10,7 +10,8 @@ import {
 } from '@/components/ui/Carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import userService from '@/services/userService';
 
 export default function HomePage() {
   const router = useRouter();
@@ -19,6 +20,19 @@ export default function HomePage() {
   const [selectedTopics, setSelectedTopics] = useState<number[]>([0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const userData = await userService.getUserData();
+      setUserId(userData.userId);
+      setUsername(userData.username);
+    };
+
+    fetchUserData();
+  }, []);
 
   const topics = [
     'Arrays',
@@ -53,8 +67,8 @@ export default function HomePage() {
       JSON.stringify({
         topics: selectedTopicNames,
         difficulty: selectedDifficulty,
-        userId: 'user-' + Math.random().toString(36).substr(2, 9),
-        username: 'User' + Math.floor(Math.random() * 1000),
+        userId: userId,
+        username: username,
       }),
     );
 
