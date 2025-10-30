@@ -4,6 +4,7 @@
  */
 
 const axios = require('axios');
+const jwt = require('jsonwebtoken');
 
 class ServiceIntegration {
   constructor() {
@@ -40,12 +41,23 @@ class ServiceIntegration {
 
   /**
    * Fetch question details from question service
+   * @param {string} questionId - The question ID to fetch
+   * @param {string} token - JWT token for authentication (optional)
    */
-  async getQuestionDetails(questionId) {
+  async getQuestionDetails(questionId, token = null) {
     try {
       console.log(`Fetching question details for ID: ${questionId}`);
 
-      const response = await this.questionServiceClient.get(`/api/questions/${questionId}`);
+      // Prepare headers with token if provided
+      const headers = {};
+      if (token) {
+        headers.Cookie = `accessToken=${token}`;
+        console.log('Using provided JWT token for question service request');
+      }
+
+      const response = await this.questionServiceClient.get(`/api/questions/${questionId}`, {
+        headers
+      });
 
       if (response.data && response.data.success) {
         console.log(`Question details fetched successfully`);

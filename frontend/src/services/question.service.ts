@@ -4,8 +4,8 @@ const baseURL = process.env.NEXT_PUBLIC_QUESTION_SERVICE_URL || 'http://localhos
 
 const questionApi = axios.create({
   baseURL,
-  // Question service does not require cookies by default
-  withCredentials: false,
+  // Enable credentials to send JWT cookies with requests
+  withCredentials: true,
 });
 
 export type QuestionsListResponse<T> = {

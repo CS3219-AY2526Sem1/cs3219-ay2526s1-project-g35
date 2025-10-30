@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const SessionManager = require('../models/SessionManager');
@@ -164,8 +165,19 @@ app.post('/api/sessions/matched', httpAuth, async (req, res) => {
       return res.status(400).json({ error: 'Question ID is required' });
     }
 
-    // Fetch question details from question service
-    const questionResult = await serviceIntegration.getQuestionDetails(questionId);
+    // Generate a temporary service-to-service JWT token for internal API calls
+    const serviceToken = jwt.sign(
+      {
+        id: userIds[0], // Use first user's ID
+        service: 'collaboration-service',
+        internal: true
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '5m' } // Short-lived token for internal call
+    );
+
+    // Fetch question details from question service with service token
+    const questionResult = await serviceIntegration.getQuestionDetails(questionId, serviceToken);
     let questionDetails = null;
 
     if (questionResult.success) {
