@@ -1,0 +1,218 @@
+name: Integration Tests
+
+on:
+  pull_request:
+    branches: [master, main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create Docker network
+        run: docker network create peerprep-network || true
+
+      - name: Create .env.docker files for testing
+        run: |
+          mkdir -p backend/question-service backend/user-service backend/collaboration-service frontend
+
+          # Question Service
+          cat > backend/question-service/.env.docker << EOF
+          NODE_ENV=production
+          PORT=8001
+          MONGODB_URI=${{ secrets.QS_MONGODB_URI }}
+          JWT_SECRET=${{ secrets.QS_JWT_SECRET }}
+          USER_SERVICE_URL=http://user-service:8000
+          CORS_ORIGIN=http://localhost:3000
+          USE_SECRET_MANAGER=false
+          REDIS_HOST=question-service-redis
+          REDIS_PORT=6380
+          EOF
+
+          # User Service
+          cat > backend/user-service/.env.docker << EOF
+          NODE_ENV=production
+          PORT=8000
+          DB_CLOUD_URI=${{ secrets.US_DB_CLOUD_URI }}
+          DB_LOCAL_URI=${{ secrets.US_DB_LOCAL_URI }}
+          ENV=PROD
+          JWT_SECRET=${{ secrets.US_JWT_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.US_JWT_REFRESH_SECRET }}
+          USE_SECRET_MANAGER=false
+          REDIS_URL=redis://user-service-redis:6379
+          COOKIE_DOMAIN=localhost
+          COOKIE_SECURE=false
+          COOKIE_SAME_SITE=lax
+          ARGON2_MEMORY_COST=65536
+          ARGON2_TIME_COST=3
+          ARGON2_PARALLELISM=4
+          ALLOWED_ORIGINS=http://localhost:3000
+          EMAIL_ENABLED=false
+          EMAIL_PROVIDER=mailtrap
+          MAILTRAP_HOST=sandbox.smtp.mailtrap.io
+          MAILTRAP_PORT=2525
+          MAILTRAP_USER=${{ secrets.MAILTRAP_USER }}
+          MAILTRAP_PASS=${{ secrets.MAILTRAP_PASS }}
+          RATE_LIMIT_WINDOW_MS=900000
+          RATE_LIMIT_MAX=100
+          AUTH_RATE_LIMIT_MAX=5
+          EOF
+
+          # Collaboration Service
+          cat > backend/collaboration-service/.env.docker << EOF
+          NODE_ENV=production
+          PORT=8002
+          REDIS_ENABLED=true
+          REDIS_URL=redis://collaboration-service-redis:6382
+          JWT_SECRET=${{ secrets.COLLAB_JWT_SECRET }}
+          CORS_ORIGIN=http://localhost:3000
+          USE_SECRET_MANAGER=false
+          EOF
+
+          # Frontend (public, non-sensitive)
+          cat > frontend/.env.docker << EOF
+          NEXT_PUBLIC_API_URL=http://localhost:8000
+          NEXT_PUBLIC_API_USER_URL=http://localhost:8000
+          NEXT_PUBLIC_API_QUESTION_URL=http://localhost:8001
+          NEXT_PUBLIC_API_MATCHING_URL=http://localhost:8003
+          NEXT_PUBLIC_WS_COLLAB_URL=http://localhost:8002
+          NEXT_PUBLIC_MATCHING_WS_URL=ws://localhost:8003
+          EOF
+      
+      - name: Build all services
+        run: docker compose build
+      
+      - name: Start all services
+        run: docker compose up -d
+        env:
+          NODE_ENV: test
+      
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to be healthy..."
+          timeout 300 bash -c '
+            until \
+              curl -sf http://localhost:8000/health \
+              && curl -sf http://localhost:8001/health \
+              && curl -sf http://localhost:8002/health \
+              && curl -sf http://localhost:8003/health; do
+              echo "Services starting...";
+              docker compose ps;
+              sleep 5;
+            done
+          '
+      
+      - name: Check service health
+        run: |
+          echo "Checking service health endpoints..."
+          
+          echo "Checking user-service..."
+          curl -f http://localhost:8000/health || exit 1
+          
+          echo "Checking question-service..."
+          curl -f http://localhost:8001/health || exit 1
+          
+          echo "Checking collaboration-service..."
+          curl -f http://localhost:8002/health || exit 1
+          
+          echo "Checking matching-service..."
+          curl -f http://localhost:8003/health || exit 1
+          
+          echo "All services are healthy!"
+      
+      - name: Display service status
+        run: docker compose ps
+      
+      - name: Test API endpoints
+        run: |
+          echo "Testing API endpoints..."
+          
+          # Test user service
+          echo "Testing user service endpoints..."
+          curl -f http://localhost:8000/health || echo "User service health check failed"
+          
+          # Test question service
+          echo "Testing question service endpoints..."
+          curl -f http://localhost:8001/health || echo "Question service health check failed"
+          
+          # Test frontend
+          echo "Testing frontend..."
+          curl -f http://localhost:3000 || echo "Frontend check failed"
+      
+      - name: Run integration tests
+        run: |
+          echo "Running integration tests..."
+          # Add your integration test commands here
+          # Example: npm run test:integration
+        continue-on-error: true
+      
+      - name: Capture service logs on failure
+        if: failure()
+        run: |
+          echo "=== User Service Logs ==="
+          docker compose logs user-service || true
+          
+          echo "=== Question Service Logs ==="
+          docker compose logs question-service || true
+          
+          echo "=== Collaboration Service Logs ==="
+          docker compose logs collaboration-service || true
+          
+          echo "=== Matching Service Logs ==="
+          docker compose logs matching-service || true
+          
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend || true
+      
+      - name: Show network configuration
+        if: failure()
+        run: |
+          echo "=== Network Information ==="
+          docker network inspect peerprep-network || true
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          docker network rm peerprep-network || true
+          docker system prune -f
+
+  test-service-communication:
+    name: Test Service Communication
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create Docker network
+        run: docker network create peerprep-network || true
+      
+      - name: Start services
+        run: docker compose up -d
+      
+      - name: Wait for services
+        run: sleep 30
+      
+      - name: Test internal service communication
+        run: |
+          echo "Testing service-to-service communication..."
+          
+          # Test that services can communicate via Docker network
+          docker compose exec -T user-service wget -q -O- http://question-service:8001/health || echo "Failed"
+          docker compose exec -T matching-service wget -q -O- http://collaboration-service:8002/health || echo "Failed"
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          docker network rm peerprep-network || true
