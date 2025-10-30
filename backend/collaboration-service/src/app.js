@@ -170,10 +170,10 @@ app.post('/api/sessions/matched', httpAuth, async (req, res) => {
       {
         id: userIds[0], // Use first user's ID
         service: 'collaboration-service',
-        internal: true
+        internal: true,
       },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '5m' } // Short-lived token for internal call
+      { expiresIn: '5m' }, // Short-lived token for internal call
     );
 
     // Fetch question details from question service with service token

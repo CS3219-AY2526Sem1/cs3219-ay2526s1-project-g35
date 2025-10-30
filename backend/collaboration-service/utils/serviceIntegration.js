@@ -56,7 +56,7 @@ class ServiceIntegration {
       }
 
       const response = await this.questionServiceClient.get(`/api/questions/${questionId}`, {
-        headers
+        headers,
       });
 
       if (response.data && response.data.success) {
