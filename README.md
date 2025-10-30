@@ -60,3 +60,32 @@
 ## Development
 
 Each microservice can be developed and deployed independently. See individual service README files for specific setup instructions.
+
+## CI/CD Pipeline
+
+This project includes a complete CI/CD pipeline with GitHub Actions.
+
+### Quick Start
+
+1. **View the pipeline**: Go to the [Actions](https://github.com/your-org/your-repo/actions) tab
+2. **Test locally**: Run `npm test` in each service directory
+3. **Read the guide**: See [CI-CD-QUICK-START.md](CI-CD-QUICK-START.md)
+4. **Detailed docs**: See [docs/CI-CD-SETUP.md](docs/CI-CD-SETUP.md)
+
+### What's Included
+
+- ✅ **CI Pipeline** - Automatic testing and code quality checks on every PR
+- ✅ **CD Pipeline** - Automated deployment to production
+- ✅ **Integration Tests** - Full system testing with docker-compose
+- ✅ **Kubernetes Deployment** - Deploy to K8s clusters
+- ✅ **Security Scanning** - Vulnerability scanning with Trivy
+- ✅ **Dependency Updates** - Automated npm dependency updates
+
+### Workflow Status
+
+The pipeline runs automatically on:
+- Pull requests to `master`, `main`, or `develop`
+- Pushes to `master` or `main` branches
+- Version tags (e.g., `v1.0.0`)
+
+See [.github/workflows/](.github/workflows/) for workflow definitions.

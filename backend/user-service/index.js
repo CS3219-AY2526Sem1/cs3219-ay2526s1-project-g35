@@ -29,9 +29,13 @@ app.use(
 );
 
 // Rate limiting
+const rateLimitWindowMs = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '900000') || 900000; // 15 minutes default
+const rateLimitMax = Number.parseInt(process.env.RATE_LIMIT_MAX ?? '100') || 100;
+const authRateLimitMax = Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? '5') || 5;
+
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
-  max: parseInt(process.env.RATE_LIMIT_MAX),
+  windowMs: rateLimitWindowMs,
+  max: rateLimitMax,
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
@@ -41,8 +45,8 @@ const limiter = rateLimit({
 });
 
 const authLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS),
-  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX),
+  windowMs: rateLimitWindowMs,
+  max: authRateLimitMax,
   message: {
     error: 'Too many authentication attempts, please try again later.',
   },

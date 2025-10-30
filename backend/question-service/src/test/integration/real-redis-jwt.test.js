@@ -13,6 +13,7 @@
 const request = require('supertest');
 const app = require('../../index');
 const { initRedis, closeRedis, getRedisClient } = require('../../config/redis');
+const { connectDB } = require('../../config/database');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
@@ -23,7 +24,8 @@ describe('Integration Tests - Real Redis & JWT', () => {
   let redisClient;
 
   beforeAll(async () => {
-    // Connect to real Redis
+    // Connect to database and Redis
+    await connectDB();
     await initRedis();
     redisClient = getRedisClient();
 
@@ -54,8 +56,12 @@ describe('Integration Tests - Real Redis & JWT', () => {
   });
 
   afterAll(async () => {
-    // Clean up Redis connection
+    // Clean up connections
     await closeRedis();
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.close();
+    }
   });
 
   describe('Real JWT Authentication', () => {
