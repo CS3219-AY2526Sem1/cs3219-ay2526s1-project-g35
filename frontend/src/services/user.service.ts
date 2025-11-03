@@ -1,6 +1,6 @@
 /**
  * User Service
- *
+ 
  * Handles all user-related API operations including profile management
  */
 
@@ -65,7 +65,20 @@ class UserService {
   }
 
   /**
-   * Delete user account
+   * Delete own account (authenticated user)
+   */
+  async deleteOwnAccount(): Promise<{ message: string; data: { message: string } }> {
+    try {
+      const response: AxiosResponse<{ message: string; data: { message: string } }> =
+        await apiClient.delete(`${this.USER_BASE_PATH}/me`);
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Delete user account (admin only)
    * DELETE /users/:id
    */
   async deleteUser(userId: string): Promise<void> {

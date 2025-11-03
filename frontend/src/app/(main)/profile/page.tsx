@@ -5,6 +5,7 @@ import Header from '@/components/ui/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import userService, { UserServiceError } from '@/services/user.service';
 import { UserData } from '@/types/user.types';
+import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 type ProfileFormData = {
@@ -16,7 +17,8 @@ type ProfileFormData = {
 };
 
 export default function ProfilePage(): React.ReactElement {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
   const [data, setData] = useState<ProfileFormData>({
     username: '',
     firstName: '',
@@ -27,6 +29,8 @@ export default function ProfilePage(): React.ReactElement {
   const [originalData, setOriginalData] = useState<ProfileFormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -143,6 +147,29 @@ export default function ProfilePage(): React.ReactElement {
     }
   }
 
+  async function handleDeleteAccount() {
+    try {
+      setDeleting(true);
+      setError(null);
+
+      await userService.deleteOwnAccount();
+
+      // Account deleted and user logged out by backend
+      // Call logout to clear frontend auth state
+      logout();
+
+      // Redirect to login page
+      router.push('/login?deleted=true');
+    } catch (err) {
+      const errorMessage =
+        err instanceof UserServiceError ? err.message : 'Failed to delete account';
+      setError(errorMessage);
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
@@ -246,7 +273,12 @@ export default function ProfilePage(): React.ReactElement {
             <div className="mt-6">
               <div className="text-md font-bold text-destructive">Danger Zone</div>
               <div className="mt-3">
-                <Button type="button" variant="destructive">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                >
                   Delete My Account
                 </Button>
               </div>
@@ -262,6 +294,31 @@ export default function ProfilePage(): React.ReactElement {
             </div>
           </div>
         </form>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background border rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <h2 className="text-xl font-bold text-destructive mb-4">Confirm Account Deletion</h2>
+              <p className="text-sm text-foreground mb-6">
+                Are you absolutely sure you want to delete your account? This action cannot be
+                undone. All your data will be permanently removed.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting}>
+                  {deleting ? 'Deleting...' : 'Yes, Delete My Account'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

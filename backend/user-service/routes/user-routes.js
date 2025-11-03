@@ -3,6 +3,7 @@ import express from 'express';
 import {
   createUser,
   deleteUser,
+  deleteSelf,
   getUser,
   getUserProfile,
   getUserIdByUsername,
@@ -53,6 +54,9 @@ router.patch(
   validateUpdatePrivilege,
   updateUserPrivilege,
 );
+
+// Delete account (authenticated users)
+router.delete('/me', verifyToken, deleteSelf);
 
 // Delete user (admin only)
 router.delete('/:id', validateUserIdParam, verifyToken, isAdmin, deleteUser);

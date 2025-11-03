@@ -3,21 +3,29 @@
 import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
-interface LoginForm {
+interface LoginFormData {
   email: string;
   password: string;
 }
 
-const Login: React.FC = () => {
+const LoginForm: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, error, clearError } = useAuth();
-  const [formData, setFormData] = useState<LoginForm>({
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
   });
+  const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('deleted') === 'true') {
+      setDeletedMessage('Your account has been successfully deleted.');
+    }
+  }, [searchParams]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,6 +60,12 @@ const Login: React.FC = () => {
         <Header>Login</Header>
 
         <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+          {deletedMessage && (
+            <div className="p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+              {deletedMessage}
+            </div>
+          )}
+
           {error && (
             <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
               {error}
@@ -118,6 +132,25 @@ const Login: React.FC = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Login: React.FC = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-(--hscreen) flex items-center justify-center">
+          <div className="w-full max-w-[500px] p-10 bg-(--card) rounded-lg shadow-[0_0_16px_rgba(0,0,0,0.12)]">
+            <Header>Login</Header>
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-attention"></div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 };
 
