@@ -152,7 +152,11 @@ export async function updateUser(req, res) {
     const updateData = {};
     if (username) updateData.username = username;
     if (email) updateData.email = email.toLowerCase();
-    if (profile) updateData.profile = { ...user.profile, ...profile };
+    if (profile) {
+      // Convert Mongoose subdocument to plain object and merge
+      const existingProfile = user.profile ? user.profile.toObject() : {};
+      updateData.profile = { ...existingProfile, ...profile };
+    }
     if (preferences) updateData.preferences = { ...user.preferences, ...preferences };
 
     let updatedUser;
@@ -244,11 +248,11 @@ export function formatUserResponse(user) {
     updatedAt: user.updatedAt,
     lastLogin: user.lastLogin,
     profile: {
-      firstName: user.profile?.firstName,
-      lastName: user.profile?.lastName,
+      firstName: user.profile?.firstName || '',
+      lastName: user.profile?.lastName || '',
       fullName: user.profile?.fullName || user.username,
-      bio: user.profile?.bio,
-      avatar: user.profile?.avatar,
+      bio: user.profile?.bio || '',
+      avatar: user.profile?.avatar || null,
     },
   };
 }
