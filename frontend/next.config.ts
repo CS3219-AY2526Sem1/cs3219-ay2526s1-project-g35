@@ -7,6 +7,17 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
 
+  // Configure external image domains
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        pathname: '/peerprep-profile-pictures/**',
+      },
+    ],
+  },
+
   // Environment variables - these will be available at runtime
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',

@@ -74,4 +74,5 @@ export interface AuthContextType extends AuthState {
   initiateRegistration: (credentials: RegisterCredentials) => Promise<SendOTPResponse>;
   completeRegistration: (email: string, otp: string) => Promise<AuthResponse>;
   resendRegistrationOTP: (email: string) => Promise<SendOTPResponse>;
+  updateUser: (updatedUser: Partial<User>) => void;
 }

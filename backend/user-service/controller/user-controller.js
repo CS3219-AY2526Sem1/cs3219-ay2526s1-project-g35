@@ -4,6 +4,7 @@ import { UserRepository } from '../model/user-repository.js';
 import { USER_ERRORS, sendUserErrorResponse, sendErrorResponse } from '../errors/index.js';
 import * as tokenService from '../services/token-service.js';
 import { setAuthCookies } from '../utils/cookie-helper.js';
+import storageService from '../services/storage-service.js';
 
 export async function createUser(req, res) {
   try {
@@ -259,6 +260,71 @@ export async function deleteSelf(req, res) {
   } catch (err) {
     console.error('Delete self error:', err);
     return sendErrorResponse(res, USER_ERRORS.DELETE_SERVER_ERROR);
+  }
+}
+
+export async function uploadAvatar(req, res) {
+  try {
+    const userId = req.userId;
+
+    if (!req.file) {
+      return res.status(400).json({
+        message: 'No file uploaded',
+        error: 'Please select an image file to upload',
+      });
+    }
+
+    const user = await _findUserById(userId);
+    if (!user) {
+      return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
+    }
+
+    // Validate file
+    try {
+      storageService.validateImageFile(req.file.mimetype, req.file.size);
+    } catch (error) {
+      return res.status(400).json({
+        message: 'Invalid file',
+        error: error.message,
+      });
+    }
+
+    // Delete old avatar if exists
+    if (user.profile?.avatar) {
+      await storageService.deleteProfilePicture(user.profile.avatar);
+    }
+
+    // Generate unique filename
+    const fileName = storageService.generateFileName(user.username, req.file.originalname);
+
+    // Upload to GCS
+    const avatarUrl = await storageService.uploadProfilePicture(
+      req.file.buffer,
+      fileName,
+      req.file.mimetype,
+    );
+
+    // Update user profile with new avatar URL
+    const updatedUser = await UserRepository.updateById(userId, {
+      profile: {
+        ...user.profile.toObject(),
+        avatar: avatarUrl,
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Avatar uploaded successfully',
+      data: {
+        avatar: avatarUrl,
+        user: formatUserResponse(updatedUser),
+      },
+    });
+  } catch (err) {
+    console.error('Upload avatar error:', err);
+    return res.status(500).json({
+      message: 'Failed to upload avatar',
+      error: err.message || 'Internal server error',
+    });
   }
 }
 

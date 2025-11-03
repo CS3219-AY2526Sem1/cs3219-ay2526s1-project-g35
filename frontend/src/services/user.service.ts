@@ -78,6 +78,32 @@ class UserService {
   }
 
   /**
+   * Upload avatar image
+   * POST /users/avatar
+   */
+  async uploadAvatar(file: File): Promise<{
+    message: string;
+    data: { avatar: string; user: UserProfileResponse };
+  }> {
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const response: AxiosResponse<{
+        message: string;
+        data: { avatar: string; user: UserProfileResponse };
+      }> = await apiClient.post(`${this.USER_BASE_PATH}/avatar`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Delete user account (admin only)
    * DELETE /users/:id
    */

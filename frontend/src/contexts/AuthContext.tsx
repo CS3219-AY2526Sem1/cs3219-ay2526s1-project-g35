@@ -195,6 +195,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuthState((prev: AuthState) => ({ ...prev, error: null }));
   }, []);
 
+  const updateUser = useCallback((updatedUser: Partial<AuthState['user']>) => {
+    setAuthState((prev: AuthState) => ({
+      ...prev,
+      user: prev.user ? { ...prev.user, ...updatedUser } : null,
+    }));
+  }, []);
+
   const value: AuthContextType = {
     ...authState,
     login,
@@ -205,6 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initiateRegistration,
     completeRegistration,
     resendRegistrationOTP,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

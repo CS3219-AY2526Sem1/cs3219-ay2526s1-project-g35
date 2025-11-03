@@ -51,6 +51,9 @@ async function loadSecrets() {
       MAILTRAP_PASS: await accessSecretVersion('user-service-mailtrap-pass'),
       SMTP_USER: await accessSecretVersion('user-service-smtp-user'),
       SMTP_PASS: await accessSecretVersion('user-service-smtp-pass'),
+
+      // GCS Service Account Key (SENSITIVE - authentication credentials)
+      GCS_SERVICE_ACCOUNT_KEY: await accessSecretVersion('user-service-gcs-key'),
     };
 
     console.log('Secrets loaded successfully from Google Secret Manager');

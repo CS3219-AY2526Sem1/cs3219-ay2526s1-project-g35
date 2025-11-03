@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import userService, { UserServiceError } from '@/services/user.service';
-import { UserData } from '@/types/user.types';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import React, { useCallback, useEffect, useState } from 'react';
 
 type ProfileFormData = {
@@ -14,10 +14,11 @@ type ProfileFormData = {
   lastName: string;
   bio: string;
   email: string;
+  avatar: string | null;
 };
 
 export default function ProfilePage(): React.ReactElement {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<ProfileFormData>({
     username: '',
@@ -25,10 +26,12 @@ export default function ProfilePage(): React.ReactElement {
     lastName: '',
     bio: '',
     email: '',
+    avatar: null,
   });
   const [originalData, setOriginalData] = useState<ProfileFormData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +51,7 @@ export default function ProfilePage(): React.ReactElement {
         lastName: userData.profile?.lastName || '',
         bio: userData.profile?.bio || '',
         email: userData.email,
+        avatar: userData.profile?.avatar || null,
       };
 
       setData(formData);
@@ -133,6 +137,7 @@ export default function ProfilePage(): React.ReactElement {
         lastName: response.data.profile?.lastName || '',
         bio: response.data.profile?.bio || '',
         email: response.data.email,
+        avatar: response.data.profile?.avatar || null,
       };
 
       setData(updatedData);
@@ -144,6 +149,56 @@ export default function ProfilePage(): React.ReactElement {
       setError(errorMessage);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Invalid file type. Only JPEG, JPG, and PNG images are allowed.');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const response = await userService.uploadAvatar(file);
+
+      // Update local state with new avatar
+      setData((prev) => ({ ...prev, avatar: response.data.avatar }));
+      setOriginalData((prev) => (prev ? { ...prev, avatar: response.data.avatar } : null));
+
+      // Update auth context with new avatar
+      updateUser({
+        profile: {
+          ...user?.profile,
+          avatar: response.data.avatar,
+          firstName: user?.profile?.firstName || '',
+          lastName: user?.profile?.lastName || '',
+          fullName: user?.profile?.fullName || '',
+          bio: user?.profile?.bio || '',
+        },
+      });
+
+      setSuccessMessage('Profile picture uploaded successfully!');
+    } catch (err) {
+      const errorMessage =
+        err instanceof UserServiceError ? err.message : 'Failed to upload profile picture';
+      setError(errorMessage);
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -204,11 +259,41 @@ export default function ProfilePage(): React.ReactElement {
           {/* Top area: avatar at left, username + name fields at right */}
           <div className="grid grid-cols-6 gap-4">
             <div className="col-span-2 flex-shrink-0 flex flex-col items-center">
-              <div className="w-40 h-40 rounded-full bg-muted/40 flex items-center justify-center">
-                <div className="w-36 h-36 rounded-full bg-muted flex items-center justify-center text-4xl font-bold text-muted-foreground">
-                  {data.firstName?.[0]?.toUpperCase() || data.username?.[0]?.toUpperCase() || '?'}
-                </div>
+              <div className="relative w-40 h-40 rounded-full bg-muted/40 flex items-center justify-center overflow-hidden group">
+                {data.avatar ? (
+                  <Image
+                    src={data.avatar}
+                    alt="Profile"
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-36 h-36 rounded-full bg-muted flex items-center justify-center text-4xl font-bold text-muted-foreground">
+                    {data.firstName?.[0]?.toUpperCase() || data.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                )}
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <span className="text-white text-sm font-medium">
+                    {uploading ? 'Uploading...' : 'Change Photo'}
+                  </span>
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
+                />
               </div>
+              <p className="mt-2 text-xs text-muted-foreground text-center">
+                Click to upload (Max 5MB)
+              </p>
             </div>
 
             <div className="col-span-4">
