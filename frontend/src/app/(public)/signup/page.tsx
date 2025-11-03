@@ -37,6 +37,16 @@ export default function SignUpPage(): React.JSX.Element {
   const [touched, setTouched] = useState<Partial<Record<keyof SignUpForm, boolean>>>({});
   const [backendErrors, setBackendErrors] = useState<Array<{ field: string; message: string }>>([]);
 
+  // Password constraint checks
+  const passwordConstraints = {
+    minLength: formData.password.length >= 6,
+    maxLength: formData.password.length <= 128,
+    hasUppercase: /[A-Z]/.test(formData.password),
+    hasLowercase: /[a-z]/.test(formData.password),
+    hasNumber: /\d/.test(formData.password),
+    hasSpecial: /[^A-Za-z0-9]/.test(formData.password),
+  };
+
   const validators: Partial<Record<keyof SignUpForm, (v: string) => string | undefined>> = {
     username: (v) => {
       if (!v || v.trim().length === 0) return 'Username is required';
@@ -64,7 +74,7 @@ export default function SignUpPage(): React.JSX.Element {
       if (!v) return 'Password is required';
       if (v.length < 6) return 'Password must be at least 6 characters long';
       if (v.length > 128) return 'Password cannot exceed 128 characters';
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(v)) {
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(v)) {
         return 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character';
       }
       return undefined;
@@ -276,12 +286,40 @@ export default function SignUpPage(): React.JSX.Element {
               className="w-full px-3 py-2 border border-border rounded"
               placeholder="Enter a strong password"
             />
-            {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
-            {!errors.password && (
-              <p className="text-muted-foreground text-xs mt-1">
-                Must be 6-128 characters with uppercase, lowercase, number, and special character
-                (@$!%*?&)
-              </p>
+
+            {(touched.password || formData.password.length > 0) && (
+              <div className="mt-2 space-y-1">
+                <div
+                  className={`text-xs ${passwordConstraints.minLength ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  At least 6 characters
+                </div>
+                <div
+                  className={`text-xs ${passwordConstraints.maxLength ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  Maximum 128 characters
+                </div>
+                <div
+                  className={`text-xs ${passwordConstraints.hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  One uppercase letter (A-Z)
+                </div>
+                <div
+                  className={`text-xs ${passwordConstraints.hasLowercase ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  One lowercase letter (a-z)
+                </div>
+                <div
+                  className={`text-xs ${passwordConstraints.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  One number (0-9)
+                </div>
+                <div
+                  className={`text-xs ${passwordConstraints.hasSpecial ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                >
+                  One special character (!@#$%^&*-_+=...)
+                </div>
+              </div>
             )}
           </div>
 

@@ -19,7 +19,7 @@ export const userSchemas = {
     password: Joi.string()
       .min(6)
       .max(128)
-      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])'))
       .required()
       .messages({
         'string.min': 'Password must be at least 6 characters long',
@@ -41,7 +41,7 @@ export const userSchemas = {
     password: Joi.string()
       .min(6)
       .max(128)
-      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])'))
       .optional(),
     profile: Joi.object({
       firstName: Joi.string().max(50).optional(),

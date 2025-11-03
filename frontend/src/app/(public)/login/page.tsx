@@ -35,9 +35,7 @@ const Login: React.FC = () => {
     try {
       await login(formData);
       //Don't manually navigate, let layout handle when isAuthenticated changes
-    } catch {
-      // Error is already set in AuthContext and displayed in the UI
-    }
+    } catch {}
   };
 
   const onSignUp = () => {
@@ -84,6 +82,7 @@ const Login: React.FC = () => {
               type="password"
               id="password"
               name="password"
+              placeholder="eg. P@ssw0rd!"
               value={formData.password}
               onChange={handleInputChange}
               className="py-3 px-4 border rounded-md text-base placeholder-muted-foreground transition-colors duration-200 focus:outline-none focus:border-attention"
