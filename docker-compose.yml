@@ -44,6 +44,9 @@ services:
       - "8001:8001"
     env_file:
       - ./backend/question-service/.env.docker
+    environment:
+      - REDIS_HOST=question-service-redis
+      - REDIS_PORT=6380
     depends_on:
       question-service-redis:
         condition: service_healthy

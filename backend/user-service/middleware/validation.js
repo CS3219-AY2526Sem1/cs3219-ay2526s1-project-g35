@@ -79,7 +79,12 @@ export const userSchemas = {
     }),
 
   // OTP validation schemas
-  verifyOTPOnly: Joi.object({
+  // Complete registration validation schema
+  completeRegistration: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
     otp: Joi.string()
       .pattern(/^\d{6}$/)
       .required()

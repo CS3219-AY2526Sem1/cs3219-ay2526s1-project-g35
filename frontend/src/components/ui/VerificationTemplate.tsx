@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VerificationTemplateProps {
   title: string;
   explanation: string;
   onSubmit?: (code: string) => void;
   onResend?: () => void;
+  initialCountdown?: number; // Initial countdown in seconds (e.g., 60)
 }
 
 export default function VerificationTemplate({
@@ -14,16 +15,42 @@ export default function VerificationTemplate({
   explanation,
   onSubmit,
   onResend,
+  initialCountdown = 0,
 }: VerificationTemplateProps) {
   const length = 6;
   const [values, setValues] = useState<string[]>(Array(length).fill(''));
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const [countdown, setCountdown] = useState<number>(initialCountdown);
+  const [isResending, setIsResending] = useState<boolean>(false);
 
   const focusAt = useCallback((index: number) => {
     const input = inputsRef.current[index];
     input?.focus();
     input?.select();
   }, []);
+
+  // Countdown effect
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const handleResendClick = async () => {
+    if (countdown > 0 || !onResend) return;
+
+    setIsResending(true);
+    try {
+      await onResend();
+      // Start 60-second countdown
+      setCountdown(60);
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
     const v = e.target.value.replace(/\D/g, '');
@@ -135,9 +162,20 @@ export default function VerificationTemplate({
 
             <div className="text-sm text-muted-foreground mt-2">
               <span>Didn&apos;t receive the code? </span>
-              <button type="button" onClick={onResend} className="underline hover:text-primary">
-                Click here to resend the code.
-              </button>
+              {countdown > 0 ? (
+                <span className="text-muted-foreground">
+                  OTP has been sent, try again in {countdown} seconds
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendClick}
+                  disabled={isResending}
+                  className="underline hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                >
+                  {isResending ? 'Sending...' : 'Click here to resend the code.'}
+                </button>
+              )}
             </div>
           </form>
         </div>
