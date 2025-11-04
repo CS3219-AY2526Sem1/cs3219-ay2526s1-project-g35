@@ -293,7 +293,7 @@ wss.on('connection', (ws) => {
                 error: 'Failed to create collaboration session',
               }),
             );
-            
+
             // Close connections after sending error
             setTimeout(() => {
               if (user.ws.readyState === 1) {
@@ -319,7 +319,7 @@ wss.on('connection', (ws) => {
               error: 'Failed to create collaboration session',
             }),
           );
-          
+
           // Close connections after sending error
           setTimeout(() => {
             if (user.ws.readyState === 1) {
