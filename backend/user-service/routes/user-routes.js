@@ -3,11 +3,13 @@ import express from 'express';
 import {
   createUser,
   deleteUser,
+  deleteSelf,
   getUser,
   getUserProfile,
   getUserIdByUsername,
   updateUser,
   updateUserPrivilege,
+  uploadAvatar,
 } from '../controller/user-controller.js';
 import { verifyToken, isAdmin } from '../middleware/jwtAuth.js';
 import {
@@ -18,6 +20,7 @@ import {
   normalizeEmail,
   normalizeUsername,
 } from '../middleware/validation.js';
+import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -53,6 +56,12 @@ router.patch(
   validateUpdatePrivilege,
   updateUserPrivilege,
 );
+
+// Upload avatar (authenticated users)
+router.post('/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
+
+// Delete account (authenticated users)
+router.delete('/me', verifyToken, deleteSelf);
 
 // Delete user (admin only)
 router.delete('/:id', validateUserIdParam, verifyToken, isAdmin, deleteUser);

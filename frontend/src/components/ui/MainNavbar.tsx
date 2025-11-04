@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import socketService from '@/services/socketService';
 import { MessagesSquare, UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ModeToggle from './ModeToggle';
@@ -128,8 +129,23 @@ function MainNavbar() {
         <ModeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="rounded-full" size="icon">
-              <UserIcon className="w-4 h-4" />
+            <Button
+              variant="outline"
+              className="rounded-full w-10 h-10 p-0 overflow-hidden"
+              size="icon"
+            >
+              {user?.profile?.avatar ? (
+                <Image
+                  src={user.profile.avatar}
+                  alt="Profile"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                <UserIcon className="w-4 h-4" />
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-44" align="end" sideOffset={10}>
