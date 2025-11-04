@@ -131,7 +131,8 @@ export default function WaitingRoomPage(): React.ReactElement {
         // Server indicates the user is already queued elsewhere
         closedByServerMessageRef.current = true;
         setServerNotice(
-          data.message || 'You are already queuing on another device or tab. Please close it first.',
+          data.message ||
+            'You are already queuing on another device or tab. Please close it first.',
         );
         setAlreadyQueuing(true);
         if (wsRef.current) {
@@ -173,7 +174,6 @@ export default function WaitingRoomPage(): React.ReactElement {
       }
     };
   }, [router, matchFound, timedOut]);
-
 
   const handleReturnHome = () => {
     // clear timer and navigate
