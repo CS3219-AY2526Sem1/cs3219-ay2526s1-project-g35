@@ -1,0 +1,144 @@
+name: Deploy to Kubernetes
+
+on:
+  push:
+    branches: [master, main]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+permissions:
+  contents: read
+  packages: read
+  deployments: write
+
+env:
+  KUBECTL_VERSION: '1.28.0'
+  REGISTRY: ghcr.io
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+      
+      - name: Configure kubectl
+        run: |
+          # This is a template - configure with your actual Kubernetes credentials
+          echo "Configuring kubectl..."
+          # Example for GKE:
+          # gcloud auth activate-service-account --key-file=key.json
+          # gcloud container clusters get-credentials ${{ vars.K8S_CLUSTER_NAME }} --zone ${{ vars.K8S_ZONE }}
+          
+          # Example for AKS:
+          # az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+          # az aks get-credentials --resource-group ${{ vars.AKS_RESOURCE_GROUP }} --name ${{ vars.AKS_CLUSTER_NAME }}
+      
+      - name: Update image tags in Kubernetes manifests
+        run: |
+          echo "Updating image tags with commit SHA: ${{ github.sha }}"
+          
+          # Update deployment manifests with new image tags
+          IMAGE_TAG="${{ github.sha }}"
+          IMAGE_PREFIX=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          
+          # Update user-service deployment
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-user-service:$IMAGE_TAG"' k8s/deployments/user-service-deployment.yaml || true
+          
+          # Update question-service deployment
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-question-service:$IMAGE_TAG"' k8s/deployments/question-service-deployment.yaml || true
+          
+          # Update collaboration-service deployment
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-collaboration-service:$IMAGE_TAG"' k8s/deployments/collaboration-service-deployment.yaml || true
+          
+          # Update matching-service deployment
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-matching-service:$IMAGE_TAG"' k8s/deployments/matching-service-deployment.yaml || true
+          
+          # Update frontend deployment
+          yq eval -i '.spec.template.spec.containers[0].image = "${{ env.REGISTRY }}/'"$IMAGE_PREFIX"'/peerprep-frontend:$IMAGE_TAG"' k8s/deployments/frontend-deployment.yaml || true
+      
+      - name: Apply Kubernetes manifests
+        run: |
+          echo "Applying Kubernetes manifests..."
+          
+          # Apply namespace
+          kubectl apply -f k8s/namespace.yaml
+          
+          # Apply configmaps
+          kubectl apply -f k8s/configmaps/
+          
+          # Apply redis statefulsets
+          kubectl apply -f k8s/redis/
+          
+          # Apply deployments
+          kubectl apply -f k8s/deployments/
+          
+          # Apply services
+          kubectl apply -f k8s/services/
+          
+          # Apply API gateway
+          kubectl apply -f k8s/api-gateway/
+          
+          # Apply ingress
+          kubectl apply -f k8s/ingress/
+      
+      - name: Wait for rollout
+        run: |
+          echo "Waiting for deployments to rollout..."
+          
+          kubectl rollout status deployment/user-service -n peerprep --timeout=5m || true
+          kubectl rollout status deployment/question-service -n peerprep --timeout=5m || true
+          kubectl rollout status deployment/collaboration-service -n peerprep --timeout=5m || true
+          kubectl rollout status deployment/matching-service -n peerprep --timeout=5m || true
+          kubectl rollout status deployment/frontend -n peerprep --timeout=5m || true
+      
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployment..."
+          
+          echo "=== Deployments ==="
+          kubectl get deployments -n peerprep
+          
+          echo "=== Pods ==="
+          kubectl get pods -n peerprep
+          
+          echo "=== Services ==="
+          kubectl get services -n peerprep
+      
+      - name: Run health checks
+        run: |
+          echo "Running health checks..."
+          
+          # Get external IP or URL for services
+          # Example for LoadBalancer:
+          # USER_SERVICE_IP=$(kubectl get service user-service -n peerprep -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          # curl -f http://$USER_SERVICE_IP:8000/health || echo "Health check failed"
+      
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, rolling back..."
+          kubectl rollout undo deployment/user-service -n peerprep || true
+          kubectl rollout undo deployment/question-service -n peerprep || true
+          kubectl rollout undo deployment/collaboration-service -n peerprep || true
+          kubectl rollout undo deployment/matching-service -n peerprep || true
+          kubectl rollout undo deployment/frontend -n peerprep || true
+

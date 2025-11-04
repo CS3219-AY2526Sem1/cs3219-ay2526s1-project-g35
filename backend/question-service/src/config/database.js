@@ -6,6 +6,12 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
+    // Don't reconnect if already connected
+    if (mongoose.connection.readyState === 1) {
+      console.log('MongoDB already connected');
+      return;
+    }
+
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/questiondb';
 
     await mongoose.connect(mongoURI, {

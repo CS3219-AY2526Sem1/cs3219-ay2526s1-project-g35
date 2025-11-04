@@ -113,7 +113,14 @@ questionSchema.statics.createQuestion = async function (questionData) {
 
 // Update a question
 questionSchema.statics.updateQuestion = async function (id, questionData) {
-  return await this.findByIdAndUpdate(id, questionData, { new: true, runValidators: true });
+  // Remove undefined fields to avoid overwriting with undefined
+  const cleanData = {};
+  Object.keys(questionData).forEach((key) => {
+    if (questionData[key] !== undefined) {
+      cleanData[key] = questionData[key];
+    }
+  });
+  return await this.findByIdAndUpdate(id, cleanData, { new: true, runValidators: true });
 };
 
 // Delete a question
