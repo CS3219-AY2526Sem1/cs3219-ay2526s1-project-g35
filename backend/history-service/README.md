@@ -148,16 +148,17 @@ The service will be available at `http://localhost:8004`
 
 ### `histories` Table
 
-| Column          | Type                      | Description                        |
-| --------------- | ------------------------- | ---------------------------------- |
-| id              | UUID                      | Primary key (auto-generated)       |
-| user_id         | VARCHAR(255)              | User ID from user service          |
-| question_title  | VARCHAR(500)              | Title of the attempted question    |
-| difficulty      | VARCHAR(10)               | Question difficulty (Easy/Medium/Hard) |
-| category        | VARCHAR(100)              | Question category/topic            |
-| created_at      | TIMESTAMP                 | When the attempt was made          |
+| Column         | Type         | Description                            |
+| -------------- | ------------ | -------------------------------------- |
+| id             | UUID         | Primary key (auto-generated)           |
+| user_id        | VARCHAR(255) | User ID from user service              |
+| question_title | VARCHAR(500) | Title of the attempted question        |
+| difficulty     | VARCHAR(10)  | Question difficulty (Easy/Medium/Hard) |
+| category       | VARCHAR(100) | Question category/topic                |
+| created_at     | TIMESTAMP    | When the attempt was made              |
 
 **Indexes:**
+
 - `idx_user_id` - Fast lookups by user
 - `idx_difficulty` - Filter by difficulty
 - `idx_category` - Filter by category
@@ -175,6 +176,7 @@ Check if the service is running.
 **Authentication:** None
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -195,6 +197,7 @@ Record a new question attempt.
 **Authentication:** None
 
 **Request Body:**
+
 ```json
 {
   "user_id": "68f089685ff31e0413f85bf8",
@@ -205,12 +208,14 @@ Record a new question attempt.
 ```
 
 **Required Fields:**
+
 - `user_id` (string, 1-255 chars) - User ID from user service
 - `question_title` (string, 1-500 chars) - Question title
 - `difficulty` (string) - Must be "Easy", "Medium", or "Hard"
 - `category` (string, 1-255 chars) - Question category
 
 **Success Response (201):**
+
 ```json
 {
   "success": true,
@@ -227,6 +232,7 @@ Record a new question attempt.
 ```
 
 **Error Response (400 - Validation Failed):**
+
 ```json
 {
   "success": false,
@@ -253,6 +259,7 @@ Retrieve question attempt history for a specific user.
 **Authorization:** Users can only view their own history. Admins can view any user's history.
 
 **Query Parameters:**
+
 - `user_id` (required) - User ID to fetch history for
 - `limit` (optional, default: 100, max: 1000) - Number of records to return
 - `offset` (optional, default: 0) - Number of records to skip (for pagination)
@@ -262,6 +269,7 @@ Retrieve question attempt history for a specific user.
 - `to_date` (optional) - Filter to date (ISO 8601 format)
 
 **Example Request:**
+
 ```bash
 # Using cookie authentication
 curl "http://localhost:8004/history?user_id=68f089685ff31e0413f85bf8&limit=10&difficulty=Easy" \
@@ -273,7 +281,8 @@ curl "http://localhost:8004/history?user_id=68f089685ff31e0413f85bf8&limit=10" \
 ```
 
 **Success Response (200):**
-```json
+
+````json
 {
   "success": true,
   "count": 2,
@@ -297,7 +306,7 @@ npm run test:watch
 
 # Run with coverage
 npm test -- --coverage
-```
+````
 
 ### Manual Testing
 
@@ -314,14 +323,14 @@ cd backend/history-service
 
 ## Common Error Codes
 
-| Code | Error | Cause |
-|------|-------|-------|
-| 400 | Validation failed | Invalid request body or query parameters |
-| 401 | Access denied. No token provided | Missing JWT token |
-| 401 | Invalid token | Token is malformed or signature is invalid |
-| 401 | Token expired | JWT token has expired |
-| 403 | Access denied. You can only view your own history | User trying to access another user's history |
-| 500 | Server configuration error | Missing JWT_SECRET or database configuration |
+| Code | Error                                             | Cause                                        |
+| ---- | ------------------------------------------------- | -------------------------------------------- |
+| 400  | Validation failed                                 | Invalid request body or query parameters     |
+| 401  | Access denied. No token provided                  | Missing JWT token                            |
+| 401  | Invalid token                                     | Token is malformed or signature is invalid   |
+| 401  | Token expired                                     | JWT token has expired                        |
+| 403  | Access denied. You can only view your own history | User trying to access another user's history |
+| 500  | Server configuration error                        | Missing JWT_SECRET or database configuration |
 
 ---
 
@@ -429,6 +438,7 @@ docker compose down -v
 The `docker-compose.yml` includes:
 
 **History Service**
+
 - Runs on port `8004`
 - Uses `.env.docker` for configuration
 - Automatically connects to `history-postgres` container
@@ -436,6 +446,7 @@ The `docker-compose.yml` includes:
 - Auto-restarts on failure
 
 **PostgreSQL Container**
+
 - PostgreSQL 14 Alpine image
 - Runs on port `5432`
 - Automatic schema initialization via `schema.sql`
