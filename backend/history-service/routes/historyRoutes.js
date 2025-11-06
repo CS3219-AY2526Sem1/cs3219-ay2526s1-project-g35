@@ -2,11 +2,15 @@ const express = require('express');
 const router = express.Router();
 const HistoryController = require('../controllers/historyController');
 const { verifyToken, optionalAuth, requireAdmin } = require('../middleware/jwtAuth');
+const { schemas, validateBody, validateQuery, sanitizeInput } = require('../middleware/validation');
 
 /**
  * History Routes
- * Defines all endpoints for the History Service
+ * Defines all endpoints for the History Service with validation and authentication
  */
+
+// Apply input sanitization to all routes
+router.use(sanitizeInput);
 
 /**
  * @swagger
@@ -47,7 +51,7 @@ const { verifyToken, optionalAuth, requireAdmin } = require('../middleware/jwtAu
  *       500:
  *         description: Server error
  */
-router.post('/history', HistoryController.createHistory);
+router.post('/history', validateBody(schemas.createHistory), HistoryController.createHistory);
 
 /**
  * @swagger
@@ -55,6 +59,8 @@ router.post('/history', HistoryController.createHistory);
  *   get:
  *     summary: Get history for a user
  *     tags: [History]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: user_id
@@ -77,17 +83,47 @@ router.post('/history', HistoryController.createHistory);
  *           default: 0
  *           minimum: 0
  *         description: Number of records to skip
+ *       - in: query
+ *         name: difficulty
+ *         schema:
+ *           type: string
+ *           enum: [Easy, Medium, Hard]
+ *         description: Filter by difficulty level
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter by category
+ *       - in: query
+ *         name: from_date
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter from date (ISO format)
+ *       - in: query
+ *         name: to_date
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: Filter to date (ISO format)
  *     responses:
  *       200:
  *         description: User history retrieved successfully
  *       400:
  *         description: Invalid query parameters
+ *       401:
+ *         description: Authentication required
  *       403:
  *         description: Access denied
  *       500:
  *         description: Server error
  */
-router.get('/history', optionalAuth, HistoryController.getUserHistory);
+router.get(
+  '/history',
+  verifyToken,
+  validateQuery(schemas.getUserHistory),
+  HistoryController.getUserHistory
+);
 
 /**
  * @swagger
@@ -121,7 +157,12 @@ router.get('/admin/stats', verifyToken, requireAdmin, HistoryController.getAdmin
  *       200:
  *         description: Category statistics retrieved successfully
  */
-router.get('/admin/stats/category', verifyToken, requireAdmin, HistoryController.getStatsByCategory);
+router.get(
+  '/admin/stats/category',
+  verifyToken,
+  requireAdmin,
+  HistoryController.getStatsByCategory
+);
 
 /**
  * @swagger

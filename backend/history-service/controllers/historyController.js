@@ -1,55 +1,21 @@
-const { getSequelize } = require('../config/database');
-const initHistoryModel = require('../models/History');
-
-let History;
-
-function getHistoryModel() {
-  if (!History) {
-    const sequelize = getSequelize();
-    History = initHistoryModel(sequelize);
-  }
-  return History;
-}
+const historyService = require('../services/historyService');
 
 /**
  * History Controller
  * Handles HTTP requests and responses for history endpoints
+ * Delegates business logic to HistoryService
  */
 
 const HistoryController = {
   /**
    * Create a new history entry
    * POST /history
-   * Body: { user_id, question_title, difficulty, category }
+   * Body: { user_id, question_title, difficulty, category, ... }
    */
   async createHistory(req, res, next) {
     try {
-      const { user_id, question_title, difficulty, category } = req.body;
-
-      // Validation
-      if (!user_id || !question_title || !difficulty || !category) {
-        return res.status(400).json({
-          success: false,
-          error: 'Please provide user_id, question_title, difficulty, and category',
-        });
-      }
-
-      // Validate difficulty
-      const validDifficulties = ['Easy', 'Medium', 'Hard'];
-      if (!validDifficulties.includes(difficulty)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Difficulty must be Easy, Medium, or Hard',
-        });
-      }
-
-      // Create history entry
-      const history = await getHistoryModel().createHistory({
-        user_id,
-        question_title,
-        difficulty,
-        category,
-      });
+      // Request body is already validated by validation middleware
+      const history = await historyService.createHistory(req.body);
 
       res.status(201).json({
         success: true,
@@ -64,63 +30,50 @@ const HistoryController = {
   /**
    * Get history for authenticated user
    * GET /history
-   * Query params: user_id (required), limit, offset
+   * Query params: user_id (required), limit, offset, difficulty, category, from_date, to_date
    */
   async getUserHistory(req, res, next) {
     try {
-      const { user_id, limit, offset } = req.query;
+      // Request query is already validated by validation middleware
+      const { user_id, limit, offset, difficulty, category, from_date, to_date } = req.query;
 
-      // Validate user_id is provided
-      if (!user_id) {
-        return res.status(400).json({
+      // Debug logging
+      console.log('getUserHistory - Request user:', JSON.stringify(req.user));
+      console.log('getUserHistory - Target user_id:', user_id);
+
+      // Authorization check: Ensure user can only access their own history (unless admin)
+      if (!historyService.canAccessUserHistory(req.user, user_id)) {
+        console.log(
+          'getUserHistory - Access denied for user:',
+          req.user?.id,
+          'trying to access:',
+          user_id
+        );
+        return res.status(403).json({
           success: false,
-          error: 'Please provide user_id as a query parameter',
+          error: 'Access denied. You can only view your own history.',
         });
       }
 
-      // If user is authenticated, ensure they can only access their own history
-      // (unless they're an admin)
-      if (req.user && req.user.role !== 'admin') {
-        if (req.user.id !== user_id) {
-          return res.status(403).json({
-            success: false,
-            error: 'Access denied. You can only view your own history.',
-          });
-        }
-      }
-
-      // Parse limit and offset
-      const options = {
-        limit: limit ? parseInt(limit, 10) : 100,
-        offset: offset ? parseInt(offset, 10) : 0,
-        order: [['created_at', 'DESC']],
-      };
-
-      // Validate pagination parameters
-      if (options.limit < 1 || options.limit > 1000) {
-        return res.status(400).json({
-          success: false,
-          error: 'Limit must be between 1 and 1000',
-        });
-      }
-
-      if (options.offset < 0) {
-        return res.status(400).json({
-          success: false,
-          error: 'Offset must be non-negative',
-        });
-      }
-
-      // Fetch user history
-      const histories = await getHistoryModel().getByUserId(user_id, options);
+      // Fetch user history with filters
+      const result = await historyService.getUserHistory(user_id, {
+        limit,
+        offset,
+        difficulty,
+        category,
+        from_date,
+        to_date,
+      });
 
       res.status(200).json({
         success: true,
-        count: histories.length,
-        data: histories,
+        count: result.histories.length,
+        totalCount: result.totalCount,
+        data: result.histories,
         pagination: {
-          limit: options.limit,
-          offset: options.offset,
+          limit: result.limit,
+          offset: result.offset,
+          hasMore: result.hasMore,
         },
       });
     } catch (error) {
@@ -135,7 +88,7 @@ const HistoryController = {
    */
   async getAdminStats(req, res, next) {
     try {
-      const stats = await getHistoryModel().getAdminStats();
+      const stats = await historyService.getAdminStats();
 
       res.status(200).json({
         success: true,
@@ -152,7 +105,7 @@ const HistoryController = {
    */
   async getStatsByCategory(req, res, next) {
     try {
-      const stats = await getHistoryModel().getStatsByCategory();
+      const stats = await historyService.getStatsByCategory();
 
       res.status(200).json({
         success: true,
@@ -169,7 +122,7 @@ const HistoryController = {
    */
   async getStatsByDifficulty(req, res, next) {
     try {
-      const stats = await getHistoryModel().getStatsByDifficulty();
+      const stats = await historyService.getStatsByDifficulty();
 
       res.status(200).json({
         success: true,
@@ -186,7 +139,12 @@ const HistoryController = {
    */
   async getStatsByUser(req, res, next) {
     try {
-      const stats = await getHistoryModel().getStatsByUser();
+      const { limit, offset } = req.query;
+
+      const stats = await historyService.getStatsByUser({
+        limit,
+        offset,
+      });
 
       res.status(200).json({
         success: true,

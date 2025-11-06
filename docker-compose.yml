@@ -122,11 +122,10 @@ services:
       - "8004:8004"
     env_file:
       - ./backend/history-service/.env.docker
-    # Uncomment volumes below if using Secret Manager with service account key
-    # volumes:
-    #   - ${GOOGLE_APPLICATION_CREDENTIALS}:/app/gcp-key.json:ro
-    # environment:
-    #   - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json
+    volumes:
+      - ./backend/history-service/gcp-service-account-key.json:/app/gcp-key.json:ro
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json
     networks:
       - peerprep-network
     healthcheck:
