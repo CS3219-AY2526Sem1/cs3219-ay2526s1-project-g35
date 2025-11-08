@@ -2,59 +2,298 @@
 
 import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
-import React, { useState } from 'react';
-// router not required yet
+import { useAuth } from '@/contexts/AuthContext';
+import userService, { UserServiceError } from '@/services/user.service';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import React, { useCallback, useEffect, useState } from 'react';
 
-type ProfileData = {
+type ProfileFormData = {
   username: string;
-  first_name: string;
-  last_name: string;
-  bio?: string;
-  avatar?: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
   email: string;
-};
-
-const DUMMY: ProfileData = {
-  username: 'abcd-1234',
-  first_name: 'John',
-  last_name: 'Doe',
-  bio: 'Tell us more about yourself!',
-  avatar: 'https://example.com/avatar.jpg',
-  email: 'peerprepforlife@gmail.com',
+  avatar: string | null;
 };
 
 export default function ProfilePage(): React.ReactElement {
-  // router not needed yet, keep for future navigation
-  const [data, setData] = useState<ProfileData>(DUMMY);
+  const { user, logout, updateUser } = useAuth();
+  const router = useRouter();
+  const [data, setData] = useState<ProfileFormData>({
+    username: '',
+    firstName: '',
+    lastName: '',
+    bio: '',
+    email: '',
+    avatar: null,
+  });
+  const [originalData, setOriginalData] = useState<ProfileFormData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  function handleChange<K extends keyof ProfileData>(key: K, value: ProfileData[K]) {
+  // Fetch user profile on mount
+  const fetchProfile = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await userService.getUserProfile();
+      const userData = response.data;
+
+      const formData: ProfileFormData = {
+        username: userData.username,
+        firstName: userData.profile?.firstName || '',
+        lastName: userData.profile?.lastName || '',
+        bio: userData.profile?.bio || '',
+        email: userData.email,
+        avatar: userData.profile?.avatar || null,
+      };
+
+      setData(formData);
+      setOriginalData(formData);
+    } catch (err) {
+      const errorMessage = err instanceof UserServiceError ? err.message : 'Failed to load profile';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  function handleChange<K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) {
     setData((d) => ({ ...d, [key]: value }));
+    // Clear messages when user starts editing
+    if (error) setError(null);
+    if (successMessage) setSuccessMessage(null);
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    // Mock save to sessionStorage
-    sessionStorage.setItem('mockProfile', JSON.stringify(data));
-    setTimeout(() => setSaving(false), 600);
+
+    if (!user?.id) {
+      setError('User ID not found. Please log in again.');
+      return;
+    }
+
+    // Check if anything changed
+    if (originalData && JSON.stringify(data) === JSON.stringify(originalData)) {
+      setSuccessMessage('No changes to save');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const payload: {
+        username?: string;
+        profile?: {
+          firstName?: string;
+          lastName?: string;
+          bio?: string;
+          avatar?: string | null;
+        };
+      } = {
+        username: data.username !== originalData?.username ? data.username : undefined,
+      };
+
+      // Build profile updates only if there are changes
+      const profileChanges: {
+        firstName?: string;
+        lastName?: string;
+        bio?: string;
+      } = {};
+
+      if (data.firstName !== originalData?.firstName) {
+        profileChanges.firstName = data.firstName;
+      }
+      if (data.lastName !== originalData?.lastName) {
+        profileChanges.lastName = data.lastName;
+      }
+      if (data.bio !== originalData?.bio) {
+        profileChanges.bio = data.bio;
+      }
+
+      // Only add profile to payload if there are changes
+      if (Object.keys(profileChanges).length > 0) {
+        payload.profile = profileChanges;
+      }
+
+      const response = await userService.updateUserProfile(user.id, payload);
+
+      // Update local state with server response
+      const updatedData: ProfileFormData = {
+        username: response.data.username,
+        firstName: response.data.profile?.firstName || '',
+        lastName: response.data.profile?.lastName || '',
+        bio: response.data.profile?.bio || '',
+        email: response.data.email,
+        avatar: response.data.profile?.avatar || null,
+      };
+
+      setData(updatedData);
+      setOriginalData(updatedData);
+      setSuccessMessage('Profile updated successfully!');
+    } catch (err) {
+      const errorMessage =
+        err instanceof UserServiceError ? err.message : 'Failed to update profile';
+      setError(errorMessage);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Invalid file type. Only JPEG, JPG, and PNG images are allowed.');
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const response = await userService.uploadAvatar(file);
+
+      // Update local state with new avatar
+      setData((prev) => ({ ...prev, avatar: response.data.avatar }));
+      setOriginalData((prev) => (prev ? { ...prev, avatar: response.data.avatar } : null));
+
+      // Update auth context with new avatar
+      updateUser({
+        profile: {
+          ...user?.profile,
+          avatar: response.data.avatar,
+          firstName: user?.profile?.firstName || '',
+          lastName: user?.profile?.lastName || '',
+          fullName: user?.profile?.fullName || '',
+          bio: user?.profile?.bio || '',
+        },
+      });
+
+      setSuccessMessage('Profile picture uploaded successfully!');
+    } catch (err) {
+      const errorMessage =
+        err instanceof UserServiceError ? err.message : 'Failed to upload profile picture';
+      setError(errorMessage);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    try {
+      setDeleting(true);
+      setError(null);
+
+      await userService.deleteOwnAccount();
+
+      // Account deleted and user logged out by backend
+      // Call logout to clear frontend auth state
+      logout();
+
+      // Redirect to login page
+      router.push('/login?deleted=true');
+    } catch (err) {
+      const errorMessage =
+        err instanceof UserServiceError ? err.message : 'Failed to delete account';
+      setError(errorMessage);
+      setShowDeleteConfirm(false);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-(--hscreen) flex items-start justify-center p-8 bg-background">
+    <div className="min-h-[calc(100vh-4rem)] flex items-start justify-center p-8 bg-background">
       <div className="w-full max-w-4xl">
         <Header className="text-center">Manage Your Profile</Header>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mt-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
+            {error}
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mt-4 p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+            {successMessage}
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="mt-6">
           {/* Top area: avatar at left, username + name fields at right */}
           <div className="grid grid-cols-6 gap-4">
             <div className="col-span-2 flex-shrink-0 flex flex-col items-center">
-              <div className="w-40 h-40 rounded-full bg-muted/40 flex items-center justify-center">
-                <div
-                  className="w-36 h-36 rounded-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${data.avatar})` }}
+              <div className="relative w-40 h-40 rounded-full bg-muted/40 flex items-center justify-center overflow-hidden group">
+                {data.avatar ? (
+                  <Image
+                    src={data.avatar}
+                    alt="Profile"
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-36 h-36 rounded-full bg-muted flex items-center justify-center text-4xl font-bold text-muted-foreground">
+                    {data.firstName?.[0]?.toUpperCase() || data.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                )}
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <span className="text-white text-sm font-medium">
+                    {uploading ? 'Uploading...' : 'Change Photo'}
+                  </span>
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={uploading}
                 />
               </div>
+              <p className="mt-2 text-xs text-muted-foreground text-center">
+                Click to upload (Max 5MB)
+              </p>
             </div>
 
             <div className="col-span-4">
@@ -65,24 +304,27 @@ export default function ProfilePage(): React.ReactElement {
                   value={data.username}
                   onChange={(e) => handleChange('username', e.target.value)}
                   className="mt-2 w-full px-3 py-2 border rounded"
+                  placeholder="Enter username"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="text-sm font-medium">Last Name</label>
+                  <label className="text-sm font-medium">First Name</label>
                   <input
-                    value={data.last_name}
-                    onChange={(e) => handleChange('last_name', e.target.value)}
+                    value={data.firstName}
+                    onChange={(e) => handleChange('firstName', e.target.value)}
                     className="w-full px-3 py-2 border rounded mt-1"
+                    placeholder="First name"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">First Name</label>
+                  <label className="text-sm font-medium">Last Name</label>
                   <input
-                    value={data.first_name}
-                    onChange={(e) => handleChange('first_name', e.target.value)}
+                    value={data.lastName}
+                    onChange={(e) => handleChange('lastName', e.target.value)}
                     className="w-full px-3 py-2 border rounded mt-1"
+                    placeholder="Last name"
                   />
                 </div>
               </div>
@@ -97,40 +339,33 @@ export default function ProfilePage(): React.ReactElement {
                 value={data.bio}
                 onChange={(e) => handleChange('bio', e.target.value)}
                 className="w-full px-3 py-2 border rounded mt-1 h-24"
+                placeholder="Tell us about yourself..."
               />
             </div>
 
             <div className="mt-4">
-              <label className="text-sm font-medium">Avatar URL</label>
+              <label className="text-sm font-medium">
+                Email <span className="text-xs text-muted-foreground">(cannot be changed)</span>
+              </label>
               <input
-                value={data.avatar}
-                onChange={(e) => handleChange('avatar', e.target.value)}
-                className="w-full px-3 py-2 border rounded mt-1"
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="text-sm font-medium">Email</label>
-              <input
+                type="email"
                 value={data.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                className="w-full px-3 py-2 border rounded mt-1"
-              />
-            </div>
-
-            <div className="mt-4">
-              <label className="text-sm font-medium">Password</label>
-              <input
-                type="password"
-                placeholder="••••••"
-                className="w-full px-3 py-2 border rounded mt-1"
+                disabled
+                className="w-full px-3 py-2 border rounded mt-1 bg-muted cursor-not-allowed opacity-60"
               />
             </div>
 
             <div className="mt-6">
               <div className="text-md font-bold text-destructive">Danger Zone</div>
               <div className="mt-3">
-                <Button variant="destructive">Delete My Account</Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={deleting}
+                >
+                  Delete My Account
+                </Button>
               </div>
               <p className="text-sm text-destructive mt-3">
                 <b>Warning:</b> This action is permanent and irreversible!
@@ -138,12 +373,37 @@ export default function ProfilePage(): React.ReactElement {
             </div>
 
             <div className="mt-12 flex justify-center">
-              <Button type="submit" variant="attention" size="lg">
+              <Button type="submit" variant="attention" size="lg" disabled={saving}>
                 {saving ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </div>
         </form>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background border rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+              <h2 className="text-xl font-bold text-destructive mb-4">Confirm Account Deletion</h2>
+              <p className="text-sm text-foreground mb-6">
+                Are you absolutely sure you want to delete your account? This action cannot be
+                undone. All your data will be permanently removed.
+              </p>
+              <div className="flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleting}
+                >
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteAccount} disabled={deleting}>
+                  {deleting ? 'Deleting...' : 'Yes, Delete My Account'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

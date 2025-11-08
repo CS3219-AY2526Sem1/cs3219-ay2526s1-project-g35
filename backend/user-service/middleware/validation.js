@@ -19,7 +19,7 @@ export const userSchemas = {
     password: Joi.string()
       .min(6)
       .max(128)
-      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])'))
       .required()
       .messages({
         'string.min': 'Password must be at least 6 characters long',
@@ -41,7 +41,7 @@ export const userSchemas = {
     password: Joi.string()
       .min(6)
       .max(128)
-      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])'))
       .optional(),
     profile: Joi.object({
       firstName: Joi.string().max(50).optional(),
@@ -79,7 +79,12 @@ export const userSchemas = {
     }),
 
   // OTP validation schemas
-  verifyOTPOnly: Joi.object({
+  // Complete registration validation schema
+  completeRegistration: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
     otp: Joi.string()
       .pattern(/^\d{6}$/)
       .required()

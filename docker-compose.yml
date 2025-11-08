@@ -24,6 +24,9 @@ services:
       - ./backend/user-service/.env.docker
     environment:
       - REDIS_URL=redis://user-service-redis:6379
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
+    volumes:
+      - ${APPDATA}/gcloud/application_default_credentials.json:/app/gcp-credentials.json:ro
     depends_on:
       user-service-redis:
         condition: service_healthy
@@ -44,6 +47,9 @@ services:
       - "8001:8001"
     env_file:
       - ./backend/question-service/.env.docker
+    environment:
+      - REDIS_HOST=question-service-redis
+      - REDIS_PORT=6380
     depends_on:
       question-service-redis:
         condition: service_healthy

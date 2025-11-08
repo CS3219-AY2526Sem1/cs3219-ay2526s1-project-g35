@@ -58,3 +58,9 @@ data:
   # GCP Configuration
   GCP_PROJECT_ID: 'peerprep-475911'
   USE_SECRET_MANAGER: 'true'
+
+  # Google Cloud Storage Configuration
+  GCS_PROJECT_ID: 'peerprep-475911'
+  GCS_BUCKET_NAME: 'peerprep-profile-pictures'
+
+```

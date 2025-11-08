@@ -7,6 +7,7 @@ import {
   AuthResponse,
   LoginCredentials,
   RegisterCredentials,
+  SendOTPResponse,
   VerifyTokenResponse,
 } from '@/types/auth.types';
 import { AxiosResponse } from 'axios';
@@ -48,6 +49,51 @@ class AuthService {
       const response: AxiosResponse<AuthResponse> = await apiClient.post(
         `${this.AUTH_BASE_PATH}/register`,
         credentials,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Initiate registration - Step 1: Send registration data and receive OTP
+   */
+  async initiateRegistration(credentials: RegisterCredentials): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/register/initiate`,
+        credentials,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Complete registration - Step 2: Verify OTP and create user account
+   */
+  async completeRegistration(email: string, otp: string): Promise<AuthResponse> {
+    try {
+      const response: AxiosResponse<AuthResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/register/complete`,
+        { email, otp },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Resend registration OTP
+   */
+  async resendRegistrationOTP(email: string): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/register/resend-otp`,
+        { email },
       );
       return response.data;
     } catch (error) {

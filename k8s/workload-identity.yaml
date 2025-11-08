@@ -8,7 +8,7 @@ metadata:
   name: user-service-sa
   namespace: peerprep
   annotations:
-    iam.gke.io/gcp-service-account: peerprep-user-service@peerprep-475911.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: user-service-gcs@peerprep-475911.iam.gserviceaccount.com
 
 ---
 apiVersion: v1

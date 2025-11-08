@@ -51,7 +51,9 @@ router.get('/categories', verifyToken, QuestionController.getAllCategories);
 router.get('/difficulties', verifyToken, QuestionController.getAllDifficulties);
 
 // GET /api/questions/:id - Get a single question by ID
-router.get('/:id', verifyToken, QuestionController.getQuestionById);
+// NOTE: No auth required - used by collaboration service for internal service-to-service calls
+// The collaboration service has already authenticated users via Socket.IO
+router.get('/:id', QuestionController.getQuestionById);
 
 // ============================================
 // Admin-Only Routes
