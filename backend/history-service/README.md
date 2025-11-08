@@ -223,15 +223,15 @@ JSON specification: http://localhost:8004/api-docs.json
 
 ### History Table
 
-| Column         | Type                         | Description                         |
-| -------------- | ---------------------------- | ----------------------------------- |
-| id             | UUID                         | Primary key (auto-generated)        |
-| user_id        | VARCHAR(255)                 | User ID from user service           |
-| session_id     | VARCHAR(255)                 | Collaboration session ID            |
-| question_title | VARCHAR(500)                 | Title of the attempted question     |
-| difficulty     | ENUM('Easy','Medium','Hard') | Question difficulty level           |
-| category       | VARCHAR(100)                 | Question category/topic             |
-| created_at     | TIMESTAMP                    | When the attempt was made           |
+| Column         | Type                         | Description                     |
+| -------------- | ---------------------------- | ------------------------------- |
+| id             | UUID                         | Primary key (auto-generated)    |
+| user_id        | VARCHAR(255)                 | User ID from user service       |
+| session_id     | VARCHAR(255)                 | Collaboration session ID        |
+| question_title | VARCHAR(500)                 | Title of the attempted question |
+| difficulty     | ENUM('Easy','Medium','Hard') | Question difficulty level       |
+| category       | VARCHAR(100)                 | Question category/topic         |
+| created_at     | TIMESTAMP                    | When the attempt was made       |
 
 **Indexes:**
 
