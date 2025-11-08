@@ -30,6 +30,17 @@ function initHistoryModel(sequelize) {
           },
         },
       },
+      session_id: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: 'Session ID from the collaboration service',
+        validate: {
+          len: {
+            args: [1, 255],
+            msg: 'Session ID must be between 1 and 255 characters',
+          },
+        },
+      },
       question_title: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -82,6 +93,10 @@ function initHistoryModel(sequelize) {
           fields: ['user_id'],
         },
         {
+          name: 'idx_session_id',
+          fields: ['session_id'],
+        },
+        {
           name: 'idx_difficulty',
           fields: ['difficulty'],
         },
@@ -114,6 +129,7 @@ function initHistoryModel(sequelize) {
     try {
       const history = await this.create({
         user_id: data.user_id,
+        session_id: data.session_id || null,
         question_title: data.question_title,
         difficulty: data.difficulty,
         category: data.category,

@@ -24,20 +24,19 @@ class HistoryService {
    * @returns {Promise<Object>} Created history entry
    */
   async createHistory(historyData) {
-    const { user_id, question_title, difficulty, category } = historyData;
+    const { user_id, session_id, question_title, difficulty, category } = historyData;
 
     // Business logic: Create history entry
     const history = await getHistoryModel().createHistory({
       user_id,
+      session_id: session_id || null,
       question_title,
       difficulty,
       category,
     });
 
     return history;
-  }
-
-  /**
+  } /**
    * Get history for a specific user
    * @param {string} userId - User ID
    * @param {Object} options - Query options (limit, offset, filters)

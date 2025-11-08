@@ -18,6 +18,11 @@ const schemas = {
       'any.required': 'User ID is required',
     }),
 
+    session_id: Joi.string().trim().min(1).max(255).allow(null, '').optional().messages({
+      'string.min': 'Session ID must be at least 1 character',
+      'string.max': 'Session ID must not exceed 255 characters',
+    }),
+
     question_title: Joi.string().trim().min(1).max(500).required().messages({
       'string.empty': 'Question title is required',
       'string.min': 'Question title must be at least 1 character',

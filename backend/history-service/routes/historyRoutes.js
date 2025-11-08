@@ -33,6 +33,9 @@ router.use(sanitizeInput);
  *               user_id:
  *                 type: string
  *                 description: User ID from the user service
+ *               session_id:
+ *                 type: string
+ *                 description: Session ID from the collaboration service (optional)
  *               question_title:
  *                 type: string
  *                 description: Title of the question attempted

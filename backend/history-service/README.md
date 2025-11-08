@@ -1,6 +1,6 @@
 # History Service
 
-A microservice for tracking user question attempts in the PeerPrep application. Built with Node.js, Express.js, and PostgreSQL with JWT authentication.
+A microservice for tracking user question attempts in the PeerPrep application. Built with Node.js, Express.js, and PostgreSQL, with secure credential management via Google Secret Manager.
 
 ## Table of Contents
 
@@ -8,18 +8,24 @@ A microservice for tracking user question attempts in the PeerPrep application. 
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
-- [API Endpoints](#api-endpoints)
+  - [Prerequisites](#prerequisites)
+  - [Local Development Setup](#local-development-setup)
+  - [Google Cloud Setup](#google-cloud-setup)
+- [API Documentation](#api-documentation)
 - [Database Schema](#database-schema)
+- [Environment Variables](#environment-variables)
+- [API Endpoints](#api-endpoints)
 - [Testing](#testing)
+- [Deployment](#deployment)
 
 ## Features
 
 - ✅ Track user question attempts with timestamp
-- ✅ Retrieve user-specific history with authentication
+- ✅ Session tracking for collaboration sessions
+- ✅ Retrieve user-specific history
 - ✅ Admin statistics by category, difficulty, and user
-- ✅ JWT-based authentication with user service integration
-- ✅ Request validation using Joi schemas
-- ✅ Role-based access control (user vs admin)
+- ✅ JWT-based authentication
+- ✅ Google Secret Manager integration for secure credential storage
 - ✅ PostgreSQL database with Sequelize ORM
 - ✅ Swagger/OpenAPI documentation
 - ✅ Docker support
@@ -30,10 +36,10 @@ A microservice for tracking user question attempts in the PeerPrep application. 
 
 - **Runtime**: Node.js 20
 - **Framework**: Express.js
-- **Database**: PostgreSQL 14
+- **Database**: PostgreSQL (Google Cloud SQL)
 - **ORM**: Sequelize
 - **Authentication**: JWT (JSON Web Tokens)
-- **Validation**: Joi
+- **Secret Management**: Google Cloud Secret Manager
 - **Documentation**: Swagger/OpenAPI
 - **Containerization**: Docker
 
@@ -43,26 +49,22 @@ A microservice for tracking user question attempts in the PeerPrep application. 
 history-service/
 ├── config/
 │   ├── database.js          # PostgreSQL connection configuration
-│   ├── secretManager.js     # Secret management
+│   ├── secretManager.js     # Google Secret Manager integration
 │   └── swagger.js           # API documentation configuration
 ├── controllers/
 │   └── historyController.js # Request handlers
 ├── middleware/
 │   ├── errorHandler.js      # Global error handling
-│   ├── jwtAuth.js           # JWT authentication middleware
-│   └── validation.js        # Request validation schemas
+│   └── jwtAuth.js           # JWT authentication middleware
 ├── models/
 │   └── History.js           # Sequelize model for history
 ├── routes/
 │   └── historyRoutes.js     # API route definitions
-├── services/
-│   └── historyService.js    # Business logic layer
 ├── src/
 │   ├── index.js             # Express app setup
 │   └── server.js            # Server startup with DB initialization
-├── test/
-│   └── history.test.js      # Integration tests
-├── .env                     # Environment variables
+├── .env                     # Local environment variables
+├── .env.docker              # Docker environment variables
 ├── Dockerfile               # Container definition
 └── package.json             # Dependencies and scripts
 ```
@@ -73,277 +75,316 @@ history-service/
 
 - Node.js 20 or higher
 - PostgreSQL 14 or higher
-- User service running on port 8000 (for authentication)
-- Docker (optional)
+- Google Cloud Platform account (for production)
+- Docker (optional, for containerization)
 
-### Local Development
+### Local Development Setup
 
-1. **Install dependencies**
+1. **Clone the repository**
 
 ```bash
 cd backend/history-service
+```
+
+2. **Install dependencies**
+
+```bash
 npm install
 ```
 
-2. **Configure environment variables**
+3. **Set up PostgreSQL locally**
 
-Create a `.env` file:
-
-```bash
-PORT=8004
-NODE_ENV=development
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=historydb
-DB_USER=postgres
-DB_PASSWORD=your-password
-
-JWT_SECRET=your-jwt-secret-key
-USER_SERVICE_URL=http://localhost:8000
-
-LOG_LEVEL=info
-```
-
-3. **Set up the database**
+Create a PostgreSQL database:
 
 ```sql
 CREATE DATABASE historydb;
 ```
 
-Run the schema (automatically applied on startup, or manually):
+4. **Configure environment variables**
+
+Copy the `.env` file and update with your local configuration:
 
 ```bash
-psql -h localhost -U postgres -d historydb -f schema.sql
+# .env
+PORT=8004
+NODE_ENV=development
+
+# Google Cloud Configuration
+GCP_PROJECT_ID=your-gcp-project-id
+USE_SECRET_MANAGER=false
+
+# PostgreSQL Configuration (local development)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=historydb
+DB_USER=postgres
+DB_PASSWORD=your-password
+DB_DIALECT=postgres
+
+# JWT Configuration
+JWT_SECRET=your-jwt-secret-key-here
+
+# Logging
+LOG_LEVEL=info
 ```
 
-4. **Start the service**
+5. **Run the service**
+
+Development mode with auto-reload:
 
 ```bash
-# Development mode (with auto-reload)
 npm run dev
+```
 
-# Production mode
+Production mode:
+
+```bash
 npm start
 ```
 
-5. **Verify it's running**
+6. **Verify the service is running**
+
+Open your browser or use curl:
 
 ```bash
 curl http://localhost:8004/health
 ```
 
-### Docker Setup
+7. **Access API Documentation**
 
-Using docker-compose (recommended):
+Navigate to: http://localhost:8004/api-docs
+
+### Google Cloud Setup
+
+#### 1. Create Cloud SQL PostgreSQL Instance
 
 ```bash
-# From project root
-docker-compose up -d history-service
+gcloud sql instances create peerprep-postgres \
+  --database-version=POSTGRES_14 \
+  --tier=db-f1-micro \
+  --region=us-central1
 ```
 
-The service will be available at `http://localhost:8004`
+#### 2. Create Database
+
+```bash
+gcloud sql databases create historydb \
+  --instance=peerprep-postgres
+```
+
+#### 3. Create Secrets in Secret Manager
+
+```bash
+# PostgreSQL Connection String
+echo -n "postgresql://username:password@host:5432/historydb?ssl=true" | \
+  gcloud secrets create history-service-db-connection-string \
+  --data-file=-
+
+# JWT Secret
+echo -n "your-jwt-secret-key" | \
+  gcloud secrets create history-service-jwt-secret \
+  --data-file=-
+```
+
+#### 4. Grant Service Account Access
+
+```bash
+# Allow the service account to access secrets
+gcloud secrets add-iam-policy-binding history-service-db-connection-string \
+  --member="serviceAccount:YOUR_SERVICE_ACCOUNT@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding history-service-jwt-secret \
+  --member="serviceAccount:YOUR_SERVICE_ACCOUNT@PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+```
+
+#### 5. Update Environment Variables for Production
+
+Set `USE_SECRET_MANAGER=true` in your production environment:
+
+```bash
+# .env.docker or Kubernetes ConfigMap
+USE_SECRET_MANAGER=true
+GCP_PROJECT_ID=your-gcp-project-id
+```
+
+## API Documentation
+
+### Swagger UI
+
+Interactive API documentation is available at: http://localhost:8004/api-docs
+
+### OpenAPI Spec
+
+JSON specification: http://localhost:8004/api-docs.json
 
 ## Database Schema
 
-### `histories` Table
+### History Table
 
-| Column         | Type         | Description                            |
-| -------------- | ------------ | -------------------------------------- |
-| id             | UUID         | Primary key (auto-generated)           |
-| user_id        | VARCHAR(255) | User ID from user service              |
-| question_title | VARCHAR(500) | Title of the attempted question        |
-| difficulty     | VARCHAR(10)  | Question difficulty (Easy/Medium/Hard) |
-| category       | VARCHAR(100) | Question category/topic                |
-| created_at     | TIMESTAMP    | When the attempt was made              |
+| Column          | Type                      | Description                        |
+| --------------- | ------------------------- | ---------------------------------- |
+| id              | UUID                      | Primary key (auto-generated)       |
+| user_id         | VARCHAR(255)              | User ID from user service          |
+| session_id      | VARCHAR(255)              | Collaboration session ID (optional)|
+| question_title  | VARCHAR(500)              | Title of the attempted question    |
+| difficulty      | ENUM('Easy','Medium','Hard') | Question difficulty level       |
+| category        | VARCHAR(100)              | Question category/topic            |
+| created_at      | TIMESTAMP                 | When the attempt was made          |
 
 **Indexes:**
+- `idx_user_id` on `user_id`
+- `idx_session_id` on `session_id`
+- `idx_difficulty` on `difficulty`
+- `idx_category` on `category`
+- `idx_created_at` on `created_at`
+- `idx_user_created` on `(user_id, created_at)`
 
-- `idx_user_id` - Fast lookups by user
-- `idx_difficulty` - Filter by difficulty
-- `idx_category` - Filter by category
-- `idx_created_at` - Sort by time
-- `idx_user_created` - Composite index for user history queries
+## Environment Variables
+
+| Variable              | Required | Default     | Description                                    |
+| --------------------- | -------- | ----------- | ---------------------------------------------- |
+| PORT                  | No       | 8004        | Port the service listens on                    |
+| NODE_ENV              | No       | development | Environment (development/production)           |
+| GCP_PROJECT_ID        | Yes*     | -           | Google Cloud Project ID                        |
+| USE_SECRET_MANAGER    | No       | false       | Enable Google Secret Manager                   |
+| DB_CONNECTION_STRING  | Yes*     | -           | PostgreSQL connection string (from Secret Manager) |
+| DB_HOST               | Yes**    | localhost   | PostgreSQL host (local dev)                    |
+| DB_PORT               | No       | 5432        | PostgreSQL port (local dev)                    |
+| DB_NAME               | Yes**    | historydb   | Database name (local dev)                      |
+| DB_USER               | Yes**    | postgres    | Database user (local dev)                      |
+| DB_PASSWORD           | Yes**    | -           | Database password (local dev)                  |
+| JWT_SECRET            | Yes      | -           | JWT secret for token verification              |
+| CORS_ORIGIN           | No       | http://localhost:3000 | Allowed CORS origin           |
+
+\* Required when `USE_SECRET_MANAGER=true`  
+\*\* Required when `USE_SECRET_MANAGER=false` (local development)
 
 ## API Endpoints
 
-### 1. Health Check
+### Health Check
 
-Check if the service is running.
-
-**Endpoint:** `GET /health`
-
-**Authentication:** None
+```http
+GET /health
+```
 
 **Response:**
-
 ```json
 {
   "success": true,
   "message": "History Service is running",
-  "timestamp": "2025-11-06T10:30:00.000Z",
+  "timestamp": "2025-11-05T10:30:00.000Z",
   "uptime": 123.45
 }
 ```
 
----
+### Create History Entry
 
-### 2. Create History Entry
+```http
+POST /history
+Content-Type: application/json
 
-Record a new question attempt.
-
-**Endpoint:** `POST /history`
-
-**Authentication:** None
-
-**Request Body:**
-
-```json
 {
-  "user_id": "68f089685ff31e0413f85bf8",
+  "user_id": "user123",
   "question_title": "Two Sum",
   "difficulty": "Easy",
-  "category": "Arrays"
+  "category": "Arrays",
+  "session_id": "session-abc-123"  // Optional: for collaboration tracking
 }
 ```
 
-**Required Fields:**
-
-- `user_id` (string, 1-255 chars) - User ID from user service
-- `question_title` (string, 1-500 chars) - Question title
-- `difficulty` (string) - Must be "Easy", "Medium", or "Hard"
-- `category` (string, 1-255 chars) - Question category
-
-**Success Response (201):**
-
+**Response:**
 ```json
 {
   "success": true,
   "message": "History entry created successfully",
   "data": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "user_id": "68f089685ff31e0413f85bf8",
+    "user_id": "user123",
+    "session_id": "session-abc-123",
     "question_title": "Two Sum",
     "difficulty": "Easy",
     "category": "Arrays",
-    "created_at": "2025-11-06T10:30:00.000Z"
+    "created_at": "2025-11-05T10:30:00.000Z"
   }
 }
 ```
 
-**Error Response (400 - Validation Failed):**
+**Note:** The `session_id` field is optional and can be used to track collaboration sessions. When users solve questions together, the same session ID can be used to link their attempts.
 
+### Get User History
+
+```http
+GET /history?user_id=user123&limit=50&offset=0
+```
+
+**Response:**
 ```json
-{
-  "success": false,
-  "error": "Validation failed",
-  "details": [
-    {
-      "field": "difficulty",
-      "message": "Difficulty must be Easy, Medium, or Hard"
-    }
-  ]
-}
-```
-
----
-
-### 3. Get User History
-
-Retrieve question attempt history for a specific user.
-
-**Endpoint:** `GET /history`
-
-**Authentication:** Required (JWT token via `accessToken` cookie or `Authorization: Bearer <token>` header)
-
-**Authorization:** Users can only view their own history. Admins can view any user's history.
-
-**Query Parameters:**
-
-- `user_id` (required) - User ID to fetch history for
-- `limit` (optional, default: 100, max: 1000) - Number of records to return
-- `offset` (optional, default: 0) - Number of records to skip (for pagination)
-- `difficulty` (optional) - Filter by difficulty ("Easy", "Medium", "Hard")
-- `category` (optional) - Filter by category
-- `from_date` (optional) - Filter from date (ISO 8601 format)
-- `to_date` (optional) - Filter to date (ISO 8601 format)
-
-**Example Request:**
-
-```bash
-# Using cookie authentication
-curl "http://localhost:8004/history?user_id=68f089685ff31e0413f85bf8&limit=10&difficulty=Easy" \
-  -H "Cookie: accessToken=your-jwt-token"
-
-# Using Bearer token
-curl "http://localhost:8004/history?user_id=68f089685ff31e0413f85bf8&limit=10" \
-  -H "Authorization: Bearer your-jwt-token"
-```
-
-**Success Response (200):**
-
-````json
 {
   "success": true,
   "count": 2,
-  "totalCount": 15,
   "data": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
-      "user_id": "68f089685ff31e0413f85bf8",
+      "user_id": "user123",
+      "session_id": "session-abc-123",
       "question_title": "Two Sum",
       "difficulty": "Easy",
-## Testing
-
-### Run Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run with coverage
-npm test -- --coverage
-````
-
-### Manual Testing
-
-See `TEST-GUIDE.md` for detailed testing instructions and examples.
-
-Quick test script:
-
-```bash
-cd backend/history-service
-.\test-get-history.ps1
+      "category": "Arrays",
+      "created_at": "2025-11-05T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "limit": 50,
+    "offset": 0
+  }
+}
 ```
 
----
+### Get Admin Statistics
 
-## Common Error Codes
+```http
+GET /admin/stats
+Authorization: Bearer <jwt-token>
+```
 
-| Code | Error                                             | Cause                                        |
-| ---- | ------------------------------------------------- | -------------------------------------------- |
-| 400  | Validation failed                                 | Invalid request body or query parameters     |
-| 401  | Access denied. No token provided                  | Missing JWT token                            |
-| 401  | Invalid token                                     | Token is malformed or signature is invalid   |
-| 401  | Token expired                                     | JWT token has expired                        |
-| 403  | Access denied. You can only view your own history | User trying to access another user's history |
-| 500  | Server configuration error                        | Missing JWT_SECRET or database configuration |
-
----
-
-## License
-
-MIT License - see LICENSE file for details
-
-### Authentication Notes
-
-- **Cookie-based:** Send JWT token in `accessToken` cookie
-- **Header-based:** Send JWT token in `Authorization: Bearer <token>` header
-- Token must be obtained from the user service (port 8000)
-- Token is verified with user service to get user details and admin status
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "overview": {
+      "total_attempts": 1234,
+      "unique_users": 56
+    },
+    "by_category": [
+      {
+        "category": "Arrays",
+        "attempt_count": 456,
+        "unique_users": 32
+      }
+    ],
+    "by_difficulty": [
+      {
+        "difficulty": "Easy",
+        "attempt_count": 500,
+        "unique_users": 40
+      }
+    ],
+    "by_user": [
+      {
+        "user_id": "user123",
+        "total_attempts": 45,
+        "unique_categories": 8,
+        "unique_difficulties": 3,
+        "first_attempt": "2025-01-01T00:00:00.000Z",
+        "last_attempt": "2025-11-05T10:30:00.000Z"
+      }
+    ]
+  }
+}
+```
 
 ## Testing
 
@@ -438,7 +479,6 @@ docker compose down -v
 The `docker-compose.yml` includes:
 
 **History Service**
-
 - Runs on port `8004`
 - Uses `.env.docker` for configuration
 - Automatically connects to `history-postgres` container
@@ -446,7 +486,6 @@ The `docker-compose.yml` includes:
 - Auto-restarts on failure
 
 **PostgreSQL Container**
-
 - PostgreSQL 14 Alpine image
 - Runs on port `5432`
 - Automatic schema initialization via `schema.sql`
@@ -516,6 +555,15 @@ See the `k8s/` directory in the repository root for Kubernetes deployment manife
 4. **Input validation**: All inputs are validated before database operations
 5. **Rate limiting**: Consider adding rate limiting for production
 6. **CORS**: Configure CORS_ORIGIN appropriately for your frontend
+
+## Session ID Migration
+
+If you're upgrading from a previous version without `session_id` support, see [SESSION-ID-MIGRATION.md](SESSION-ID-MIGRATION.md) for detailed migration instructions.
+
+The migration adds:
+- `session_id` column to the `histories` table
+- Index on `session_id` for better query performance
+- Updated API to accept optional `session_id` parameter
 
 ## Troubleshooting
 
