@@ -707,8 +707,8 @@ Coverage:    71.5% statements, 56.96% branches
 ```
 src/test/
 ├── setup.js              # Test configuration (in-memory MongoDB)
-├── question-api.test.js  # API integration tests (23 tests)
-└── question-model.test.js # Model unit tests (24 tests)
+├── question-api.test.js  # API tests (Redis mocked)
+└── question-model.test.js # Model unit tests
 ```
 
 ### What's Tested
@@ -809,7 +809,7 @@ question-service/
 │   │   └── seed-questions.js     # Database seeding script
 │   ├── test/
 │   │   ├── setup.js              # Test configuration
-│   │   ├── question-api.test.js  # API integration tests (Redis mocked)
+│   │   ├── question-api.test.js  # API tests (Redis mocked)
 │   │   ├── question-model.test.js # Model unit tests
 │   │   ├── scripts/
 │   │   │   ├── test-admin-api.sh # Admin auth testing script

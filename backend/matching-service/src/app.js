@@ -23,7 +23,8 @@ const SERVICE_JWT_DEFAULT_PAYLOAD = {
   id: process.env.SERVICE_JWT_SUBJECT || `${SERVICE_NAME}-internal`,
   username: process.env.SERVICE_JWT_USERNAME || SERVICE_NAME,
   email:
-    process.env.SERVICE_JWT_EMAIL || `${SERVICE_NAME.replace(/[^a-z0-9]/gi, '-')}@internal.peerprep`,
+    process.env.SERVICE_JWT_EMAIL ||
+    `${SERVICE_NAME.replace(/[^a-z0-9]/gi, '-')}@internal.peerprep`,
   service: SERVICE_NAME,
   internal: true,
 };
