@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import redisQueue from './redisQueue.js';
 import jwt from 'jsonwebtoken';
 
 dotenv.config();
@@ -202,8 +203,181 @@ wss.on('connection', (ws) => {
         connectedAt: Date.now(),
         timeoutId: null,
       };
+      // Try Redis-backed matching first. If Redis is unavailable or matching fails, fall back to in-memory queue.
+      try {
+        // Ensure redis is connected (connect is idempotent if already connected)
+        // Attempt to find a match in Redis
+        const match = await redisQueue.tryFindMatchFor({ userId, topics, difficulty, username });
 
-      // Try to find best match
+        if (match) {
+          // match: { userId: candidateId, username, topics, difficulty, sharedTopics }
+          const bestMatchUserId = match.userId;
+          const bestMatchWs = connectedUsers.get(bestMatchUserId);
+          const bestMatch = {
+            ws: bestMatchWs,
+            topics: match.topics,
+            difficulty: match.difficulty,
+            userId: bestMatchUserId,
+            username: match.username,
+          };
+
+          // Store active pair
+          activePairs.push([user, bestMatch]);
+
+          // Proceed to create collaboration session (same flow as before)
+          let questionId = null;
+          const questionServiceUrl =
+            process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
+          const topicsToTry = user.topics.length > 0 ? user.topics : ['Algorithms'];
+
+          for (const topic of topicsToTry) {
+            try {
+              console.log(
+                `Trying to get question for topic="${topic}", difficulty="${user.difficulty}"`,
+              );
+              const response = await axios.get(`${questionServiceUrl}/api/questions/random`, {
+                params: { topic, difficulty: user.difficulty },
+              });
+
+              if (response.data.success && response.data.questionId) {
+                questionId = response.data.questionId;
+                console.log(
+                  `Found question for topic "${topic}" and difficulty "${user.difficulty}": ${questionId}`,
+                );
+                break;
+              }
+            } catch (error) {
+              console.warn(`Could not get question for topic "${topic}":`, error.message);
+            }
+          }
+
+          if (!questionId) {
+            questionId = '68ebb93667c84a099513124d';
+            console.log(`Using default question: ${questionId}`);
+          }
+
+          try {
+            const sessionResponse = await collaborationServiceClient.post('/api/sessions/matched', {
+              userIds: [user.userId, bestMatch.userId],
+              questionId,
+            });
+
+            if (sessionResponse.data.success) {
+              const sessionId = sessionResponse.data.sessionId;
+              console.log(
+                `Created collaboration session ${sessionId} for users ${user.userId} and ${bestMatch.userId}`,
+              );
+
+              // Notify both users about the match if their ws is available locally
+              try {
+                if (user.ws && user.ws.readyState === 1) {
+                  user.ws.send(
+                    JSON.stringify({
+                      type: 'match',
+                      sessionId,
+                      partnerUserId: bestMatch.userId,
+                      partnerUsername: bestMatch.username,
+                      sharedTopics: match.sharedTopics,
+                      difficulty: user.difficulty,
+                    }),
+                  );
+                }
+
+                if (bestMatch.ws && bestMatch.ws.readyState === 1) {
+                  bestMatch.ws.send(
+                    JSON.stringify({
+                      type: 'match',
+                      sessionId,
+                      partnerUserId: user.userId,
+                      partnerUsername: user.username,
+                      sharedTopics: match.sharedTopics,
+                      difficulty: user.difficulty,
+                    }),
+                  );
+                }
+              } catch (error) {
+                console.error('Error notifying matched users:', error);
+              }
+
+              // Close sockets after small delay if they're open locally
+              setTimeout(() => {
+                if (user.ws && user.ws.readyState === 1) user.ws.close(1000, 'Match found');
+                if (bestMatch.ws && bestMatch.ws.readyState === 1)
+                  bestMatch.ws.close(1000, 'Match found');
+              }, 500);
+            } else {
+              console.error('Failed to create collaboration session:', sessionResponse.data.error);
+              if (user.ws && user.ws.readyState === 1) {
+                user.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
+                user.ws.close(1000, 'Match error');
+              }
+              if (bestMatch.ws && bestMatch.ws.readyState === 1) {
+                bestMatch.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
+                bestMatch.ws.close(1000, 'Match error');
+              }
+            }
+          } catch (error) {
+            console.error('Error creating collaboration session:', error);
+            try {
+              if (user.ws && user.ws.readyState === 1)
+                user.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
+              if (bestMatch.ws && bestMatch.ws.readyState === 1)
+                bestMatch.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
+            } catch (e) {
+              console.error('Error sending match-error messages:', e);
+            }
+          }
+
+          return;
+        }
+
+        // No match found in Redis — enqueue user
+        await redisQueue.enqueueUser({ userId, topics, difficulty, username }, (timedOutUserId) => {
+          // Notify local ws about timeout if still connected
+          try {
+            const localWs = connectedUsers.get(timedOutUserId);
+            if (localWs && localWs.readyState === 1) {
+              localWs.send(
+                JSON.stringify({ type: 'timeout', message: 'No match found within 60 seconds.' }),
+              );
+              localWs.close();
+            }
+          } catch (e) {
+            console.error('Error notifying timed out user locally:', e);
+          }
+        });
+
+        console.log(`User ${userId} enqueued in Redis`);
+        return;
+      } catch (redisErr) {
+        console.error(
+          'Redis error during match/enqueue, falling back to in-memory queue:',
+          redisErr.message || redisErr,
+        );
+        // Fall through to original in-memory behavior
+      }
+
+      // Fallback in-memory behavior (original logic)
       if (waitingQueue.length === 0) {
         startTimeout(user);
         waitingQueue.push(user);
@@ -393,7 +567,7 @@ wss.on('connection', (ws) => {
           }, 500);
         }
       } else {
-        // No match found yet — queue silently
+        // No match found yet — queue silently (in-memory fallback)
         startTimeout(user);
         waitingQueue.push(user);
         console.log(`User ${userId} added to waiting queue`);
@@ -405,6 +579,17 @@ wss.on('connection', (ws) => {
     // Remove mapping for this userId if set
     if (ws.userId && connectedUsers.get(ws.userId) === ws) {
       connectedUsers.delete(ws.userId);
+    }
+    // Try to remove from Redis queue as well (best-effort)
+    if (ws.userId) {
+      try {
+        redisQueue.removeUser(ws.userId).catch((e) => {
+          // Log but ignore errors during cleanup
+          console.warn('Failed to remove user from Redis on close:', e.message || e);
+        });
+      } catch (e) {
+        // noop
+      }
     }
     // Find and remove user from waiting queue
     const userIndex = waitingQueue.findIndex((u) => u.ws === ws);
@@ -459,5 +644,15 @@ server.listen(PORT, () => {
 ╚════════════════════════════════════════════╝
   `);
 });
+
+// Attempt to connect to Redis (best-effort). Redis URL should come from docker-compose via REDIS_URL env var.
+redisQueue
+  .connect({
+    redisUrl: process.env.REDIS_URL || 'redis://matching-service-redis:6381',
+    timeoutMs: TIMEOUT_MS,
+  })
+  .catch((err) =>
+    console.warn('Could not connect to Redis for matching service:', err.message || err),
+  );
 
 console.log('Matching WebSocket server running on port ' + PORT);

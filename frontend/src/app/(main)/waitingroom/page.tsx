@@ -175,6 +175,14 @@ export default function WaitingRoomPage(): React.ReactElement {
     };
   }, [router, matchFound, timedOut]);
 
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
   const handleReturnHome = () => {
     // clear timer and navigate
     if (timerRef.current) {
