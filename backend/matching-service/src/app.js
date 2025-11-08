@@ -57,6 +57,98 @@ const createServiceJwt = (payloadOverrides = {}) => {
   }
 };
 
+const QUESTION_SERVICE_BASE_URL =
+  process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
+const DEFAULT_TOPICS = ['Algorithms'];
+const QUESTION_FETCH_ERROR_MESSAGE = 'Unable to retrieve a coding question. Please try again.';
+
+const fetchQuestionId = async ({ topics, difficulty, userId }) => {
+  const topicsToTry = Array.isArray(topics) && topics.length > 0 ? topics : DEFAULT_TOPICS;
+
+  for (const topic of topicsToTry) {
+    try {
+      console.log(`Trying to get question for topic="${topic}", difficulty="${difficulty}"`);
+
+      const serviceToken = createServiceJwt({
+        scope: 'question:random',
+        topic,
+        difficulty,
+        subjectUserId: userId,
+      });
+
+      const requestConfig = {
+        params: { topic, difficulty },
+        headers: {},
+      };
+
+      if (serviceToken) {
+        requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
+        requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
+      } else {
+        console.warn('Service JWT unavailable when requesting random question');
+      }
+
+      const response = await axios.get(
+        `${QUESTION_SERVICE_BASE_URL}/api/questions/random`,
+        requestConfig,
+      );
+
+      if (response.data.success && response.data.questionId) {
+        console.log(
+          `Found question for topic "${topic}" and difficulty "${difficulty}": ${response.data.questionId}`,
+        );
+        return response.data.questionId;
+      }
+    } catch (error) {
+      console.warn(`Could not get question for topic "${topic}":`, error.message || error);
+    }
+  }
+
+  return null;
+};
+
+const sendMatchError = (participants, message) => {
+  for (const participant of participants) {
+    if (!participant?.ws) continue;
+    const socket = participant.ws;
+    if (socket.readyState === WebSocket.OPEN) {
+      try {
+        socket.send(
+          JSON.stringify({
+            type: 'match-error',
+            error: message,
+          }),
+        );
+      } catch (error) {
+        console.error('Error sending match-error message:', error);
+      }
+      try {
+        socket.close(1011, 'Match error');
+      } catch (error) {
+        console.error('Error closing socket after match-error:', error);
+      }
+    }
+  }
+};
+
+const removeActivePair = (user, partner) => {
+  activePairs = activePairs.filter(
+    ([first, second]) =>
+      !(
+        (first === user && second === partner) ||
+        (first === partner && second === user)
+      ),
+  );
+};
+
+const handleQuestionFetchFailure = (user, partner) => {
+  console.error(
+    `Unable to retrieve question for users ${user.userId} and ${partner.userId}. Aborting match.`,
+  );
+  sendMatchError([user, partner], QUESTION_FETCH_ERROR_MESSAGE);
+  removeActivePair(user, partner);
+};
+
 // Middleware
 app.use(helmet());
 app.use(
@@ -225,36 +317,16 @@ wss.on('connection', (ws) => {
           activePairs.push([user, bestMatch]);
 
           // Proceed to create collaboration session (same flow as before)
-          let questionId = null;
-          const questionServiceUrl =
-            process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
-          const topicsToTry = user.topics.length > 0 ? user.topics : ['Algorithms'];
+        const questionId = await fetchQuestionId({
+          topics: user.topics,
+          difficulty: user.difficulty,
+          userId: user.userId,
+        });
 
-          for (const topic of topicsToTry) {
-            try {
-              console.log(
-                `Trying to get question for topic="${topic}", difficulty="${user.difficulty}"`,
-              );
-              const response = await axios.get(`${questionServiceUrl}/api/questions/random`, {
-                params: { topic, difficulty: user.difficulty },
-              });
-
-              if (response.data.success && response.data.questionId) {
-                questionId = response.data.questionId;
-                console.log(
-                  `Found question for topic "${topic}" and difficulty "${user.difficulty}": ${questionId}`,
-                );
-                break;
-              }
-            } catch (error) {
-              console.warn(`Could not get question for topic "${topic}":`, error.message);
-            }
-          }
-
-          if (!questionId) {
-            questionId = '68ebb93667c84a099513124d';
-            console.log(`Using default question: ${questionId}`);
-          }
+        if (!questionId) {
+          handleQuestionFetchFailure(user, bestMatch);
+          return;
+        }
 
           try {
             const sessionResponse = await collaborationServiceClient.post('/api/sessions/matched', {
@@ -409,56 +481,15 @@ wss.on('connection', (ws) => {
         activePairs.push([user, bestMatch]);
 
         // Get a random question from question service based on shared topics
-        let questionId = null;
+        const questionId = await fetchQuestionId({
+          topics: user.topics,
+          difficulty: user.difficulty,
+          userId: user.userId,
+        });
 
-        // Try to get a question matching the user's topics and difficulty
-        const questionServiceUrl =
-          process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
-        const topicsToTry = user.topics.length > 0 ? user.topics : ['Algorithms'];
-
-        for (const topic of topicsToTry) {
-          try {
-            console.log(
-              `Trying to get question for topic="${topic}", difficulty="${user.difficulty}"`,
-            );
-            const serviceToken = createServiceJwt({
-              scope: 'question:random',
-              topic,
-              difficulty: user.difficulty,
-              subjectUserId: user.userId,
-            });
-
-            const requestConfig = {
-              params: { topic, difficulty: user.difficulty },
-              headers: {},
-            };
-
-            if (serviceToken) {
-              requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
-              requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
-            }
-
-            const response = await axios.get(
-              `${questionServiceUrl}/api/questions/random`,
-              requestConfig,
-            );
-
-            if (response.data.success && response.data.questionId) {
-              questionId = response.data.questionId;
-              console.log(
-                `Found question for topic "${topic}" and difficulty "${user.difficulty}": ${questionId}`,
-              );
-              break;
-            }
-          } catch (error) {
-            console.warn(`Could not get question for topic "${topic}":`, error.message);
-          }
-        }
-
-        // Fallback to default question if no match found
         if (!questionId) {
-          questionId = '68ebb93667c84a099513124d'; // Default: Add Binary
-          console.log(`Using default question: ${questionId}`);
+          handleQuestionFetchFailure(user, bestMatch);
+          return;
         }
 
         // Create collaboration session
