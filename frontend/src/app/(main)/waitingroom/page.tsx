@@ -33,6 +33,12 @@ export default function WaitingRoomPage(): React.ReactElement {
   const autoNavRef = useRef<number | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const countdownIntervalRef = useRef<number | null>(null);
+  // Track who initiated the disconnect so we don't show timeout alert incorrectly
+  const closedByClientRef = useRef(false);
+  const closedByServerMessageRef = useRef(false);
+  // Show alert if server says the user is already queuing elsewhere
+  const [alreadyQueuing, setAlreadyQueuing] = useState(false);
+  const [serverNotice, setServerNotice] = useState<string | null>(null);
 
   // Auto-redirect to session after 5 seconds once a match is found
   useEffect(() => {
@@ -96,6 +102,7 @@ export default function WaitingRoomPage(): React.ReactElement {
         username: searchData.username,
       };
 
+      console.log('Sending search message:', message);
       ws.send(JSON.stringify(message));
     };
 
@@ -105,6 +112,7 @@ export default function WaitingRoomPage(): React.ReactElement {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log('Received message from matching service:', data);
 
       if (data.type === 'match') {
         setMatchData(data);
@@ -116,6 +124,23 @@ export default function WaitingRoomPage(): React.ReactElement {
           clearTimeout(timerRef.current);
           timerRef.current = null;
         }
+      } else if (
+        data.type === 'already-queuing' ||
+        (data.type === 'disconnect' && data.reason === 'duplicate-user')
+      ) {
+        // Server indicates the user is already queued elsewhere
+        closedByServerMessageRef.current = true;
+        setServerNotice(
+          data.message ||
+            'You are already queuing on another device or tab. Please close it first.',
+        );
+        setAlreadyQueuing(true);
+        if (wsRef.current) {
+          try {
+            wsRef.current.close(1000, 'Server disconnect');
+          } catch {}
+          wsRef.current = null;
+        }
       } else if (data.type === 'timeout') {
         setTimedOut(true);
         if (timerRef.current) {
@@ -125,7 +150,13 @@ export default function WaitingRoomPage(): React.ReactElement {
       }
     };
 
-    ws.onclose = () => {
+    ws.onclose = (ev: CloseEvent) => {
+      // Avoid showing the timeout alert for client-initiated or graceful server closes
+      const isNormalClose = ev.code === 1000;
+      const isMatchClose = isNormalClose && ev.reason === 'Match found';
+      if (closedByClientRef.current || closedByServerMessageRef.current || isMatchClose) {
+        return;
+      }
       if (!matchFound && !timedOut) {
         setTimedOut(true);
       }
@@ -150,6 +181,36 @@ export default function WaitingRoomPage(): React.ReactElement {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    router.push('/home');
+  };
+
+  const handleCancel = () => {
+    // Clear any pending timers
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (autoNavRef.current) {
+      clearTimeout(autoNavRef.current);
+      autoNavRef.current = null;
+    }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+
+    // Proactively disconnect from matching-service
+    if (wsRef.current) {
+      try {
+        closedByClientRef.current = true;
+        wsRef.current.close();
+      } catch {
+        // ignore
+      }
+      wsRef.current = null;
+    }
+
+    // Navigate home
     router.push('/home');
   };
 
@@ -178,9 +239,13 @@ export default function WaitingRoomPage(): React.ReactElement {
             <div className="absolute w-22 h-22 rounded-full border-8 border-muted-foreground/30 ring-anim"></div>
           </div>
 
-          <Link href="/home" className="text-sm underline text-muted-foreground">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="text-sm underline text-muted-foreground"
+          >
             Cancel
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -230,6 +295,45 @@ export default function WaitingRoomPage(): React.ReactElement {
               <div className="text-sm text-muted-foreground">
                 Starting session in {countdown ?? 5}s…
               </div>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogPortal>
+      </AlertDialog>
+
+      {/* Alert dialog shows when server reports user already queuing elsewhere */}
+      <AlertDialog
+        open={alreadyQueuing}
+        onOpenChange={(open: boolean) => {
+          if (!open) setAlreadyQueuing(false);
+        }}
+      >
+        <AlertDialogPortal>
+          <AlertDialogOverlay />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>You are already queuing</AlertDialogTitle>
+              <AlertDialogDescription>
+                {serverNotice ||
+                  'This account is already in the waiting queue on another device or tab.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction asChild>
+                <Button
+                  onClick={() => {
+                    // ensure ws is closed and go home
+                    if (wsRef.current) {
+                      try {
+                        wsRef.current.close();
+                      } catch {}
+                      wsRef.current = null;
+                    }
+                    handleReturnHome();
+                  }}
+                >
+                  Return to home
+                </Button>
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialogPortal>
