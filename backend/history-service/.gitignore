@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Environment variables
 .env
@@ -12,6 +11,7 @@ gcp-service-account-key.json
 *-service-account-key.json
 *.json
 !package.json
+!package-lock.json
 
 # Logs
 logs
