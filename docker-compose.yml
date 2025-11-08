@@ -69,6 +69,8 @@ services:
     build: ./backend/matching-service
     ports:
       - "8003:8003"
+    env_file:
+      - ./backend/matching-service/.env.docker
     environment:
       - PORT=8003
       - COLLABORATION_SERVICE_URL=http://collaboration-service:8002

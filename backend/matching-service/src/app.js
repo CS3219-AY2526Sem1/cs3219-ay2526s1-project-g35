@@ -45,6 +45,8 @@ const wss = new WebSocketServer({
 
 let waitingQueue = [];
 let activePairs = [];
+// Track connected userIds to prevent multiple simultaneous searches per account
+const connectedUsers = new Map(); // userId -> ws
 
 const TIMEOUT_MS = 60000; // 1 minute
 
@@ -86,7 +88,7 @@ app.post('/api/sessions/ready', (req, res) => {
             sessionId,
             questionId,
             partnerUserId: user2.userId,
-            partnerUsername: user2.userId, // Use userId as username for consistency
+            partnerUsername: user2.username,
           }),
         );
 
@@ -96,7 +98,7 @@ app.post('/api/sessions/ready', (req, res) => {
             sessionId,
             questionId,
             partnerUserId: user1.userId,
-            partnerUsername: user1.userId, // Use userId as username for consistency
+            partnerUsername: user1.username,
           }),
         );
 
@@ -123,6 +125,28 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'search') {
       const { topics, difficulty, userId, username } = msg;
+
+      // If this userId is already connected from another device/tab, reject this connection
+      if (connectedUsers.has(userId) && connectedUsers.get(userId) !== ws) {
+        try {
+          ws.send(
+            JSON.stringify({
+              type: 'already-queuing',
+              reason: 'duplicate-user',
+              message:
+                'You are already searching or matched from another device or tab. Close that session to try again.',
+            }),
+          );
+        } catch (e) {}
+        try {
+          ws.close(1000, 'Duplicate user connection');
+        } catch (e) {}
+        return;
+      }
+
+      // Mark this ws as belonging to userId and remember mapping
+      ws.userId = userId; // attach for cleanup on close
+      connectedUsers.set(userId, ws);
 
       // Create user entry
       const user = {
@@ -220,7 +244,7 @@ wss.on('connection', (ws) => {
                 type: 'match',
                 sessionId,
                 partnerUserId: bestMatch.userId,
-                partnerUsername: bestMatch.userId, // Use userId as username for consistency
+                partnerUsername: bestMatch.username,
                 sharedTopics: maxShared,
                 difficulty: user.difficulty,
               }),
@@ -231,7 +255,7 @@ wss.on('connection', (ws) => {
                 type: 'match',
                 sessionId,
                 partnerUserId: user.userId,
-                partnerUsername: user.userId, // Use userId as username for consistency
+                partnerUsername: user.username,
                 sharedTopics: maxShared,
                 difficulty: user.difficulty,
               }),
@@ -240,6 +264,20 @@ wss.on('connection', (ws) => {
             console.log(
               `Matched users [difficulty=${user.difficulty}] (shared ${maxShared} topics): ${user.userId} <--> ${bestMatch.userId}`,
             );
+
+            // Close WebSocket connections after successful match
+            // Give a small delay to ensure messages are sent
+            setTimeout(() => {
+              if (user.ws.readyState === 1) {
+                // 1 = OPEN
+                user.ws.close(1000, 'Match found');
+                console.log(`Closed WebSocket for user ${user.userId}`);
+              }
+              if (bestMatch.ws.readyState === 1) {
+                bestMatch.ws.close(1000, 'Match found');
+                console.log(`Closed WebSocket for user ${bestMatch.userId}`);
+              }
+            }, 500);
           } else {
             console.error('Failed to create collaboration session:', sessionResponse.data.error);
             // Fallback: notify users about match failure
@@ -255,6 +293,16 @@ wss.on('connection', (ws) => {
                 error: 'Failed to create collaboration session',
               }),
             );
+
+            // Close connections after sending error
+            setTimeout(() => {
+              if (user.ws.readyState === 1) {
+                user.ws.close(1000, 'Match error');
+              }
+              if (bestMatch.ws.readyState === 1) {
+                bestMatch.ws.close(1000, 'Match error');
+              }
+            }, 500);
           }
         } catch (error) {
           console.error('Error creating collaboration session:', error);
@@ -271,6 +319,16 @@ wss.on('connection', (ws) => {
               error: 'Failed to create collaboration session',
             }),
           );
+
+          // Close connections after sending error
+          setTimeout(() => {
+            if (user.ws.readyState === 1) {
+              user.ws.close(1000, 'Match error');
+            }
+            if (bestMatch.ws.readyState === 1) {
+              bestMatch.ws.close(1000, 'Match error');
+            }
+          }, 500);
         }
       } else {
         // No match found yet — queue silently
@@ -282,9 +340,28 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    // Remove from queue if still waiting
-    waitingQueue = waitingQueue.filter((u) => u.ws !== ws);
-    console.log('Connection closed');
+    // Remove mapping for this userId if set
+    if (ws.userId && connectedUsers.get(ws.userId) === ws) {
+      connectedUsers.delete(ws.userId);
+    }
+    // Find and remove user from waiting queue
+    const userIndex = waitingQueue.findIndex((u) => u.ws === ws);
+    if (userIndex !== -1) {
+      const user = waitingQueue[userIndex];
+      // Clear timeout if exists
+      if (user.timeoutId) {
+        clearTimeout(user.timeoutId);
+        user.timeoutId = null;
+      }
+      waitingQueue.splice(userIndex, 1);
+      console.log(`User ${user.userId || 'unknown'} disconnected and removed from queue`);
+    } else {
+      console.log('Connection closed');
+    }
+  });
+
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
   });
 });
 
@@ -314,8 +391,8 @@ server.listen(PORT, () => {
 ╔════════════════════════════════════════════╗
 ║   Matching Service Started                 ║
 ╠════════════════════════════════════════════╣
-║   HTTP Port: ${PORT.toString().padEnd(36)}║
-║   WebSocket Port: ${PORT}                    ║
+║   HTTP Port: ${PORT.toString().padEnd(36)} ║
+║   WebSocket Port: ${PORT}                  ║
 ║   Environment: ${(process.env.NODE_ENV || 'development').padEnd(27)}║
 ╚════════════════════════════════════════════╝
   `);
