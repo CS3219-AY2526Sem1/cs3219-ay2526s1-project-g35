@@ -223,17 +223,18 @@ JSON specification: http://localhost:8004/api-docs.json
 
 ### History Table
 
-| Column          | Type                      | Description                        |
-| --------------- | ------------------------- | ---------------------------------- |
-| id              | UUID                      | Primary key (auto-generated)       |
-| user_id         | VARCHAR(255)              | User ID from user service          |
-| session_id      | VARCHAR(255)              | Collaboration session ID (optional)|
-| question_title  | VARCHAR(500)              | Title of the attempted question    |
-| difficulty      | ENUM('Easy','Medium','Hard') | Question difficulty level       |
-| category        | VARCHAR(100)              | Question category/topic            |
-| created_at      | TIMESTAMP                 | When the attempt was made          |
+| Column         | Type                         | Description                         |
+| -------------- | ---------------------------- | ----------------------------------- |
+| id             | UUID                         | Primary key (auto-generated)        |
+| user_id        | VARCHAR(255)                 | User ID from user service           |
+| session_id     | VARCHAR(255)                 | Collaboration session ID (optional) |
+| question_title | VARCHAR(500)                 | Title of the attempted question     |
+| difficulty     | ENUM('Easy','Medium','Hard') | Question difficulty level           |
+| category       | VARCHAR(100)                 | Question category/topic             |
+| created_at     | TIMESTAMP                    | When the attempt was made           |
 
 **Indexes:**
+
 - `idx_user_id` on `user_id`
 - `idx_session_id` on `session_id`
 - `idx_difficulty` on `difficulty`
@@ -243,20 +244,20 @@ JSON specification: http://localhost:8004/api-docs.json
 
 ## Environment Variables
 
-| Variable              | Required | Default     | Description                                    |
-| --------------------- | -------- | ----------- | ---------------------------------------------- |
-| PORT                  | No       | 8004        | Port the service listens on                    |
-| NODE_ENV              | No       | development | Environment (development/production)           |
-| GCP_PROJECT_ID        | Yes*     | -           | Google Cloud Project ID                        |
-| USE_SECRET_MANAGER    | No       | false       | Enable Google Secret Manager                   |
-| DB_CONNECTION_STRING  | Yes*     | -           | PostgreSQL connection string (from Secret Manager) |
-| DB_HOST               | Yes**    | localhost   | PostgreSQL host (local dev)                    |
-| DB_PORT               | No       | 5432        | PostgreSQL port (local dev)                    |
-| DB_NAME               | Yes**    | historydb   | Database name (local dev)                      |
-| DB_USER               | Yes**    | postgres    | Database user (local dev)                      |
-| DB_PASSWORD           | Yes**    | -           | Database password (local dev)                  |
-| JWT_SECRET            | Yes      | -           | JWT secret for token verification              |
-| CORS_ORIGIN           | No       | http://localhost:3000 | Allowed CORS origin           |
+| Variable             | Required | Default               | Description                                        |
+| -------------------- | -------- | --------------------- | -------------------------------------------------- |
+| PORT                 | No       | 8004                  | Port the service listens on                        |
+| NODE_ENV             | No       | development           | Environment (development/production)               |
+| GCP_PROJECT_ID       | Yes\*    | -                     | Google Cloud Project ID                            |
+| USE_SECRET_MANAGER   | No       | false                 | Enable Google Secret Manager                       |
+| DB_CONNECTION_STRING | Yes\*    | -                     | PostgreSQL connection string (from Secret Manager) |
+| DB_HOST              | Yes\*\*  | localhost             | PostgreSQL host (local dev)                        |
+| DB_PORT              | No       | 5432                  | PostgreSQL port (local dev)                        |
+| DB_NAME              | Yes\*\*  | historydb             | Database name (local dev)                          |
+| DB_USER              | Yes\*\*  | postgres              | Database user (local dev)                          |
+| DB_PASSWORD          | Yes\*\*  | -                     | Database password (local dev)                      |
+| JWT_SECRET           | Yes      | -                     | JWT secret for token verification                  |
+| CORS_ORIGIN          | No       | http://localhost:3000 | Allowed CORS origin                                |
 
 \* Required when `USE_SECRET_MANAGER=true`  
 \*\* Required when `USE_SECRET_MANAGER=false` (local development)
@@ -270,6 +271,7 @@ GET /health
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -295,6 +297,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -320,6 +323,7 @@ GET /history?user_id=user123&limit=50&offset=0
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -350,6 +354,7 @@ Authorization: Bearer <jwt-token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -479,6 +484,7 @@ docker compose down -v
 The `docker-compose.yml` includes:
 
 **History Service**
+
 - Runs on port `8004`
 - Uses `.env.docker` for configuration
 - Automatically connects to `history-postgres` container
@@ -486,6 +492,7 @@ The `docker-compose.yml` includes:
 - Auto-restarts on failure
 
 **PostgreSQL Container**
+
 - PostgreSQL 14 Alpine image
 - Runs on port `5432`
 - Automatic schema initialization via `schema.sql`
@@ -561,6 +568,7 @@ See the `k8s/` directory in the repository root for Kubernetes deployment manife
 If you're upgrading from a previous version without `session_id` support, see [SESSION-ID-MIGRATION.md](SESSION-ID-MIGRATION.md) for detailed migration instructions.
 
 The migration adds:
+
 - `session_id` column to the `histories` table
 - Index on `session_id` for better query performance
 - Updated API to accept optional `session_id` parameter
