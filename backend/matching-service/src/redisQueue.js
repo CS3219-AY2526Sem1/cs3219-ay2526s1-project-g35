@@ -50,7 +50,7 @@ export async function enqueueUser(user, notifyTimeout) {
     }, TIMEOUT_MS);
     localTimers.set(userId, t);
   }
-};
+}
 
 export async function removeUser(userId) {
   // Remove metadata and from queued set; remove from all difficulty lists is best-effort
@@ -102,7 +102,12 @@ export async function tryFindMatchFor(user) {
     const meta = JSON.parse(metaStr);
     const shared = countShared(topics, meta.topics);
     if (shared > maxShared) {
-      best = { userId: candidateId, username: meta.username, topics: meta.topics, difficulty: meta.difficulty };
+      best = {
+        userId: candidateId,
+        username: meta.username,
+        topics: meta.topics,
+        difficulty: meta.difficulty,
+      };
       maxShared = shared;
     }
   }

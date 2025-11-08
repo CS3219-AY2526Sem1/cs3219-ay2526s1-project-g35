@@ -182,7 +182,8 @@ wss.on('connection', (ws) => {
 
           // Proceed to create collaboration session (same flow as before)
           let questionId = null;
-          const questionServiceUrl = process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
+          const questionServiceUrl =
+            process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
           const topicsToTry = user.topics.length > 0 ? user.topics : ['Algorithms'];
 
           for (const topic of topicsToTry) {
@@ -263,11 +264,21 @@ wss.on('connection', (ws) => {
             } else {
               console.error('Failed to create collaboration session:', sessionResponse.data.error);
               if (user.ws && user.ws.readyState === 1) {
-                user.ws.send(JSON.stringify({ type: 'match-error', error: 'Failed to create collaboration session' }));
+                user.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
                 user.ws.close(1000, 'Match error');
               }
               if (bestMatch.ws && bestMatch.ws.readyState === 1) {
-                bestMatch.ws.send(JSON.stringify({ type: 'match-error', error: 'Failed to create collaboration session' }));
+                bestMatch.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
                 bestMatch.ws.close(1000, 'Match error');
               }
             }
@@ -275,9 +286,19 @@ wss.on('connection', (ws) => {
             console.error('Error creating collaboration session:', error);
             try {
               if (user.ws && user.ws.readyState === 1)
-                user.ws.send(JSON.stringify({ type: 'match-error', error: 'Failed to create collaboration session' }));
+                user.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
               if (bestMatch.ws && bestMatch.ws.readyState === 1)
-                bestMatch.ws.send(JSON.stringify({ type: 'match-error', error: 'Failed to create collaboration session' }));
+                bestMatch.ws.send(
+                  JSON.stringify({
+                    type: 'match-error',
+                    error: 'Failed to create collaboration session',
+                  }),
+                );
             } catch (e) {
               console.error('Error sending match-error messages:', e);
             }
@@ -292,7 +313,9 @@ wss.on('connection', (ws) => {
           try {
             const localWs = connectedUsers.get(timedOutUserId);
             if (localWs && localWs.readyState === 1) {
-              localWs.send(JSON.stringify({ type: 'timeout', message: 'No match found within 60 seconds.' }));
+              localWs.send(
+                JSON.stringify({ type: 'timeout', message: 'No match found within 60 seconds.' }),
+              );
               localWs.close();
             }
           } catch (e) {
@@ -303,7 +326,10 @@ wss.on('connection', (ws) => {
         console.log(`User ${userId} enqueued in Redis`);
         return;
       } catch (redisErr) {
-        console.error('Redis error during match/enqueue, falling back to in-memory queue:', redisErr.message || redisErr);
+        console.error(
+          'Redis error during match/enqueue, falling back to in-memory queue:',
+          redisErr.message || redisErr,
+        );
         // Fall through to original in-memory behavior
       }
 
@@ -559,7 +585,12 @@ server.listen(PORT, () => {
 
 // Attempt to connect to Redis (best-effort). Redis URL should come from docker-compose via REDIS_URL env var.
 redisQueue
-  .connect({ redisUrl: process.env.REDIS_URL || 'redis://matching-service-redis:6381', timeoutMs: TIMEOUT_MS })
-  .catch((err) => console.warn('Could not connect to Redis for matching service:', err.message || err));
+  .connect({
+    redisUrl: process.env.REDIS_URL || 'redis://matching-service-redis:6381',
+    timeoutMs: TIMEOUT_MS,
+  })
+  .catch((err) =>
+    console.warn('Could not connect to Redis for matching service:', err.message || err),
+  );
 
 console.log('Matching WebSocket server running on port ' + PORT);

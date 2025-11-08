@@ -180,7 +180,7 @@ export default function WaitingRoomPage(): React.ReactElement {
       if (wsRef.current) {
         wsRef.current.close();
       }
-    }
+    };
   }, []);
 
   const handleReturnHome = () => {
