@@ -6,11 +6,55 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8003;
+const SERVICE_NAME = process.env.SERVICE_NAME || 'matching-service';
+const SERVICE_JWT_SECRET = process.env.JWT_SECRET;
+const SERVICE_JWT_OPTIONS = {
+  expiresIn: process.env.SERVICE_JWT_TTL || '5m',
+  issuer: process.env.SERVICE_JWT_ISSUER || SERVICE_NAME,
+  audience: process.env.SERVICE_JWT_AUDIENCE || 'question-service',
+};
+const SERVICE_JWT_DEFAULT_PAYLOAD = {
+  id: process.env.SERVICE_JWT_SUBJECT || `${SERVICE_NAME}-internal`,
+  username: process.env.SERVICE_JWT_USERNAME || SERVICE_NAME,
+  email:
+    process.env.SERVICE_JWT_EMAIL ||
+    `${SERVICE_NAME.replace(/[^a-z0-9]/gi, '-')}@internal.peerprep`,
+  service: SERVICE_NAME,
+  internal: true,
+};
+let jwtWarningLogged = false;
+
+const createServiceJwt = (payloadOverrides = {}) => {
+  if (!SERVICE_JWT_SECRET) {
+    if (!jwtWarningLogged) {
+      console.error(
+        'JWT_SECRET is not configured for matching service. Unable to authenticate with question service.',
+      );
+      jwtWarningLogged = true;
+    }
+    return null;
+  }
+
+  try {
+    return jwt.sign(
+      {
+        ...SERVICE_JWT_DEFAULT_PAYLOAD,
+        ...payloadOverrides,
+      },
+      SERVICE_JWT_SECRET,
+      SERVICE_JWT_OPTIONS,
+    );
+  } catch (error) {
+    console.error('Failed to generate service JWT token:', error.message);
+    return null;
+  }
+};
 
 // Middleware
 app.use(helmet());
@@ -203,9 +247,27 @@ wss.on('connection', (ws) => {
             console.log(
               `Trying to get question for topic="${topic}", difficulty="${user.difficulty}"`,
             );
-            const response = await axios.get(`${questionServiceUrl}/api/questions/random`, {
-              params: { topic, difficulty: user.difficulty },
+            const serviceToken = createServiceJwt({
+              scope: 'question:random',
+              topic,
+              difficulty: user.difficulty,
+              subjectUserId: user.userId,
             });
+
+            const requestConfig = {
+              params: { topic, difficulty: user.difficulty },
+              headers: {},
+            };
+
+            if (serviceToken) {
+              requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
+              requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
+            }
+
+            const response = await axios.get(
+              `${questionServiceUrl}/api/questions/random`,
+              requestConfig,
+            );
 
             if (response.data.success && response.data.questionId) {
               questionId = response.data.questionId;

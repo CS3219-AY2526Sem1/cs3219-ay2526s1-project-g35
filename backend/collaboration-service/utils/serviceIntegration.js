@@ -12,6 +12,23 @@ class ServiceIntegration {
     this.questionServiceUrl = process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
     this.matchingServiceUrl = process.env.MATCHING_SERVICE_URL || 'http://matching-service:8003';
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8000';
+    this.serviceName = process.env.SERVICE_NAME || 'collaboration-service';
+    this.jwtSecret = process.env.JWT_SECRET;
+    this.serviceTokenDefaults = {
+      id: process.env.SERVICE_JWT_SUBJECT || `${this.serviceName}-internal`,
+      username: process.env.SERVICE_JWT_USERNAME || this.serviceName,
+      email:
+        process.env.SERVICE_JWT_EMAIL ||
+        `${this.serviceName.replace(/[^a-z0-9]/gi, '-')}@internal.peerprep`,
+      service: this.serviceName,
+      internal: true,
+    };
+    this.serviceTokenOptions = {
+      expiresIn: process.env.SERVICE_JWT_TTL || '5m',
+      issuer: process.env.SERVICE_JWT_ISSUER || this.serviceName,
+      audience: process.env.SERVICE_JWT_AUDIENCE || 'question-service',
+    };
+    this.jwtWarningLogged = false;
 
     // Create axios instances with default configs
     this.questionServiceClient = axios.create({
@@ -48,11 +65,23 @@ class ServiceIntegration {
     try {
       console.log(`Fetching question details for ID: ${questionId}`);
 
-      // Prepare headers with token if provided
+      // Prepare headers with token if provided or generated
       const headers = {};
-      if (token) {
-        headers.Cookie = `accessToken=${token}`;
-        console.log('Using provided JWT token for question service request');
+      let resolvedToken = token;
+
+      if (!resolvedToken) {
+        resolvedToken = this.generateServiceToken({
+          scope: 'question:read',
+          questionId,
+        });
+      }
+
+      if (resolvedToken) {
+        headers.Authorization = `Bearer ${resolvedToken}`;
+        headers.Cookie = `accessToken=${resolvedToken}`;
+        console.log('Using service JWT token for question service request');
+      } else {
+        console.warn('Proceeding without JWT token for question service request');
       }
 
       const response = await this.questionServiceClient.get(`/api/questions/${questionId}`, {
@@ -90,6 +119,37 @@ class ServiceIntegration {
           error: `Request error: ${error.message}`,
         };
       }
+    }
+  }
+
+  /**
+   * Generate a short-lived service-to-service JWT
+   * @param {Object} payloadOverrides - Additional payload fields
+   * @returns {string|null} - Signed JWT or null if unavailable
+   */
+  generateServiceToken(payloadOverrides = {}) {
+    if (!this.jwtSecret) {
+      if (!this.jwtWarningLogged) {
+        console.error(
+          'JWT_SECRET is not configured for collaboration service. Unable to generate service token.',
+        );
+        this.jwtWarningLogged = true;
+      }
+      return null;
+    }
+
+    try {
+      return jwt.sign(
+        {
+          ...this.serviceTokenDefaults,
+          ...payloadOverrides,
+        },
+        this.jwtSecret,
+        this.serviceTokenOptions,
+      );
+    } catch (error) {
+      console.error('Failed to generate service JWT token:', error.message);
+      return null;
     }
   }
 

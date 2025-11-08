@@ -9,8 +9,6 @@
     "seed": "node src/scripts/seed-questions.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:integration": "jest --config jest.integration.config.js",
-    "test:all": "npm test && npm run test:integration",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

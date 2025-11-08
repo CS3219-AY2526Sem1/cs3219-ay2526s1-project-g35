@@ -24,9 +24,9 @@ services:
       - ./backend/user-service/.env.docker
     environment:
       - REDIS_URL=redis://user-service-redis:6379
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-credentials.json
-    volumes:
-      - ${APPDATA}/gcloud/application_default_credentials.json:/app/gcp-credentials.json:ro
+      # GCS credentials are optional for local development
+      # If not provided, GCS features (profile pictures) will not work
+      # To enable: Set GCS_SERVICE_ACCOUNT_KEY in .env.docker with base64 encoded JSON key
     depends_on:
       user-service-redis:
         condition: service_healthy
