@@ -117,6 +117,26 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # History service - User activity and session history tracking
+  history-service:
+    build: ./backend/history-service
+    ports:
+      - "8004:8004"
+    env_file:
+      - ./backend/history-service/.env.docker
+    volumes:
+      - ./backend/history-service/gcp-service-account-key.json:/app/gcp-key.json:ro
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/health" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
   # Redis instances for each service - separated for scalability
   user-service-redis:
     container_name: user-service-redis
@@ -199,3 +219,4 @@ volumes:
   question_redis_data:
   matching_redis_data:
   collaboration_redis_data:
+  history_postgres_data:
