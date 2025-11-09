@@ -1,201 +1,608 @@
 'use client';
 
-import Header from '@/components/ui/Header';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { HelpCircle, UploadCloud } from 'lucide-react';
+import { isAxiosError } from 'axios';
+import { X } from 'lucide-react';
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { FormEvent, KeyboardEvent, RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Difficulty = 'Easy' | 'Medium' | 'Hard';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
+import Header from '@/components/ui/Header';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  CreateQuestionPayload,
+  QuestionDifficulty,
+  QuestionTestCase,
+  createQuestion,
+  fetchCategories,
+  fetchDifficulties,
+} from '@/services/question.service';
+
+type EditableTestCase = QuestionTestCase & { id: string };
+
+const TEST_CASE_TYPES: QuestionTestCase['type'][] = ['Sample', 'Hidden'];
+
+const DEFAULT_DIFFICULTIES: QuestionDifficulty[] = ['Easy', 'Medium', 'Hard'];
+
+const createTestCase = (): EditableTestCase => ({
+  id:
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`,
+  input: '',
+  expectedOutput: '',
+  explanation: '',
+  type: 'Sample',
+});
 
 export default function AddQuestionPage() {
+  const router = useRouter();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [difficulty, setDifficulty] = useState<Difficulty | ''>('');
-  const [topics, setTopics] = useState('');
-  const [tags, setTags] = useState('');
-  const [testCases, setTestCases] = useState<string[]>(['Test Case 1']);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | ''>('');
 
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
-  const [selectedFileName, setSelectedFileName] = useState<string>('');
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [availableDifficulties, setAvailableDifficulties] = useState<QuestionDifficulty[]>([]);
+  const [availableTopics, setAvailableTopics] = useState<string[]>([]);
 
-  const onUploadConfirm = () => {
-    if (selectedFileName) {
-      setTestCases((prev) => [...prev, selectedFileName]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [topicInput, setTopicInput] = useState('');
+  const [topicsPopoverOpen, setTopicsPopoverOpen] = useState(false);
+  const topicsInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [tagsPopoverOpen, setTagsPopoverOpen] = useState(false);
+  const tagsInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [testCases, setTestCases] = useState<EditableTestCase[]>([createTestCase()]);
+
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        const [difficulties, topics] = await Promise.all([
+          fetchDifficulties().catch(() => DEFAULT_DIFFICULTIES),
+          fetchCategories().catch(() => []),
+        ]);
+
+        if (!ignore) {
+          const nextDifficulties =
+            difficulties.length > 0 ? (difficulties as QuestionDifficulty[]) : DEFAULT_DIFFICULTIES;
+
+          setAvailableDifficulties(nextDifficulties);
+          setAvailableTopics(topics);
+
+          if (!selectedDifficulty && nextDifficulties.length > 0) {
+            setSelectedDifficulty(nextDifficulties[0]);
+          }
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingOptions(false);
+        }
+      }
+    };
+
+    void loadOptions();
+
+    return () => {
+      ignore = true;
+    };
+    // We intentionally run this effect only once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (topicsPopoverOpen) {
+      requestAnimationFrame(() => {
+        topicsInputRef.current?.focus();
+      });
     }
-    setSelectedFileName('');
-    setShowUpload(false);
-    if (fileRef.current) fileRef.current.value = '';
+  }, [topicsPopoverOpen]);
+
+  useEffect(() => {
+    if (tagsPopoverOpen) {
+      requestAnimationFrame(() => {
+        tagsInputRef.current?.focus();
+      });
+    }
+  }, [tagsPopoverOpen]);
+
+  const difficultyOptions = useMemo(
+    () => (availableDifficulties.length ? availableDifficulties : DEFAULT_DIFFICULTIES),
+    [availableDifficulties],
+  );
+
+  const addValues = (current: string[], values: string[]) => {
+    const normalized = values.map((value) => value.trim()).filter((value) => value.length > 0);
+    const merged = new Set([...current, ...normalized]);
+    return Array.from(merged);
   };
 
-  const onAddQuestion = () => {
-    // TODO: integrate with API create endpoint
-    setShowConfirm(false);
+  const handleTopicKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    setSelectedTopics((prev) => addValues(prev, topicInput.split(',')));
+    setTopicInput('');
+  };
+
+  const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    setSelectedTags((prev) => addValues(prev, tagInput.split(',')));
+    setTagInput('');
+  };
+
+  const handleTestCaseChange = <K extends keyof QuestionTestCase>(
+    id: string,
+    field: K,
+    value: QuestionTestCase[K],
+  ) => {
+    setTestCases((prev) =>
+      prev.map((testCase) => (testCase.id === id ? { ...testCase, [field]: value } : testCase)),
+    );
+  };
+
+  const handleRemoveTestCase = (id: string) => {
+    setTestCases((prev) =>
+      prev.length <= 1 ? prev : prev.filter((testCase) => testCase.id !== id),
+    );
+  };
+
+  const handleAddTestCase = () => {
+    setTestCases((prev) => [...prev, createTestCase()]);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting) return;
+
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+    const difficulty = selectedDifficulty as QuestionDifficulty | '';
+
+    if (!trimmedTitle || !trimmedDescription || !difficulty) {
+      setFormError('Title, description, and difficulty are required.');
+      return;
+    }
+
+    if (trimmedTitle.length < 5) {
+      setFormError('Title must be at least 5 characters long.');
+      return;
+    }
+
+    if (trimmedDescription.length < 10) {
+      setFormError('Description must be at least 10 characters long.');
+      return;
+    }
+
+    const sanitizedTopics = Array.from(
+      new Set(selectedTopics.map((topic) => topic.trim()).filter((topic) => topic.length > 0)),
+    );
+
+    if (sanitizedTopics.length === 0) {
+      setFormError('Please add at least one topic.');
+      return;
+    }
+
+    const sanitizedTags = Array.from(
+      new Set(selectedTags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)),
+    );
+
+    const preparedTestCases = testCases.map(({ input, expectedOutput, type, explanation }) => {
+      const trimmedInput = input.trim();
+      const trimmedExpectedOutput = expectedOutput.trim();
+      return {
+        input: trimmedInput,
+        expectedOutput: trimmedExpectedOutput,
+        type,
+        explanation: explanation?.trim() ?? '',
+      };
+    });
+
+    const hasInvalidTestCase = preparedTestCases.some(
+      (testCase) => !testCase.input || !testCase.expectedOutput,
+    );
+
+    if (hasInvalidTestCase) {
+      setFormError('Each test case requires input and expected output.');
+      return;
+    }
+
+    const payload: CreateQuestionPayload = {
+      title: trimmedTitle,
+      description: trimmedDescription,
+      difficulty,
+      topics: sanitizedTopics,
+      tags: sanitizedTags,
+      testCases: preparedTestCases,
+    };
+
+    try {
+      setSubmitting(true);
+      setFormError(null);
+      await createQuestion(payload);
+      router.push('/admin/questions');
+    } catch (error) {
+      console.error('Failed to create question', error);
+      let message = 'Failed to create question. Please try again.';
+      if (isAxiosError(error)) {
+        const responseMessage = error.response?.data?.error;
+        if (typeof responseMessage === 'string' && responseMessage.trim().length > 0) {
+          message = responseMessage;
+        }
+      }
+      setFormError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10">
-      <Header>New Question</Header>
+    <div className="container mx-auto max-w-5xl px-4 py-10">
+      <Header className="text-center">Add Question</Header>
 
-      <form className="space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Title <span className="text-destructive">*</span>
-          </label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Enter question title"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Description <span className="text-destructive">*</span>
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Difficulty <span className="text-destructive">*</span>
-            </label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Please Select a Difficulty Level</option>
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Topics <span className="text-destructive">*</span>
-            </label>
-            <input
-              value={topics}
-              onChange={(e) => setTopics(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Comma-separated topics"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Tags <span className="text-destructive">*</span>
-          </label>
-          <input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Comma-separated tags"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Test Cases <span className="text-destructive">*</span>
-          </label>
-          <div className="rounded-md border p-4">
-            <ul className="list-disc pl-5 text-sm">
-              {testCases.map((t, i) => (
-                <li key={`${t}-${i}`}>{t}</li>
-              ))}
-            </ul>
-            <div className="mt-2">
-              <Button variant="link" className="px-0" onClick={() => setShowUpload(true)}>
-                + Add New
-              </Button>
+      <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+        <section className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold tracking-tight">Question Details</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">
+                Title <span className="text-destructive">*</span>
+              </label>
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter question title"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">
+                Description <span className="text-destructive">*</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Describe the problem, requirements, and constraints"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Difficulty <span className="text-destructive">*</span>
+              </label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {selectedDifficulty || 'Select difficulty'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                >
+                  <DropdownMenuRadioGroup
+                    value={selectedDifficulty}
+                    onValueChange={(value) => setSelectedDifficulty(value as QuestionDifficulty)}
+                  >
+                    {difficultyOptions.map((option) => (
+                      <DropdownMenuRadioItem key={option} value={option}>
+                        {option}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Topics <span className="text-destructive">*</span>
+              </label>
+              <MultiValuePopover
+                buttonLabel="Topics"
+                open={topicsPopoverOpen}
+                onOpenChange={setTopicsPopoverOpen}
+                inputRef={topicsInputRef}
+                inputValue={topicInput}
+                onInputChange={setTopicInput}
+                onInputKeyDown={handleTopicKeyDown}
+                values={selectedTopics}
+                onRemoveValue={(value) =>
+                  setSelectedTopics((prev) => prev.filter((topic) => topic !== value))
+                }
+                onAddValues={(next) => setSelectedTopics((prev) => addValues(prev, next))}
+                suggestions={availableTopics}
+                onSelectSuggestion={(suggestion) =>
+                  setSelectedTopics((prev) => addValues(prev, [suggestion]))
+                }
+                placeholder="arrays, hashmap"
+                helperText="Press Enter to add comma-separated topics."
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">Tags</label>
+              <MultiValuePopover
+                buttonLabel="Tags"
+                open={tagsPopoverOpen}
+                onOpenChange={setTagsPopoverOpen}
+                inputRef={tagsInputRef}
+                inputValue={tagInput}
+                onInputChange={setTagInput}
+                onInputKeyDown={handleTagKeyDown}
+                values={selectedTags}
+                onRemoveValue={(value) =>
+                  setSelectedTags((prev) => prev.filter((tag) => tag !== value))
+                }
+                onAddValues={(next) => setSelectedTags((prev) => addValues(prev, next))}
+                suggestions={[]}
+                onSelectSuggestion={(suggestion) =>
+                  setSelectedTags((prev) => addValues(prev, [suggestion]))
+                }
+                placeholder="beginner-friendly, interview"
+                helperText="Press Enter to add comma-separated tags."
+              />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="flex items-center justify-end gap-3 pt-2">
-          <Button variant="outline" asChild>
+        <section className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">Test Cases</h2>
+            <Button type="button" variant="secondary" onClick={handleAddTestCase}>
+              + Add New
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Provide at least one sample test case outlining the input, expected output, and optional
+            explanation.
+          </p>
+          <div className="space-y-4">
+            {testCases.map((testCase, index) => (
+              <Card key={testCase.id} className="border-muted">
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                  <CardTitle className="text-base font-semibold">Test Case {index + 1}</CardTitle>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveTestCase(testCase.id)}
+                    disabled={testCases.length <= 1}
+                    aria-label={`Remove test case ${index + 1}`}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Input <span className="text-destructive">*</span>
+                      </label>
+                      <textarea
+                        value={testCase.input}
+                        onChange={(event) =>
+                          handleTestCaseChange(testCase.id, 'input', event.target.value)
+                        }
+                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="nums = [2,7,11,15], target = 9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Expected Output <span className="text-destructive">*</span>
+                      </label>
+                      <textarea
+                        value={testCase.expectedOutput}
+                        onChange={(event) =>
+                          handleTestCaseChange(testCase.id, 'expectedOutput', event.target.value)
+                        }
+                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="[0,1]"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Explanation</label>
+                      <textarea
+                        value={testCase.explanation ?? ''}
+                        onChange={(event) =>
+                          handleTestCaseChange(testCase.id, 'explanation', event.target.value)
+                        }
+                        className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Explain why the expected output is correct"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Type</label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full justify-between">
+                            {testCase.type}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="start"
+                          className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                        >
+                          <DropdownMenuRadioGroup
+                            value={testCase.type}
+                            onValueChange={(value) =>
+                              handleTestCaseChange(
+                                testCase.id,
+                                'type',
+                                value as QuestionTestCase['type'],
+                              )
+                            }
+                          >
+                            {TEST_CASE_TYPES.map((option) => (
+                              <DropdownMenuRadioItem key={option} value={option}>
+                                {option}
+                              </DropdownMenuRadioItem>
+                            ))}
+                          </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {formError && <p className="text-center text-sm text-destructive">{formError}</p>}
+
+        <div className="flex items-center justify-end gap-3">
+          <Button type="button" variant="outline" asChild>
             <Link href="/admin/questions">Cancel</Link>
           </Button>
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              setShowConfirm(true);
-            }}
-          >
-            Add Question
+          <Button type="submit" disabled={submitting || loadingOptions}>
+            {submitting ? 'Saving...' : 'Add Question'}
           </Button>
         </div>
       </form>
+    </div>
+  );
+}
 
-      {/* Confirm Add Modal */}
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <HelpCircle className="h-10 w-10" />
-            </div>
-            <AlertDialogTitle className="text-center">Add this question?</AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="justify-center gap-3">
-            <AlertDialogAction onClick={onAddQuestion} className="min-w-[80px]">
-              Yes
-            </AlertDialogAction>
-            <AlertDialogCancel className="min-w-[80px]">No</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+type MultiValuePopoverProps = {
+  buttonLabel: string;
+  open: boolean;
+  onOpenChange: (state: boolean) => void;
+  inputRef: RefObject<HTMLInputElement | null>;
+  inputValue: string;
+  onInputChange: (value: string) => void;
+  onInputKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  values: string[];
+  onRemoveValue: (value: string) => void;
+  onAddValues: (values: string[]) => void;
+  suggestions: string[];
+  onSelectSuggestion: (value: string) => void;
+  placeholder: string;
+  helperText?: string;
+};
 
-      {/* Upload Test Script Modal */}
-      <AlertDialog open={showUpload} onOpenChange={setShowUpload}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-center">Upload Test Script</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              Attach a file containing test cases or evaluation script for this question.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="rounded-md border p-4 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-accent-foreground">
-              <UploadCloud className="h-7 w-7" />
+function MultiValuePopover({
+  buttonLabel,
+  open,
+  onOpenChange,
+  inputRef,
+  inputValue,
+  onInputChange,
+  onInputKeyDown,
+  values,
+  onRemoveValue,
+  onAddValues,
+  suggestions,
+  onSelectSuggestion,
+  placeholder,
+  helperText,
+}: MultiValuePopoverProps) {
+  const count = values.length;
+  const triggerLabel = count > 0 ? `${buttonLabel} (${count})` : buttonLabel;
+  const inputId = `${buttonLabel.toLowerCase().replace(/\s+/g, '-')}-input`;
+
+  const handleBlur = () => {
+    if (!inputValue.trim()) return;
+    onAddValues(inputValue.split(','));
+    onInputChange('');
+  };
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full justify-between">
+          {triggerLabel}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="min-w-0 w-[var(--radix-popover-trigger-width)] space-y-2"
+      >
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={inputId}>
+            {helperText ?? 'Press Enter to add values'}
+          </label>
+          <input
+            id={inputId}
+            ref={inputRef}
+            value={inputValue}
+            onChange={(event) => onInputChange(event.target.value)}
+            onKeyDown={onInputKeyDown}
+            onBlur={handleBlur}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder={placeholder}
+          />
+        </div>
+        {suggestions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Suggestions</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onSelectSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              ))}
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".txt,.json,.js,.ts,.py"
-              onChange={(e) => setSelectedFileName(e.target.files?.[0]?.name ?? '')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
-            {selectedFileName && (
-              <p className="mt-2 text-sm text-muted-foreground">Selected: {selectedFileName}</p>
+          </div>
+        )}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            {values.length > 0 ? 'Selected' : 'No values added yet.'}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {values.length > 0 ? (
+              values.map((value) => (
+                <TagChip key={value} label={value} onRemove={() => onRemoveValue(value)} />
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground">Add items to see them here.</span>
             )}
           </div>
-          <AlertDialogFooter className="justify-center gap-3">
-            <AlertDialogAction onClick={onUploadConfirm}>Upload</AlertDialogAction>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs text-muted-foreground">
+      {label}
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onRemove}
+        className="ml-1 rounded-full p-0.5 transition hover:bg-muted/80 hover:text-foreground"
+        aria-label={`Remove ${label}`}
+      >
+        {'x'}
+      </button>
+    </span>
   );
 }

@@ -150,6 +150,137 @@ describe('Question API Tests', () => {
     });
   });
 
+  describe('GET /api/questions/recent10', () => {
+    it('should return the 10 most recently updated questions in descending order', async () => {
+      for (let i = 0; i < 12; i += 1) {
+        await Question.createQuestion({
+          ...sampleQuestion,
+          title: `Question ${i}`,
+          description: `${sampleQuestion.description} (${i})`,
+        });
+      }
+
+      const response = await request(app).get('/api/questions/recent10').expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(10);
+
+      const titles = response.body.data.map((question) => question.title);
+      const updatedAtValues = response.body.data.map((question) =>
+        new Date(question.updatedAt).getTime(),
+      );
+      const sortedUpdatedAtValues = [...updatedAtValues].sort((a, b) => b - a);
+
+      expect(updatedAtValues).toEqual(sortedUpdatedAtValues);
+      expect(titles[0]).toBe('Question 11');
+      expect(titles[9]).toBe('Question 2');
+    });
+
+    it('should return all available questions when fewer than 10 exist', async () => {
+      for (let i = 0; i < 3; i += 1) {
+        await Question.createQuestion({
+          ...sampleQuestion,
+          title: `Small Set Question ${i}`,
+          description: `${sampleQuestion.description} (small-${i})`,
+        });
+      }
+
+      const response = await request(app).get('/api/questions/recent10').expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(3);
+      expect(response.body.data).toHaveLength(3);
+    });
+  });
+
+  describe('GET /api/questions/search', () => {
+    it('should return all questions sorted by updatedAt when no filters provided', async () => {
+      const first = await Question.createQuestion(sampleQuestion);
+      const second = await Question.createQuestion({
+        ...sampleQuestion,
+        title: 'Binary Search Variants',
+        description: `${sampleQuestion.description} (binary)`,
+        difficulty: 'Medium',
+        topics: ['Binary Search'],
+      });
+
+      await Question.updateQuestion(first._id, { tags: ['updated-tag'] });
+
+      const response = await request(app).get('/api/questions/search').expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(2);
+
+      const returnedIds = response.body.data.map((q) => q._id);
+      expect(returnedIds[0]).toBe(first._id.toString());
+      expect(returnedIds[1]).toBe(second._id.toString());
+    });
+
+    it('should filter by search text, difficulty (OR) and topics (OR)', async () => {
+      await Question.createQuestion({
+        ...sampleQuestion,
+        title: 'Array Sum',
+        description: 'Compute the sum of an array',
+        difficulty: 'Easy',
+        topics: ['Arrays'],
+        tags: ['beginner-friendly', 'interview'],
+      });
+
+      await Question.createQuestion({
+        ...sampleQuestion,
+        title: 'Hashmap Sum Lookup',
+        description: 'Use hashmaps to find sums',
+        difficulty: 'Medium',
+        topics: ['HashMap'],
+        tags: ['interview'],
+      });
+
+      await Question.createQuestion({
+        ...sampleQuestion,
+        title: 'Graph Paths',
+        description: 'Find paths in graphs',
+        difficulty: 'Hard',
+        topics: ['Graphs'],
+        tags: ['advanced'],
+      });
+
+      const response = await request(app)
+        .get('/api/questions/search')
+        .query({ q: 'sum', difficulty: 'Easy,Medium', topics: 'Arrays,HashMap' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(2);
+      const titles = response.body.data.map((q) => q.title).sort();
+      expect(titles).toEqual(['Array Sum', 'Hashmap Sum Lookup'].sort());
+    });
+
+    it('should require all provided tags (AND logic)', async () => {
+      await Question.createQuestion({
+        ...sampleQuestion,
+        title: 'Tag Matched Question',
+        description: 'Question with both tags',
+        tags: ['beginner-friendly', 'interview'],
+      });
+
+      await Question.createQuestion({
+        ...sampleQuestion,
+        title: 'Single Tag Question',
+        description: 'Has only one tag',
+        tags: ['beginner-friendly'],
+      });
+
+      const response = await request(app)
+        .get('/api/questions/search')
+        .query({ tags: 'beginner-friendly,interview' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.count).toBe(1);
+      expect(response.body.data[0].title).toBe('Tag Matched Question');
+    });
+  });
+
   describe('GET /api/questions/:id', () => {
     let questionId;
 

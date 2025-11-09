@@ -6,6 +6,7 @@
 
 'use client';
 
+import { recordSiteVisit } from '@/services/analytics.service';
 import authService from '@/services/auth.service';
 import {
   AuthContextType,
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthState((prev: AuthState) => ({ ...prev, error: null }));
 
       const response = await authService.login(credentials);
+      const loggedInUser = response.data?.user;
 
       // Store user data but don't mark as fully authenticated yet (needs 2FA)
       setAuthState((prev: AuthState) => ({
@@ -66,6 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         error: null,
       }));
+
+      if (loggedInUser && !loggedInUser.isAdmin) {
+        recordSiteVisit({ visitType: 'user_login', path: '/home' }).catch((err) => {
+          console.error('Failed to record site visit on login:', err);
+        });
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setAuthState((prev: AuthState) => ({

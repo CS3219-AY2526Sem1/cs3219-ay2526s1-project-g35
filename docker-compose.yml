@@ -210,6 +210,26 @@ services:
       start_period: 5s
     restart: unless-stopped
 
+  # Analytics service - Tracks visits and downtime metrics
+  analytics-service:
+    build: ./backend/analytics-service
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./backend/analytics-service/.env.docker
+    depends_on:
+      user-service:
+        condition: service_healthy
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8005/health || exit 1" ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
 networks:
   peerprep-network:
     driver: bridge

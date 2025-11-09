@@ -100,6 +100,11 @@ questionSchema.statics.getAll = async function () {
   return await this.find();
 };
 
+//Get the 10 most recent edited questions
+questionSchema.statics.getFirstTen = async function () {
+  return await this.find().sort({ updatedAt: -1, createdAt: -1 }).limit(10);
+};
+
 // Get question by ID
 questionSchema.statics.getById = async function (id) {
   return await this.findById(id);
@@ -130,6 +135,40 @@ questionSchema.statics.getByDifficulty = async function (difficulty) {
 // Get questions by topic
 questionSchema.statics.getByTopic = async function (topic) {
   return await this.find({ topics: topic });
+};
+
+// Search questions with filters
+questionSchema.statics.searchQuestions = async function ({
+  searchText,
+  difficulties,
+  topics,
+  tags,
+}) {
+  const filters = [];
+
+  if (searchText) {
+    const escaped = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
+    filters.push({
+      $or: [{ title: regex }, { description: regex }],
+    });
+  }
+
+  if (Array.isArray(difficulties) && difficulties.length > 0) {
+    filters.push({ difficulty: { $in: difficulties } });
+  }
+
+  if (Array.isArray(topics) && topics.length > 0) {
+    filters.push({ topics: { $in: topics } });
+  }
+
+  if (Array.isArray(tags) && tags.length > 0) {
+    filters.push({ tags: { $all: tags } });
+  }
+
+  const query = filters.length > 0 ? { $and: filters } : {};
+
+  return await this.find(query).sort({ updatedAt: -1, createdAt: -1 });
 };
 
 // Get random question by difficulty

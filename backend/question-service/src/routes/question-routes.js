@@ -27,6 +27,12 @@ const { verifyToken, verifyAdmin } = require('../middleware/jwtAuth'); // Change
 // GET /api/questions - Get all questions
 router.get('/', verifyToken, QuestionController.getAllQuestions);
 
+//GET /api/questions/recent10 - Get the 10 most recently updated questions
+router.get('/recent10', verifyToken, QuestionController.getRecentTenQuestions);
+
+// GET /api/questions/search - Search questions with filters
+router.get('/search', verifyToken, QuestionController.searchQuestions);
+
 // GET /api/questions/random - Get random question by topic and difficulty (for matching)
 // Query params: ?topic=Arrays&difficulty=Easy
 router.get('/random', verifyToken, QuestionController.getRandomQuestion);
