@@ -14,16 +14,36 @@ export type QuestionsListResponse<T> = {
   data: T;
 };
 
+export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard';
+
+export type QuestionTestCase = {
+  input: string;
+  expectedOutput: string;
+  explanation?: string;
+  type: 'Sample' | 'Hidden';
+};
+
 export type QuestionDto = {
   _id: string;
   title: string;
   description: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: QuestionDifficulty;
   topics: string[];
   tags: string[];
   constraints?: string[];
+  testCases?: QuestionTestCase[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type CreateQuestionPayload = {
+  title: string;
+  description: string;
+  difficulty: QuestionDifficulty;
+  topics: string[];
+  tags: string[];
+  testCases: QuestionTestCase[];
+  constraints?: string[];
 };
 
 export async function fetchRecentQuestions(): Promise<QuestionDto[]> {
@@ -77,4 +97,9 @@ export async function fetchCategories(): Promise<string[]> {
 export async function fetchDifficulties(): Promise<string[]> {
   const res = await questionApi.get<QuestionsListResponse<string[]>>('/api/questions/difficulties');
   return res.data?.data ?? [];
+}
+
+export async function createQuestion(payload: CreateQuestionPayload) {
+  const res = await questionApi.post('/api/questions', payload);
+  return res.data;
 }

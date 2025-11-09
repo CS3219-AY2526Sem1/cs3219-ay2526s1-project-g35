@@ -44,7 +44,7 @@ function AdminNavbar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-48" align="end" sideOffset={10}>
             <DropdownMenuItem asChild>
-              <Link href="/admin/users">Manage Users</Link>
+              <Link href="/admin/accounts">Manage Users</Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link href="/admin/questions">Question Bank</Link>
