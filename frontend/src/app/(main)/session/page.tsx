@@ -36,6 +36,7 @@ interface QuestionData {
   testCases?: Array<{
     input?: string;
     expected?: string;
+    expectedOutput?: string;
     explanation?: string;
   }>;
 }
@@ -156,7 +157,7 @@ const Session = (): React.ReactElement => {
             matchedData.question.testCases.map((tc, index: number) => ({
               id: `Case ${index + 1}`,
               input: tc.input || '',
-              expected: tc.expected || '',
+              expected: (tc.expected ?? tc.expectedOutput) || '',
               explanation: tc.explanation || '',
             })),
           );

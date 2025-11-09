@@ -1,20 +1,21 @@
 {
-  "name": "question-service",
+  "name": "history-service",
   "version": "1.0.0",
-  "description": "Question management microservice for PeerPrep",
+  "description": "History tracking microservice for PeerPrep - tracks user question attempts",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/scripts/seed-questions.js",
-    "test": "jest",
+    "test": "jest --coverage",
     "test:watch": "jest --watch",
+    "test:unit": "jest --testPathPattern=test/(service|middleware|validation).test.js",
+    "test:integration": "jest --testPathPattern=test/integration.test.js",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
     "@google-cloud/secret-manager": "^6.1.1",
-    "axios": "^1.12.2",
+    "axios": "^1.13.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -22,24 +23,25 @@
     "helmet": "^7.0.0",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
     "prettier": "^3.6.2",
-    "redis": "^5.9.0"
+    "sequelize": "^6.35.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "jest": "^29.6.2",
-    "mongodb-memory-server": "^9.0.0",
     "nodemon": "^3.0.1",
     "supertest": "^6.3.3"
   },
   "keywords": [
     "microservice",
-    "question",
-    "database",
+    "history",
+    "postgres",
     "peerprep"
   ],
-  "author": "Your Name",
+  "author": "PeerPrep Team",
   "license": "MIT"
 }
