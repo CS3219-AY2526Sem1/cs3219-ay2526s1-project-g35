@@ -30,9 +30,8 @@ data:
   ARGON2_HASH_LENGTH: '32'
   ARGON2_SALT_LENGTH: '16'
 
-  # CORS Configuration (will be updated after you get domain/IP)
-  # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: 'http://34.8.234.19,http://localhost:3000'
+  # CORS Configuration
+  ALLOWED_ORIGINS: 'http://34.8.234.19,https://34.8.234.19'
 
   # Rate Limiting
   RATE_LIMIT_WINDOW_MS: '900000'
@@ -46,11 +45,9 @@ data:
 
   # Email Service Configuration
   EMAIL_ENABLED: 'true'
-  EMAIL_PROVIDER: 'mailtrap'
+  EMAIL_PROVIDER: 'smtp'
   EMAIL_FROM: 'cs3219g35@gmail.com'
   EMAIL_FROM_NAME: 'PeerPrep Team'
-  MAILTRAP_HOST: 'sandbox.smtp.mailtrap.io'
-  MAILTRAP_PORT: '2525'
   SMTP_HOST: 'smtp.gmail.com'
   SMTP_PORT: '587'
   SMTP_SECURE: 'false'
@@ -63,4 +60,3 @@ data:
   GCS_PROJECT_ID: 'peerprep-475911'
   GCS_BUCKET_NAME: 'peerprep-profile-pictures'
 
-```

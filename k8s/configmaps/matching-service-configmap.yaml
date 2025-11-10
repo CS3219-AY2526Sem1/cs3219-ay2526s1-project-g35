@@ -11,13 +11,13 @@ data:
   # Redis Configuration
   REDIS_URL: 'redis://matching-service-redis-service:6381'
 
-  # CORS Configuration (will be updated after you get domain/IP)
-  # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: 'http://34.8.234.19'
+  # CORS Configuration
+  ALLOWED_ORIGINS: 'http://34.8.234.19,https://34.8.234.19'
 
   # Service URLs (internal cluster communication)
   COLLABORATION_SERVICE_URL: 'http://collaboration-service:8002'
   USER_SERVICE_URL: 'http://user-service:8000'
+  QUESTION_SERVICE_URL: 'http://question-service:8001'
 
   # Matching Configuration
   MATCHING_TIMEOUT: '60000'

@@ -76,3 +76,4 @@ spec:
       targetPort: 6382
       protocol: TCP
       name: redis
+

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: peerprep-analytics-service
+  namespace: peerprep
+  annotations:
+    iam.gke.io/gcp-service-account: peerprep-analytics-service@peerprep-475911.iam.gserviceaccount.com

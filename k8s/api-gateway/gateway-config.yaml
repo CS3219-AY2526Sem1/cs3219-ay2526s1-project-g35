@@ -84,6 +84,19 @@ data:
         - POST
         - OPTIONS
 
+    # Analytics Service
+    - name: analytics-service
+      url: http://analytics-service.peerprep.svc.cluster.local:8005
+      routes:
+      - name: analytics-routes
+        paths:
+        - /api/analytics
+        strip_path: true
+        methods:
+        - GET
+        - POST
+        - OPTIONS
+
     # Global plugins
     plugins:
     - name: cors

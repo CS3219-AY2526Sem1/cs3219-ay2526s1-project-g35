@@ -8,8 +8,14 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import redisQueue from './redisQueue.js';
 import jwt from 'jsonwebtoken';
+import { initializeSecrets } from '../config/secretManager.js';
 
 dotenv.config();
+
+if (process.env.USE_SECRET_MANAGER === 'true') {
+  console.log('USE_SECRET_MANAGER is enabled, loading secrets...');
+  await initializeSecrets();
+}
 
 const app = express();
 const PORT = process.env.PORT || 8003;

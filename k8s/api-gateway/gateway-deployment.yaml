@@ -90,14 +90,18 @@ spec:
               value: 'off'
             - name: KONG_DECLARATIVE_CONFIG
               value: /kong/declarative/kong.yml
+            # Disable access logs to reduce logging costs
             - name: KONG_PROXY_ACCESS_LOG
-              value: /dev/stdout
+              value: /dev/null
             - name: KONG_ADMIN_ACCESS_LOG
-              value: /dev/stdout
+              value: /dev/null
+            # Keep only error logs
             - name: KONG_PROXY_ERROR_LOG
               value: /dev/stderr
             - name: KONG_ADMIN_ERROR_LOG
               value: /dev/stderr
+            - name: KONG_LOG_LEVEL
+              value: 'warn'
             - name: KONG_ADMIN_LISTEN
               value: '0.0.0.0:8001'
             - name: KONG_PROXY_LISTEN

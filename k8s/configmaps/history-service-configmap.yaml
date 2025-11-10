@@ -15,9 +15,5 @@ data:
   # Logging
   LOG_LEVEL: 'info'
 
-  # CORS Configuration (update after getting domain/IP)
-  CORS_ORIGIN: 'http://34.8.234.19,http://localhost:3000'
-
-  # Note: DB credentials and JWT secret are fetched from Secret Manager:
-  # - history-service-db-connection-string (PostgreSQL connection)
-  # - user-service-jwt-secret (shared JWT secret)
+  # CORS Configuration
+  CORS_ORIGIN: 'http://34.8.234.19,https://34.8.234.19'

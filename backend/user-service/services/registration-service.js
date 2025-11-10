@@ -1,11 +1,15 @@
 import argon2 from 'argon2';
 import { UserRepository } from '../model/user-repository.js';
-import { emailService } from './email-service.js';
 import { otpService } from './otp-service.js';
 import { otpRedisService } from './redis/redis-otp-service.js';
 import { registrationRedisService } from './redis/redis-registration-service.js';
 
 const OTP_PURPOSE = 'registration';
+
+async function getEmailService() {
+  const { emailService } = await import('./email-service.js');
+  return emailService;
+}
 
 /**
  * Initiate registration - validate data, send OTP, but don't create user yet
@@ -71,12 +75,12 @@ export async function initiateRegistration(username, email, password, profile = 
 
   // Send OTP email
   try {
+    const emailService = await getEmailService();
     await emailService.sendRegistrationOTP(email, otpData.otp, {
       username,
     });
   } catch (error) {
     console.error('Failed to send registration OTP email:', error);
-    // Don't clean up - allow user to retry
     throw new Error('EMAIL_ERROR');
   }
 
@@ -188,6 +192,7 @@ export async function resendRegistrationOTP(email) {
 
   // Send OTP email
   try {
+    const emailService = await getEmailService();
     await emailService.sendRegistrationOTP(normalizedEmail, otpData.otp, {
       username: registrationData.username,
     });

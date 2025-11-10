@@ -14,7 +14,6 @@ const HistoryController = {
    */
   async createHistory(req, res, next) {
     try {
-      // Request body is already validated by validation middleware
       const history = await historyService.createHistory(req.body);
 
       res.status(201).json({
@@ -34,14 +33,11 @@ const HistoryController = {
    */
   async getUserHistory(req, res, next) {
     try {
-      // Request query is already validated by validation middleware
       const { user_id, limit, offset, difficulty, category, from_date, to_date } = req.query;
 
-      // Debug logging
       console.log('getUserHistory - Request user:', JSON.stringify(req.user));
       console.log('getUserHistory - Target user_id:', user_id);
 
-      // Authorization check: Ensure user can only access their own history (unless admin)
       if (!historyService.canAccessUserHistory(req.user, user_id)) {
         console.log(
           'getUserHistory - Access denied for user:',
@@ -55,7 +51,6 @@ const HistoryController = {
         });
       }
 
-      // Fetch user history with filters
       const result = await historyService.getUserHistory(user_id, {
         limit,
         offset,

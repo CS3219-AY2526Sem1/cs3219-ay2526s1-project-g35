@@ -1,21 +1,9 @@
 const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
 
-/**
- * Google Secret Manager Configuration
- * Fetches secrets from Google Cloud Secret Manager for the History Service
- */
-
 const client = new SecretManagerServiceClient();
 
-// GCP Project ID - set via environment variable
 const PROJECT_ID = process.env.GCP_PROJECT_ID || 'your-gcp-project-id';
 
-/**
- * Access a secret version from Google Secret Manager
- * @param {string} secretName - Name of the secret in Secret Manager
- * @param {string} version - Version of the secret (default: 'latest')
- * @returns {Promise<string>} - The secret value
- */
 async function accessSecretVersion(secretName, version = 'latest') {
   try {
     const name = `projects/${PROJECT_ID}/secrets/${secretName}/versions/${version}`;
@@ -38,15 +26,13 @@ async function loadSecrets() {
     console.log('Loading secrets from Google Secret Manager...');
 
     const secrets = {
-      // PostgreSQL Database Connection String (SENSITIVE - contains credentials)
       DB_CONNECTION_STRING: await accessSecretVersion('history-service-db-connection-string'),
-
-      // JWT Secret (SENSITIVE - cryptographic key for token verification)
-      // IMPORTANT: This should be the SAME secret used by user-service
-      JWT_SECRET: await accessSecretVersion('user-service-jwt-secret'),
+      JWT_SECRET: await accessSecretVersion('history-service-jwt-secret'),
     };
 
-    console.log('Secrets loaded successfully from Google Secret Manager');
+    console.log('✓ Loaded DB_CONNECTION_STRING from Secret Manager');
+    console.log('✓ Loaded JWT_SECRET from Secret Manager');
+    console.log('Secret Manager initialization complete');
     return secrets;
   } catch (error) {
     console.error('Error loading secrets:', error.message);
@@ -54,15 +40,10 @@ async function loadSecrets() {
   }
 }
 
-/**
- * Initialize environment variables from Google Secret Manager
- * Sets process.env with values from Secret Manager
- */
 async function initializeSecrets() {
   try {
     const secrets = await loadSecrets();
 
-    // Set environment variables
     Object.keys(secrets).forEach((key) => {
       process.env[key] = secrets[key];
     });

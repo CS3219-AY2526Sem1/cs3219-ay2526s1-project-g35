@@ -8,9 +8,8 @@ data:
   NODE_ENV: 'production'
   PORT: '8002'
 
-  # CORS Configuration (will be updated after you get domain/IP)
-  # For now allowing all, update after deployment for security
-  CORS_ORIGIN: 'http://34.8.234.19'
+  # CORS Configuration
+  CORS_ORIGIN: 'http://34.8.234.19,https://34.8.234.19'
 
   # Redis Configuration
   REDIS_ENABLED: 'true'

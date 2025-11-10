@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: analytics-service-config
+  namespace: peerprep
+data:
+  PORT: "8005"
+  NODE_ENV: "production"
+  CORS_ORIGINS: "http://34.8.234.19,https://34.8.234.19"
+  ENABLE_UPTIME_MONITOR: "true"
+  UPTIME_POLL_INTERVAL_CRON: "*/1 * * * *"
+  MONITORED_SERVICES: "user-service|http://user-service:8000/health,question-service|http://question-service:8001/health,matching-service|http://matching-service:8003/health,collaboration-service|http://collaboration-service:8002/health"
+  SERVICE_HEALTH_TIMEOUT_MS: "3000"
+  GCP_PROJECT_ID: "peerprep-475911"
+  USE_SECRET_MANAGER: "true"

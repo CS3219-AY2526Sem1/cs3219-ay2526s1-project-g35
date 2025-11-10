@@ -16,5 +16,6 @@ data:
   NEXT_PUBLIC_API_USER_URL: 'http://34.8.234.19/api/users'
   NEXT_PUBLIC_API_QUESTION_URL: 'http://34.8.234.19/api/questions'
   NEXT_PUBLIC_API_MATCHING_URL: 'http://34.8.234.19/api/matching'
+  NEXT_PUBLIC_API_HISTORY_URL: 'http://34.8.234.19/api/history'
   NEXT_PUBLIC_WS_COLLAB_URL: 'ws://34.8.234.19/api/collaboration'
   NEXT_PUBLIC_MATCHING_WS_URL: 'ws://34.8.234.19/api/matching/ws'

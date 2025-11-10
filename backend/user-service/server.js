@@ -12,15 +12,16 @@ const server = http.createServer(index);
 // Initialize secrets, database and Redis connections
 const initializeServices = async () => {
   try {
-    // Load secrets from Google Secret Manager (if enabled)
     if (process.env.USE_SECRET_MANAGER === 'true') {
       console.log('USE_SECRET_MANAGER is enabled, loading secrets...');
       await initializeSecrets();
+      
+      const { emailService } = await import('./services/email-service.js');
+      emailService.reinitialize();
     } else {
       console.log('USE_SECRET_MANAGER is not enabled, skipping secret loading');
     }
 
-    // Connect to MongoDB and Redis
     await Promise.all([connectToDB(), baseRedisService.connect()]);
 
     console.log('MongoDB Connected!');
@@ -32,7 +33,6 @@ const initializeServices = async () => {
     console.error('Failed to connect to services');
     console.error(err);
 
-    // Start server anyway for graceful degradation
     server.listen(port);
     console.log(
       'User service server listening on http://localhost:' +

@@ -24,7 +24,7 @@ class StorageService {
           console.error('Failed to parse GCS_SERVICE_ACCOUNT_KEY:', parseError);
         }
       } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        // Fallback to key file path
+
         storageOptions.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS;
         console.log('Using GCS service account from key file');
       } else {
@@ -70,7 +70,6 @@ class StorageService {
       const file = bucket.file(fileName);
 
       // Upload file without legacy ACL (uniform bucket-level access is enabled)
-      // Files are automatically public because bucket has allUsers:objectViewer IAM role
       await file.save(fileBuffer, {
         metadata: {
           contentType: mimetype,

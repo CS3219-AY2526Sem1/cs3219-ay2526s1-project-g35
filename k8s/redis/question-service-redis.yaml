@@ -76,3 +76,4 @@ spec:
       targetPort: 6380
       protocol: TCP
       name: redis
+

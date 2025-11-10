@@ -7,12 +7,12 @@ spec:
   connectionDraining:
     drainingTimeoutSec: 60
 
-  timeoutSec: 3600
+  timeoutSec: 86400  # 24 hours for long-lived WebSocket connections
   healthCheck:
     checkIntervalSec: 10
     timeoutSec: 5
     healthyThreshold: 2
     unhealthyThreshold: 3
     type: HTTP
-    requestPath: /
+    requestPath: /health
     port: 8003

@@ -103,9 +103,6 @@ class EmailService {
       console.log(
         `Email transporter created successfully for provider: ${this.emailConfig.provider}`,
       );
-
-      // Verify configuration
-      this.verifyConnection();
     } catch (error) {
       console.error('Failed to initialize email transporter:', error);
       this.isConfigured = false;
@@ -237,6 +234,36 @@ class EmailService {
       configured: this.isConfigured,
       provider: this.emailConfig.provider,
     };
+  }
+
+  /**
+   * Reinitialize the email service (useful after loading secrets)
+   */
+  async reinitialize() {
+    console.log('Reinitializing email service with updated credentials...');
+    this.emailConfig = {
+      enabled: process.env.EMAIL_ENABLED === 'true',
+      provider: process.env.EMAIL_PROVIDER,
+      fromEmail: process.env.EMAIL_FROM,
+      fromName: process.env.EMAIL_FROM_NAME,
+
+      mailtrap: {
+        host: process.env.MAILTRAP_HOST,
+        port: parseInt(process.env.MAILTRAP_PORT),
+        user: process.env.MAILTRAP_USER,
+        pass: process.env.MAILTRAP_PASS,
+      },
+
+      smtp: {
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT),
+        secure: process.env.SMTP_SECURE === 'true',
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    };
+    this.initializeTransporter();
+    await this.verifyConnection();
   }
 }
 

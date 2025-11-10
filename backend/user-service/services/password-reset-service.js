@@ -1,10 +1,14 @@
 import argon2 from 'argon2';
 import { UserRepository } from '../model/user-repository.js';
-import { emailService } from './email-service.js';
 import { otpService } from './otp-service.js';
 import { otpRedisService } from './redis/redis-otp-service.js';
 
 const OTP_PURPOSE = 'password-reset';
+
+async function getEmailService() {
+  const { emailService } = await import('./email-service.js');
+  return emailService;
+}
 
 export async function initiatePasswordReset(email) {
   const normalizedEmail = email.toLowerCase();
@@ -31,6 +35,7 @@ export async function initiatePasswordReset(email) {
   }
 
   try {
+    const emailService = await getEmailService();
     await emailService.sendOTP(normalizedEmail, otpData.otp, 'Password Reset', {
       username: user.username,
       expiryMinutes: Math.floor(otpData.ttl / 60),
@@ -160,6 +165,7 @@ export async function resendPasswordResetOTP(email) {
   }
 
   try {
+    const emailService = await getEmailService();
     await emailService.sendOTP(normalizedEmail, otpData.otp, 'Password Reset', {
       username: user.username,
       expiryMinutes: Math.floor(otpData.ttl / 60),

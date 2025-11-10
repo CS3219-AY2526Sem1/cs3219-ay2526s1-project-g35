@@ -27,12 +27,6 @@ const { verifyToken, verifyAdmin } = require('../middleware/jwtAuth'); // Change
 // GET /api/questions - Get all questions
 router.get('/', verifyToken, QuestionController.getAllQuestions);
 
-//GET /api/questions/recent10 - Get the 10 most recently updated questions
-router.get('/recent10', verifyToken, QuestionController.getRecentTenQuestions);
-
-// GET /api/questions/search - Search questions with filters
-router.get('/search', verifyToken, QuestionController.searchQuestions);
-
 // GET /api/questions/random - Get random question by topic and difficulty (for matching)
 // Query params: ?topic=Arrays&difficulty=Easy
 router.get('/random', verifyToken, QuestionController.getRandomQuestion);
@@ -55,11 +49,8 @@ router.get('/categories', verifyToken, QuestionController.getAllCategories);
 
 // GET /api/questions/difficulties - Get all difficulty levels
 router.get('/difficulties', verifyToken, QuestionController.getAllDifficulties);
-
 // GET /api/questions/:id - Get a single question by ID
-// NOTE: No auth required - used by collaboration service for internal service-to-service calls
-// The collaboration service has already authenticated users via Socket.IO
-router.get('/:id', QuestionController.getQuestionById);
+router.get('/:id', verifyToken, QuestionController.getQuestionById);
 
 // ============================================
 // Admin-Only Routes

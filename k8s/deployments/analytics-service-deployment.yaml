@@ -1,41 +1,42 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: collaboration-service
+  name: analytics-service
   namespace: peerprep
   labels:
-    app: collaboration-service
+    app: analytics-service
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: collaboration-service
+      app: analytics-service
   template:
     metadata:
       labels:
-        app: collaboration-service
+        app: analytics-service
     spec:
-      serviceAccountName: collaboration-service-sa
+      serviceAccountName: peerprep-analytics-service
       containers:
-        - name: collaboration-service
-          image: gcr.io/peerprep-475911/collaboration-service:v1.9
+        - name: analytics-service
+          image: gcr.io/peerprep-475911/analytics-service:v1.0.2
+          imagePullPolicy: Always
           ports:
-            - containerPort: 8002
+            - containerPort: 8005
               name: http
           envFrom:
             - configMapRef:
-                name: collaboration-service-config
+                name: analytics-service-config
           resources:
             requests:
-              memory: '256Mi'
-              cpu: '250m'
+              memory: "256Mi"
+              cpu: "250m"
             limits:
-              memory: '512Mi'
-              cpu: '500m'
+              memory: "512Mi"
+              cpu: "500m"
           livenessProbe:
             httpGet:
               path: /health
-              port: 8002
+              port: 8005
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -43,7 +44,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 8002
+              port: 8005
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 3

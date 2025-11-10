@@ -8,12 +8,12 @@ data:
   NODE_ENV: 'production'
   PORT: '8001'
 
-  # CORS Configuration (will be updated after you get domain/IP)
-  # For now allowing all, update after deployment for security
-  ALLOWED_ORIGINS: 'http://34.8.234.19'
+  # CORS Configuration
+  ALLOWED_ORIGINS: 'http://34.8.234.19,https://34.8.234.19'
 
   # Redis Configuration
-  REDIS_URL: 'redis://question-service-redis-service:6380'
+  REDIS_HOST: 'question-service-redis-service'
+  REDIS_PORT: '6380'
 
   # GCP Configuration
   GCP_PROJECT_ID: 'peerprep-475911'

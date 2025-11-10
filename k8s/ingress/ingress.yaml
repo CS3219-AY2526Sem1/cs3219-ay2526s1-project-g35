@@ -61,7 +61,24 @@ spec:
                 port:
                   number: 8003
 
-          # Frontend - all other paths (must be last)
+          # History Service
+          - path: /api/history/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: history-service
+                port:
+                  number: 8004
+
+          # Analytics Service
+          - path: /api/analytics/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: analytics-service
+                port:
+                  number: 8005
+
           - path: /*
             pathType: ImplementationSpecific
             backend:

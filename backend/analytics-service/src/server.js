@@ -3,11 +3,14 @@ const http = require('http');
 const app = require('./index');
 const { connectDatabase } = require('./config/database');
 const { startUptimeMonitor } = require('./workers/uptimeMonitor');
+const { loadSecrets } = require('./config/secretManager');
 
 const PORT = process.env.PORT || 8005;
 
 const startServer = async () => {
   try {
+    await loadSecrets();
+
     await connectDatabase();
 
     const server = http.createServer(app);
