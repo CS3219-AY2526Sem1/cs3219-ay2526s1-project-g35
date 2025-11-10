@@ -156,10 +156,11 @@ const Session = (): React.ReactElement => {
           } else if (typeof matchedData.question.starterCode === 'object') {
             // Use the current language's starter code, fallback to python
             const starterCodeObj = matchedData.question.starterCode as Record<string, string>;
-            const languageCode = starterCodeObj[selectedLanguage] || 
-                                starterCodeObj.python || 
-                                starterCodeObj.javascript || 
-                                '';
+            const languageCode =
+              starterCodeObj[selectedLanguage] ||
+              starterCodeObj.python ||
+              starterCodeObj.javascript ||
+              '';
             setCode(languageCode);
           }
         }

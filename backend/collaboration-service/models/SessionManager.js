@@ -59,7 +59,7 @@ class SessionManager {
 
     // Determine the default language (prefer python)
     const defaultLanguage = questionDetails?.preferredLanguage || 'python';
-    
+
     // Get starter code for the selected language
     // starterCode can be either a string (old format) or an object with language keys (new format)
     let initialCode = '';
@@ -69,10 +69,11 @@ class SessionManager {
         initialCode = questionDetails.starterCode;
       } else if (typeof questionDetails.starterCode === 'object') {
         // New format: starterCode is an object with language keys
-        initialCode = questionDetails.starterCode[defaultLanguage] || 
-                     questionDetails.starterCode.python || 
-                     questionDetails.starterCode.javascript || 
-                     '';
+        initialCode =
+          questionDetails.starterCode[defaultLanguage] ||
+          questionDetails.starterCode.python ||
+          questionDetails.starterCode.javascript ||
+          '';
       }
     }
 

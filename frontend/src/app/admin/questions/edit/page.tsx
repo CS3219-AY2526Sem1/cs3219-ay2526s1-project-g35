@@ -50,7 +50,7 @@ const createTestCase = (
   // Handle both old format (input/expectedOutput) and new format (params/expected)
   let input = '';
   let expectedOutput = '';
-  
+
   if (initial) {
     // If old format exists, use it
     if (typeof initial.input === 'string') {
@@ -62,17 +62,18 @@ const createTestCase = (
         .map((param) => (typeof param === 'string' ? `"${param}"` : JSON.stringify(param)))
         .join(', ');
     }
-    
+
     // Same for expected output
     if (typeof initial.expectedOutput === 'string') {
       expectedOutput = initial.expectedOutput;
     } else if (initial.expected !== undefined) {
-      expectedOutput = typeof initial.expected === 'string' 
-        ? `"${initial.expected}"` 
-        : JSON.stringify(initial.expected);
+      expectedOutput =
+        typeof initial.expected === 'string'
+          ? `"${initial.expected}"`
+          : JSON.stringify(initial.expected);
     }
   }
-  
+
   return {
     id:
       initial?.id ??

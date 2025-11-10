@@ -275,10 +275,10 @@ wss.on('connection', (ws) => {
                 'You are already searching or matched from another device or tab. Close that session to try again.',
             }),
           );
-        } catch (e) { }
+        } catch (e) {}
         try {
           ws.close(1000, 'Duplicate user connection');
-        } catch (e) { }
+        } catch (e) {}
         return;
       }
 

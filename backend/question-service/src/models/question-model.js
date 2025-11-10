@@ -330,9 +330,7 @@ ${paramDocs}
 
 // Java template generator
 questionSchema.statics.generateJavaTemplate = function (funcName, params, returnType) {
-  const paramList = params
-    .map((p) => `${this.getJavaType(p.type)} ${p.name}`)
-    .join(', ');
+  const paramList = params.map((p) => `${this.getJavaType(p.type)} ${p.name}`).join(', ');
 
   return `class Solution {
     /**
@@ -348,9 +346,7 @@ questionSchema.statics.generateJavaTemplate = function (funcName, params, return
 
 // C++ template generator
 questionSchema.statics.generateCppTemplate = function (funcName, params, returnType) {
-  const paramList = params
-    .map((p) => `${this.getCppType(p.type)} ${p.name}`)
-    .join(', ');
+  const paramList = params.map((p) => `${this.getCppType(p.type)} ${p.name}`).join(', ');
 
   return `class Solution {
 public:

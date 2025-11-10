@@ -177,7 +177,7 @@ class CodeExecutor {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => { });
+      await fs.unlink(tempFile).catch(() => {});
     } catch (error) {
       // Catch execution errors (timeout, file errors, etc.)
       results.success = false;
@@ -193,7 +193,7 @@ class CodeExecutor {
       // Clean up on error
       try {
         const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.py`);
-        await fs.unlink(tempFile).catch(() => { });
+        await fs.unlink(tempFile).catch(() => {});
       } catch (cleanupError) {
         // Ignore cleanup errors
       }
@@ -375,7 +375,7 @@ except Exception as e:
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -508,7 +508,7 @@ class SolutionTests {
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -602,7 +602,7 @@ int main() {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => { });
+      await fs.unlink(tempFile).catch(() => {});
     } catch (error) {
       results.success = false;
       results.error = error.message;

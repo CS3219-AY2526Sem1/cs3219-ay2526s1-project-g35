@@ -167,25 +167,25 @@ const setupSocketHandlers = (io, sessionManager) => {
         // Get session and check for starter code
         const session = sessionManager.getSession(sessionId);
         const oldLanguage = session?.language;
-        
+
         // Update language in session
         const result = sessionManager.updateLanguage(sessionId, language);
 
         if (result.success) {
           let newCode = null;
-          
+
           // If question has starterCode object with multiple languages, update code
           if (session?.problem?.starterCode && typeof session.problem.starterCode === 'object') {
             const starterCode = session.problem.starterCode;
-            
+
             // Get new language's starter code
             const newLanguageCode = starterCode[language];
-            
+
             if (newLanguageCode) {
               // Check if current code is empty or is the old language's starter code
               const oldLanguageCode = starterCode[oldLanguage];
               const currentCode = session.code || '';
-              
+
               // Auto-switch to new starter code if:
               // 1. Current code is empty or whitespace only
               // 2. Current code matches the old language's starter code (user hasn't modified it)
@@ -195,7 +195,7 @@ const setupSocketHandlers = (io, sessionManager) => {
               }
             }
           }
-          
+
           // Broadcast language change to all users
           io.to(sessionId).emit('language-update', {
             language,
