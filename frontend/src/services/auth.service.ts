@@ -37,6 +37,7 @@ class AuthService {
       const response: AxiosResponse<AuthResponse> = await apiClient.post(
         `${this.AUTH_BASE_PATH}/login`,
         credentials,
+        { withCredentials: true },
       );
       return response.data;
     } catch (error) {
@@ -94,6 +95,58 @@ class AuthService {
       const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
         `${this.AUTH_BASE_PATH}/register/resend-otp`,
         { email },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async initiatePasswordReset(email: string): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/password-reset/initiate`,
+        { email },
+        { withCredentials: false },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async verifyPasswordResetOTP(email: string, otp: string): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/password-reset/verify`,
+        { email, otp },
+        { withCredentials: false },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async resetPassword(email: string, otp: string, newPassword: string): Promise<AuthResponse> {
+    try {
+      const response: AxiosResponse<AuthResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/password-reset/reset`,
+        { email, otp, newPassword },
+        { withCredentials: false },
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async resendPasswordResetOTP(email: string): Promise<SendOTPResponse> {
+    try {
+      const response: AxiosResponse<SendOTPResponse> = await apiClient.post(
+        `${this.AUTH_BASE_PATH}/password-reset/resend-otp`,
+        { email },
+        { withCredentials: false },
       );
       return response.data;
     } catch (error) {

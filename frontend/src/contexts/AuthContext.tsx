@@ -14,7 +14,7 @@ import {
   LoginCredentials,
   RegisterCredentials,
 } from '@/types/auth.types';
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -210,18 +210,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  const value: AuthContextType = {
-    ...authState,
-    login,
-    logout,
-    register,
-    clearError,
-    verifySession,
-    initiateRegistration,
-    completeRegistration,
-    resendRegistrationOTP,
-    updateUser,
-  };
+  const passwordResetApi = useMemo(
+    () => ({
+      initiatePasswordReset: authService.initiatePasswordReset.bind(authService),
+      verifyPasswordResetOTP: authService.verifyPasswordResetOTP.bind(authService),
+      resetPassword: authService.resetPassword.bind(authService),
+      resendPasswordResetOTP: authService.resendPasswordResetOTP.bind(authService),
+    }),
+    [],
+  );
+
+  const value: AuthContextType = useMemo(
+    () => ({
+      ...authState,
+      login,
+      logout,
+      register,
+      clearError,
+      verifySession,
+      initiateRegistration,
+      completeRegistration,
+      resendRegistrationOTP,
+      updateUser,
+      ...passwordResetApi,
+    }),
+    [
+      authState,
+      login,
+      logout,
+      register,
+      clearError,
+      verifySession,
+      initiateRegistration,
+      completeRegistration,
+      resendRegistrationOTP,
+      updateUser,
+      passwordResetApi,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
