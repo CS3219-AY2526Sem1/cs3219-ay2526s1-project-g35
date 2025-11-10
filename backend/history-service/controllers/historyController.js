@@ -1,20 +1,8 @@
 const historyService = require('../services/historyService');
 
-/**
- * History Controller
- * Handles HTTP requests and responses for history endpoints
- * Delegates business logic to HistoryService
- */
-
 const HistoryController = {
-  /**
-   * Create a new history entry
-   * POST /history
-   * Body: { user_id, question_title, difficulty, category, ... }
-   */
   async createHistory(req, res, next) {
     try {
-      // Request body is already validated by validation middleware
       const history = await historyService.createHistory(req.body);
 
       res.status(201).json({
@@ -27,21 +15,13 @@ const HistoryController = {
     }
   },
 
-  /**
-   * Get history for authenticated user
-   * GET /history
-   * Query params: user_id (required), limit, offset, difficulty, category, from_date, to_date
-   */
   async getUserHistory(req, res, next) {
     try {
-      // Request query is already validated by validation middleware
       const { user_id, limit, offset, difficulty, category, from_date, to_date } = req.query;
 
-      // Debug logging
       console.log('getUserHistory - Request user:', JSON.stringify(req.user));
       console.log('getUserHistory - Target user_id:', user_id);
 
-      // Authorization check: Ensure user can only access their own history (unless admin)
       if (!historyService.canAccessUserHistory(req.user, user_id)) {
         console.log(
           'getUserHistory - Access denied for user:',
@@ -55,7 +35,6 @@ const HistoryController = {
         });
       }
 
-      // Fetch user history with filters
       const result = await historyService.getUserHistory(user_id, {
         limit,
         offset,
@@ -67,7 +46,7 @@ const HistoryController = {
 
       res.status(200).json({
         success: true,
-        count: result.totalCount, // Use totalCount for pagination
+        count: result.totalCount,
         totalCount: result.totalCount,
         data: result.histories,
         pagination: {
@@ -81,11 +60,6 @@ const HistoryController = {
     }
   },
 
-  /**
-   * Get admin statistics
-   * GET /admin/stats
-   * Requires admin authentication
-   */
   async getAdminStats(req, res, next) {
     try {
       const stats = await historyService.getAdminStats();
@@ -99,10 +73,6 @@ const HistoryController = {
     }
   },
 
-  /**
-   * Get statistics by category
-   * GET /admin/stats/category
-   */
   async getStatsByCategory(req, res, next) {
     try {
       const stats = await historyService.getStatsByCategory();
@@ -116,10 +86,6 @@ const HistoryController = {
     }
   },
 
-  /**
-   * Get statistics by difficulty
-   * GET /admin/stats/difficulty
-   */
   async getStatsByDifficulty(req, res, next) {
     try {
       const stats = await historyService.getStatsByDifficulty();
@@ -133,10 +99,6 @@ const HistoryController = {
     }
   },
 
-  /**
-   * Get statistics by user
-   * GET /admin/stats/user
-   */
   async getStatsByUser(req, res, next) {
     try {
       const { limit, offset } = req.query;

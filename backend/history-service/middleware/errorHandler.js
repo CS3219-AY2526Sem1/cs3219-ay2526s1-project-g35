@@ -1,12 +1,3 @@
-/**
- * Global Error Handler Middleware
- * Centralized error handling for the History Service
- */
-
-/**
- * Error handler middleware
- * Catches and formats all errors in a consistent manner
- */
 const errorHandler = (err, req, res, next) => {
   console.error('Error:', {
     message: err.message,
@@ -15,7 +6,6 @@ const errorHandler = (err, req, res, next) => {
     method: req.method,
   });
 
-  // Sequelize Validation Error
   if (err.name === 'SequelizeValidationError') {
     const errors = err.errors.map((e) => ({
       field: e.path,
@@ -29,7 +19,6 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Sequelize Unique Constraint Error
   if (err.name === 'SequelizeUniqueConstraintError') {
     return res.status(409).json({
       success: false,
@@ -38,7 +27,6 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Sequelize Database Error
   if (err.name === 'SequelizeDatabaseError') {
     return res.status(500).json({
       success: false,
@@ -47,7 +35,6 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Sequelize Connection Error
   if (err.name === 'SequelizeConnectionError') {
     return res.status(503).json({
       success: false,
@@ -56,7 +43,6 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // JWT Errors
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
       success: false,
@@ -71,7 +57,6 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Custom API Errors (with statusCode property)
   if (err.statusCode) {
     return res.status(err.statusCode).json({
       success: false,
@@ -80,7 +65,6 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Default error response
   res.status(500).json({
     success: false,
     error: 'Internal server error',
@@ -88,10 +72,6 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-/**
- * 404 Not Found handler
- * Handles routes that don't exist
- */
 const notFoundHandler = (req, res) => {
   res.status(404).json({
     success: false,

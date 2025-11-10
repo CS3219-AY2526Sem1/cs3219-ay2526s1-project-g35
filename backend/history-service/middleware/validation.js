@@ -1,15 +1,6 @@
 const Joi = require('joi');
 
-/**
- * Request Validation Middleware
- * Validates request body, query parameters, and params using Joi schemas
- */
-
-/**
- * Validation schemas for history service
- */
 const schemas = {
-  // Create history entry
   createHistory: Joi.object({
     user_id: Joi.string().trim().min(1).max(255).required().messages({
       'string.empty': 'User ID is required',
@@ -42,12 +33,15 @@ const schemas = {
       'any.required': 'Category is required',
     }),
 
-    status: Joi.string().valid('attempted', 'incomplete', 'completed').optional().default('attempted').messages({
-      'any.only': 'Status must be attempted, incomplete, or completed',
-    }),
+    status: Joi.string()
+      .valid('attempted', 'incomplete', 'completed')
+      .optional()
+      .default('attempted')
+      .messages({
+        'any.only': 'Status must be attempted, incomplete, or completed',
+      }),
   }),
 
-  // Get user history query parameters
   getUserHistory: Joi.object({
     user_id: Joi.string().trim().min(1).required().messages({
       'string.empty': 'User ID is required',
@@ -85,14 +79,11 @@ const schemas = {
   }),
 };
 
-/**
- * Validate request body
- */
 const validateBody = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.body, {
-      abortEarly: false, // Return all errors, not just the first one
-      stripUnknown: true, // Remove unknown fields
+      abortEarly: false,
+      stripUnknown: true,
     });
 
     if (error) {
@@ -108,15 +99,11 @@ const validateBody = (schema) => {
       });
     }
 
-    // Replace req.body with validated and sanitized value
     req.body = value;
     next();
   };
 };
 
-/**
- * Validate query parameters
- */
 const validateQuery = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.query, {
@@ -142,9 +129,6 @@ const validateQuery = (schema) => {
   };
 };
 
-/**
- * Validate URL parameters
- */
 const validateParams = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.params, {
@@ -170,21 +154,15 @@ const validateParams = (schema) => {
   };
 };
 
-/**
- * Sanitize user input to prevent XSS and injection attacks
- */
 const sanitizeInput = (req, res, next) => {
-  // Sanitize body
   if (req.body) {
     req.body = sanitizeObject(req.body);
   }
 
-  // Sanitize query
   if (req.query) {
     req.query = sanitizeObject(req.query);
   }
 
-  // Sanitize params
   if (req.params) {
     req.params = sanitizeObject(req.params);
   }
@@ -192,18 +170,13 @@ const sanitizeInput = (req, res, next) => {
   next();
 };
 
-/**
- * Helper function to sanitize an object
- */
 function sanitizeObject(obj) {
   const sanitized = {};
 
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
-      // Trim whitespace
       let sanitizedValue = value.trim();
 
-      // Remove null bytes
       sanitizedValue = sanitizedValue.replace(/\0/g, '');
 
       sanitized[key] = sanitizedValue;

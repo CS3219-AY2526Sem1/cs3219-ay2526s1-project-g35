@@ -1,21 +1,11 @@
 const { Sequelize } = require('sequelize');
 
-/**
- * PostgreSQL Database Configuration
- * Manages connection to PostgreSQL database using Sequelize ORM
- */
-
 let sequelize;
 
-/**
- * Initialize Sequelize instance with database connection
- * Supports both connection string and individual parameters
- */
 function createSequelizeInstance() {
   const connectionString = process.env.DB_CONNECTION_STRING;
 
   if (connectionString) {
-    // Use connection string (recommended for production with Secret Manager)
     console.log('Connecting to PostgreSQL using connection string...');
     sequelize = new Sequelize(connectionString, {
       dialect: 'postgres',
@@ -31,13 +21,12 @@ function createSequelizeInstance() {
           process.env.NODE_ENV === 'production'
             ? {
                 require: true,
-                rejectUnauthorized: false, // Required for Cloud SQL
+                rejectUnauthorized: false,
               }
             : false,
       },
     });
   } else {
-    // Use individual parameters (for local development)
     console.log('Connecting to PostgreSQL using individual parameters...');
     const dbConfig = {
       host: process.env.DB_HOST || 'localhost',
@@ -70,28 +59,21 @@ function createSequelizeInstance() {
   return sequelize;
 }
 
-/**
- * Connect to PostgreSQL database
- * Tests the connection and initializes models
- */
 async function connectDB() {
   try {
     if (!sequelize) {
       createSequelizeInstance();
     }
 
-    // Test the connection
     await sequelize.authenticate();
     console.log('PostgreSQL Connected Successfully!');
     console.log(`Database: ${sequelize.config.database}`);
 
-    // Sync models in development (creates tables if they don't exist)
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync({ alter: false });
       console.log('Database models synchronized');
     }
 
-    // Handle application termination
     process.on('SIGINT', async () => {
       await sequelize.close();
       console.log('PostgreSQL connection closed due to app termination');
@@ -109,10 +91,6 @@ async function connectDB() {
   }
 }
 
-/**
- * Get the Sequelize instance
- * @returns {Sequelize} - Sequelize instance
- */
 function getSequelize() {
   if (!sequelize) {
     throw new Error('Database not initialized. Call connectDB() first.');
@@ -120,9 +98,6 @@ function getSequelize() {
   return sequelize;
 }
 
-/**
- * Close the database connection
- */
 async function closeDB() {
   if (sequelize) {
     await sequelize.close();

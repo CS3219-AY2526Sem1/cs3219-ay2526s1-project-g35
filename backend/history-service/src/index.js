@@ -7,11 +7,6 @@ const historyRoutes = require('../routes/historyRoutes');
 const { errorHandler, notFoundHandler } = require('../middleware/errorHandler');
 const { setupSwagger } = require('../config/swagger');
 
-/**
- * Express Application Setup
- * Configures middleware and routes for the History Service
- */
-
 const app = express();
 
 app.use(
@@ -46,16 +41,6 @@ if (process.env.NODE_ENV === 'development') {
 
 setupSwagger(app);
 
-/**
- * @swagger
- * /health:
- *   get:
- *     summary: Health check endpoint
- *     tags: [Health]
- *     responses:
- *       200:
- *         description: Service is healthy
- */
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -65,19 +50,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
-// Mount at root since gateway strips /api/history prefix
-// Add debug middleware to log all incoming requests
 app.use((req, res, next) => {
   console.log(`[History Service] ${req.method} ${req.path} - Query:`, req.query);
   next();
 });
 app.use('/', historyRoutes);
 
-// 404 handler
 app.use(notFoundHandler);
 
-// Global error handler (must be last)
 app.use(errorHandler);
 
 module.exports = app;

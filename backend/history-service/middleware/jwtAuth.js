@@ -1,25 +1,12 @@
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 
-/**
- * JWT Authentication Middleware
- * Verifies JWT tokens from cookies or Authorization header
- */
-
-// User service URL for token verification
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:8000';
 
-/**
- * Verify JWT token and extract user information
- * Supports both cookie-based and header-based authentication
- * Also verifies with user service to get complete user data including isAdmin
- */
 const verifyToken = async (req, res, next) => {
   try {
-    // Try to get token from cookie first (preferred method)
     let token = req.cookies?.accessToken || req.cookies?.token;
 
-    // Fallback to Authorization header
     if (!token) {
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -34,7 +21,6 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    // Verify token with JWT secret (basic validation)
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
       console.error('JWT_SECRET is not configured');
@@ -46,7 +32,6 @@ const verifyToken = async (req, res, next) => {
 
     const decoded = jwt.verify(token, jwtSecret);
 
-    // Verify with user service to get complete user data including isAdmin
     try {
       const response = await axios.get(`${USER_SERVICE_URL}/auth/verify-token`, {
         headers: {
@@ -55,7 +40,6 @@ const verifyToken = async (req, res, next) => {
       });
 
       if (response.data && response.data.data) {
-        // Use data from user service
         req.user = {
           id: response.data.data.id,
           email: response.data.data.email,
@@ -64,7 +48,6 @@ const verifyToken = async (req, res, next) => {
           role: response.data.data.isAdmin === true ? 'admin' : 'user',
         };
       } else {
-        // Fallback to decoded JWT data
         req.user = {
           id: decoded.id || decoded.userId || decoded.sub,
           email: decoded.email,
@@ -75,7 +58,6 @@ const verifyToken = async (req, res, next) => {
       }
     } catch (verifyError) {
       console.error('User service verification error:', verifyError.message);
-      // Fallback to decoded JWT data if user service is unavailable
       req.user = {
         id: decoded.id || decoded.userId || decoded.sub,
         email: decoded.email,
@@ -110,11 +92,6 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-/**
- * Optional authentication middleware
- * Verifies token if present, but doesn't fail if missing
- * Useful for endpoints that have different behavior for authenticated users
- */
 const optionalAuth = (req, res, next) => {
   try {
     let token = req.cookies?.accessToken || req.cookies?.token;
@@ -127,7 +104,6 @@ const optionalAuth = (req, res, next) => {
     }
 
     if (!token) {
-      // No token provided, continue without authentication
       req.user = null;
       return next();
     }
@@ -144,17 +120,11 @@ const optionalAuth = (req, res, next) => {
 
     next();
   } catch (error) {
-    // Token verification failed, continue without authentication
     req.user = null;
     next();
   }
 };
 
-/**
- * Admin role verification middleware
- * Requires user to be authenticated
- * TODO: Add proper admin verification once user service integration is stable
- */
 const requireAdmin = async (req, res, next) => {
   try {
     if (!req.user) {
@@ -164,8 +134,6 @@ const requireAdmin = async (req, res, next) => {
       });
     }
 
-    // For now, just allow any authenticated user
-    // TODO: Verify with user service to check isAdmin status
     console.log('Admin endpoint accessed by user:', req.user.id);
     return next();
   } catch (error) {
