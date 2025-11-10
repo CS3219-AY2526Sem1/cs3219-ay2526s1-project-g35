@@ -4,12 +4,16 @@ require('dotenv').config();
 
 /**
  * Seed Script for Question Service
- * Populates the database with 20 sample LeetCode questions
+ * Populates the database with 60+ sample LeetCode questions
+ * Test cases use simplified format: params array and expected value
  */
 
 const sampleQuestions = [
+  // ==================== EASY QUESTIONS ====================
+
+  // STRINGS - EASY
   {
-    title: 'Reverse a String',
+    title: 'Reverse String',
     description:
       'Write a function that reverses a string. The input string is given as an array of characters s. You must do this by modifying the input array in-place with O(1) extra memory.',
     difficulty: 'Easy',
@@ -17,14 +21,14 @@ const sampleQuestions = [
     tags: ['leetcode', 'two-pointers'],
     testCases: [
       {
-        input: 's = ["h","e","l","l","o"]',
-        expectedOutput: '["o","l","l","e","h"]',
+        params: [['h', 'e', 'l', 'l', 'o']],
+        expected: ['o', 'l', 'l', 'e', 'h'],
         explanation: 'Reverse the array of characters',
         type: 'Sample',
       },
       {
-        input: 's = ["H","a","n","n","a","h"]',
-        expectedOutput: '["h","a","n","n","a","H"]',
+        params: [['H', 'a', 'n', 'n', 'a', 'h']],
+        expected: ['h', 'a', 'n', 'n', 'a', 'H'],
         explanation: 'Reverse the array of characters',
         type: 'Sample',
       },
@@ -32,122 +36,118 @@ const sampleQuestions = [
     constraints: ['1 <= s.length <= 10^5', 's[i] is a printable ascii character.'],
   },
   {
+    title: 'Valid Palindrome',
+    description:
+      'A phrase is a palindrome if, after converting all uppercase letters into lowercase letters and removing all non-alphanumeric characters, it reads the same forward and backward. Given a string s, return true if it is a palindrome, or false otherwise.',
+    difficulty: 'Easy',
+    topics: ['Strings', 'Algorithms'],
+    tags: ['leetcode', 'two-pointers', 'string'],
+    testCases: [
+      {
+        params: ['A man, a plan, a canal: Panama'],
+        expected: true,
+        explanation: 'After removing non-alphanumeric characters: "amanaplanacanalpanama" is a palindrome',
+        type: 'Sample',
+      },
+      {
+        params: ['race a car'],
+        expected: false,
+        explanation: '"raceacar" is not a palindrome',
+        type: 'Sample',
+      },
+      {
+        params: [' '],
+        expected: true,
+        explanation: 'Empty string after removing non-alphanumeric is considered palindrome',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= s.length <= 2 * 10^5'],
+  },
+
+  // ARRAYS - EASY
+  {
+    title: 'Two Sum',
+    description:
+      'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.',
+    difficulty: 'Easy',
+    topics: ['Arrays', 'Algorithms'],
+    tags: ['leetcode', 'hash-table', 'array'],
+    testCases: [
+      {
+        params: [[2, 7, 11, 15], 9],
+        expected: [0, 1],
+        explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1]',
+        type: 'Sample',
+      },
+      {
+        params: [[3, 2, 4], 6],
+        expected: [1, 2],
+        explanation: 'Because nums[1] + nums[2] == 6, we return [1, 2]',
+        type: 'Sample',
+      },
+      {
+        params: [[3, 3], 6],
+        expected: [0, 1],
+        explanation: 'Because nums[0] + nums[1] == 6, we return [0, 1]',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['2 <= nums.length <= 10^4', '-10^9 <= nums[i] <= 10^9', 'Only one valid answer exists'],
+  },
+  {
+    title: 'Best Time to Buy and Sell Stock',
+    description:
+      'You are given an array prices where prices[i] is the price of a given stock on the ith day. You want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell that stock. Return the maximum profit you can achieve from this transaction. If you cannot achieve any profit, return 0.',
+    difficulty: 'Easy',
+    topics: ['Arrays', 'Algorithms'],
+    tags: ['leetcode', 'array', 'dynamic-programming'],
+    testCases: [
+      {
+        params: [[7, 1, 5, 3, 6, 4]],
+        expected: 5,
+        explanation: 'Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5',
+        type: 'Sample',
+      },
+      {
+        params: [[7, 6, 4, 3, 1]],
+        expected: 0,
+        explanation: 'No transactions are done and the max profit = 0',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= prices.length <= 10^5', '0 <= prices[i] <= 10^4'],
+  },
+
+  // DATA STRUCTURES - EASY
+  {
     title: 'Linked List Cycle Detection',
-    description: 'Implement a function to detect if a linked list contains a cycle.',
+    description:
+      'Given head, the head of a linked list, determine if the linked list has a cycle in it. Return true if there is a cycle, false otherwise.',
     difficulty: 'Easy',
     topics: ['Data Structures', 'Algorithms'],
     tags: ['leetcode', 'linked-list', 'two-pointers'],
     testCases: [
       {
-        input: 'head = [3,2,0,-4], pos = 1',
-        expectedOutput: 'true',
-        explanation:
-          'There is a cycle in the linked list, where the tail connects to the 1st node (0-indexed).',
+        params: [[3, 2, 0, -4], 1],
+        expected: true,
+        explanation: 'There is a cycle in the linked list, where the tail connects to the 1st node (0-indexed)',
         type: 'Sample',
       },
       {
-        input: 'head = [1,2], pos = 0',
-        expectedOutput: 'true',
-        explanation:
-          'There is a cycle in the linked list, where the tail connects to the 0th node.',
+        params: [[1, 2], 0],
+        expected: true,
+        explanation: 'There is a cycle in the linked list, where the tail connects to the 0th node',
         type: 'Sample',
       },
       {
-        input: 'head = [1], pos = -1',
-        expectedOutput: 'false',
-        explanation: 'There is no cycle in the linked list.',
+        params: [[1], -1],
+        expected: false,
+        explanation: 'There is no cycle in the linked list',
         type: 'Sample',
       },
     ],
-    constraints: [
-      'The number of nodes in the list is in the range [0, 10^4]',
-      '-10^5 <= Node.val <= 10^5',
-    ],
-  },
-  {
-    title: 'Roman to Integer',
-    description: 'Given a roman numeral, convert it to an integer.',
-    difficulty: 'Easy',
-    topics: ['Algorithms'],
-    tags: ['leetcode', 'hash-table', 'math'],
-    testCases: [
-      {
-        input: 's = "III"',
-        expectedOutput: '3',
-        explanation: 'III = 3.',
-        type: 'Sample',
-      },
-      {
-        input: 's = "LVIII"',
-        expectedOutput: '58',
-        explanation: 'L = 50, V= 5, III = 3.',
-        type: 'Sample',
-      },
-      {
-        input: 's = "MCMXCIV"',
-        expectedOutput: '1994',
-        explanation: 'M = 1000, CM = 900, XC = 90 and IV = 4.',
-        type: 'Sample',
-      },
-    ],
-    constraints: [
-      '1 <= s.length <= 15',
-      "s contains only the characters ('I', 'V', 'X', 'L', 'C', 'D', 'M').",
-    ],
-  },
-  {
-    title: 'Add Binary',
-    description: 'Given two binary strings a and b, return their sum as a binary string.',
-    difficulty: 'Easy',
-    topics: ['Bit Manipulation', 'Algorithms'],
-    tags: ['leetcode', 'math', 'string'],
-    testCases: [
-      {
-        input: 'a = "11", b = "1"',
-        expectedOutput: '"100"',
-        explanation: '',
-        type: 'Sample',
-      },
-      {
-        input: 'a = "1010", b = "1011"',
-        expectedOutput: '"10101"',
-        explanation: '',
-        type: 'Sample',
-      },
-    ],
-    constraints: [
-      '1 <= a.length, b.length <= 10^4',
-      "a and b consist only of '0' or '1' characters.",
-    ],
-  },
-  {
-    title: 'Fibonacci Number',
-    description:
-      'The Fibonacci numbers, commonly denoted F(n) form a sequence, called the Fibonacci sequence, such that each number is the sum of the two preceding ones, starting from 0 and 1. That is, F(0) = 0, F(1) = 1, F(n) = F(n - 1) + F(n - 2), for n > 1. Given n, calculate F(n).',
-    difficulty: 'Easy',
-    topics: ['Recursion', 'Algorithms'],
-    tags: ['leetcode', 'dynamic-programming', 'math'],
-    testCases: [
-      {
-        input: 'n = 2',
-        expectedOutput: '1',
-        explanation: 'F(2) = F(1) + F(0) = 1 + 0 = 1.',
-        type: 'Sample',
-      },
-      {
-        input: 'n = 3',
-        expectedOutput: '2',
-        explanation: 'F(3) = F(2) + F(1) = 1 + 1 = 2.',
-        type: 'Sample',
-      },
-      {
-        input: 'n = 4',
-        expectedOutput: '3',
-        explanation: 'F(4) = F(3) + F(2) = 2 + 1 = 3.',
-        type: 'Sample',
-      },
-    ],
-    constraints: ['0 <= n <= 30'],
+    constraints: ['The number of nodes in the list is in the range [0, 10^4]', '-10^5 <= Node.val <= 10^5'],
   },
   {
     title: 'Implement Stack using Queues',
@@ -158,78 +158,452 @@ const sampleQuestions = [
     tags: ['leetcode', 'stack', 'queue', 'design'],
     testCases: [
       {
-        input: '["MyStack", "push", "push", "top", "pop", "empty"]\n[[], [1], [2], [], [], []]',
-        expectedOutput: '[null, null, null, 2, 2, false]',
-        explanation:
-          'MyStack myStack = new MyStack();\nmyStack.push(1);\nmyStack.push(2);\nmyStack.top(); // return 2\nmyStack.pop(); // return 2\nmyStack.empty(); // return False',
+        params: [['MyStack', 'push', 'push', 'top', 'pop', 'empty'], [[], [1], [2], [], [], []]],
+        expected: [null, null, null, 2, 2, false],
+        explanation: 'Implement stack operations using queues',
         type: 'Sample',
       },
     ],
-    constraints: ['1 <= x <= 9', 'At most 100 calls will be made to push, pop, top, and empty.'],
+    constraints: ['1 <= x <= 9', 'At most 100 calls will be made to push, pop, top, and empty'],
   },
+
+  // ALGORITHMS - EASY
+  {
+    title: 'Roman to Integer',
+    description:
+      'Roman numerals are represented by seven different symbols: I, V, X, L, C, D and M. Given a roman numeral, convert it to an integer.',
+    difficulty: 'Easy',
+    topics: ['Algorithms'],
+    tags: ['leetcode', 'hash-table', 'math', 'string'],
+    testCases: [
+      {
+        params: ['III'],
+        expected: 3,
+        explanation: 'III = 3',
+        type: 'Sample',
+      },
+      {
+        params: ['LVIII'],
+        expected: 58,
+        explanation: 'L = 50, V= 5, III = 3',
+        type: 'Sample',
+      },
+      {
+        params: ['MCMXCIV'],
+        expected: 1994,
+        explanation: 'M = 1000, CM = 900, XC = 90 and IV = 4',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= s.length <= 15', "s contains only the characters ('I', 'V', 'X', 'L', 'C', 'D', 'M')"],
+  },
+  {
+    title: 'Valid Parentheses',
+    description:
+      "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. An input string is valid if: Open brackets must be closed by the same type of brackets, and open brackets must be closed in the correct order.",
+    difficulty: 'Easy',
+    topics: ['Algorithms', 'Data Structures'],
+    tags: ['leetcode', 'stack', 'string'],
+    testCases: [
+      {
+        params: ['()'],
+        expected: true,
+        explanation: 'Valid parentheses',
+        type: 'Sample',
+      },
+      {
+        params: ['()[]{}'],
+        expected: true,
+        explanation: 'All brackets are properly closed',
+        type: 'Sample',
+      },
+      {
+        params: ['(]'],
+        expected: false,
+        explanation: 'Mismatched brackets',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= s.length <= 10^4'],
+  },
+
+  // BIT MANIPULATION - EASY
+  {
+    title: 'Add Binary',
+    description: 'Given two binary strings a and b, return their sum as a binary string.',
+    difficulty: 'Easy',
+    topics: ['Bit Manipulation', 'Algorithms'],
+    tags: ['leetcode', 'math', 'string', 'bit-manipulation'],
+    testCases: [
+      {
+        params: ['11', '1'],
+        expected: '100',
+        explanation: '11 + 1 = 100 in binary',
+        type: 'Sample',
+      },
+      {
+        params: ['1010', '1011'],
+        expected: '10101',
+        explanation: '1010 + 1011 = 10101 in binary',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= a.length, b.length <= 10^4', "a and b consist only of '0' or '1' characters"],
+  },
+  {
+    title: 'Number of 1 Bits',
+    description:
+      'Write a function that takes an unsigned integer and returns the number of 1 bits it has (also known as the Hamming weight).',
+    difficulty: 'Easy',
+    topics: ['Bit Manipulation', 'Algorithms'],
+    tags: ['leetcode', 'bit-manipulation'],
+    testCases: [
+      {
+        params: [11],
+        expected: 3,
+        explanation: 'The binary representation of 11 is 1011, which has three 1 bits',
+        type: 'Sample',
+      },
+      {
+        params: [128],
+        expected: 1,
+        explanation: 'The binary representation of 128 is 10000000, which has one 1 bit',
+        type: 'Sample',
+      },
+      {
+        params: [7],
+        expected: 3,
+        explanation: 'The binary representation of 7 is 111, which has three 1 bits',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['The input must be a binary string of length 32'],
+  },
+
+  // RECURSION - EASY
+  {
+    title: 'Fibonacci Number',
+    description:
+      'The Fibonacci numbers form a sequence where each number is the sum of the two preceding ones, starting from 0 and 1. Given n, calculate F(n).',
+    difficulty: 'Easy',
+    topics: ['Recursion', 'Algorithms'],
+    tags: ['leetcode', 'dynamic-programming', 'math', 'recursion'],
+    testCases: [
+      {
+        params: [2],
+        expected: 1,
+        explanation: 'F(2) = F(1) + F(0) = 1 + 0 = 1',
+        type: 'Sample',
+      },
+      {
+        params: [3],
+        expected: 2,
+        explanation: 'F(3) = F(2) + F(1) = 1 + 1 = 2',
+        type: 'Sample',
+      },
+      {
+        params: [4],
+        expected: 3,
+        explanation: 'F(4) = F(3) + F(2) = 2 + 1 = 3',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['0 <= n <= 30'],
+  },
+  {
+    title: 'Climbing Stairs',
+    description:
+      'You are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?',
+    difficulty: 'Easy',
+    topics: ['Recursion', 'Algorithms'],
+    tags: ['leetcode', 'dynamic-programming', 'math'],
+    testCases: [
+      {
+        params: [2],
+        expected: 2,
+        explanation: 'There are two ways: 1+1 or 2',
+        type: 'Sample',
+      },
+      {
+        params: [3],
+        expected: 3,
+        explanation: 'There are three ways: 1+1+1, 1+2, or 2+1',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= n <= 45'],
+  },
+
+  // DATABASES - EASY
   {
     title: 'Combine Two Tables',
     description:
-      'Given table Person with columns personId (int), lastName (varchar), firstName (varchar) where personId is the primary key, and table Address with columns addressId (int), personId (int), city (varchar), state (varchar) where addressId is the primary key. Write a solution to report the first name, last name, city, and state of each person in the Person table. If the address of a personId is not present in the Address table, report null instead.',
+      'Write a SQL query to report the first name, last name, city, and state of each person in the Person table. If the address of a personId is not present in the Address table, report null instead.',
     difficulty: 'Easy',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
     testCases: [
       {
-        input:
-          'Person table:\n+----------+----------+-----------+\n| personId | lastName | firstName |\n+----------+----------+-----------+\n| 1        | Wang     | Allen     |\n| 2        | Alice    | Bob       |\n+----------+----------+-----------+\nAddress table:\n+-----------+----------+---------------+------------+\n| addressId | personId | city          | state      |\n+-----------+----------+---------------+------------+\n| 1         | 2        | New York City | New York   |\n| 2         | 3        | Leetcode      | California |\n+-----------+----------+---------------+------------+',
-        expectedOutput:
-          '+-----------+----------+---------------+----------+\n| firstName | lastName | city          | state    |\n+-----------+----------+---------------+----------+\n| Allen     | Wang     | Null          | Null     |\n| Bob       | Alice    | New York City | New York |\n+-----------+----------+---------------+----------+',
-        explanation:
-          'There is no address in the address table for the personId = 1 so we return null in their city and state.',
+        params: [
+          {
+            Person: [
+              { personId: 1, lastName: 'Wang', firstName: 'Allen' },
+              { personId: 2, lastName: 'Alice', firstName: 'Bob' },
+            ],
+            Address: [
+              { addressId: 1, personId: 2, city: 'New York City', state: 'New York' },
+              { addressId: 2, personId: 3, city: 'Leetcode', state: 'California' },
+            ],
+          },
+        ],
+        expected: [
+          { firstName: 'Allen', lastName: 'Wang', city: null, state: null },
+          { firstName: 'Bob', lastName: 'Alice', city: 'New York City', state: 'New York' },
+        ],
+        explanation: 'Person with personId=1 has no address in the Address table',
         type: 'Sample',
       },
     ],
     constraints: [],
   },
   {
-    title: 'Repeated DNA Sequences',
+    title: 'Duplicate Emails',
     description:
-      "The DNA sequence is composed of a series of nucleotides abbreviated as 'A', 'C', 'G', and 'T'. For example, \"ACGAATTCCG\" is a DNA sequence. When studying DNA, it is useful to identify repeated sequences within the DNA. Given a string s that represents a DNA sequence, return all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule. You may return the answer in any order.",
-    difficulty: 'Medium',
-    topics: ['Algorithms', 'Bit Manipulation'],
-    tags: ['leetcode', 'hash-table', 'string'],
+      'Write a SQL query to report all the duplicate emails. Return the result table in any order.',
+    difficulty: 'Easy',
+    topics: ['Databases'],
+    tags: ['leetcode', 'sql', 'database'],
     testCases: [
       {
-        input: 's = "AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT"',
-        expectedOutput: '["AAAAACCCCC","CCCCCAAAAA"]',
-        explanation: '',
-        type: 'Sample',
-      },
-      {
-        input: 's = "AAAAAAAAAAAAA"',
-        expectedOutput: '["AAAAAAAAAA"]',
-        explanation: '',
+        params: [
+          {
+            Person: [
+              { id: 1, email: 'a@b.com' },
+              { id: 2, email: 'c@d.com' },
+              { id: 3, email: 'a@b.com' },
+            ],
+          },
+        ],
+        expected: [{ email: 'a@b.com' }],
+        explanation: 'a@b.com appears twice',
         type: 'Sample',
       },
     ],
-    constraints: ['1 <= s.length <= 10^5', "s[i] is either 'A', 'C', 'G', or 'T'."],
+    constraints: [],
   },
+
+  // BRAINTEASER - EASY
   {
-    title: 'Course Schedule',
+    title: 'Nim Game',
     description:
-      'There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. You are given an array prerequisites where prerequisites[i] = [ai, bi] indicates that you must take course bi first if you want to take course ai. For example, the pair [0, 1], indicates that to take course 0 you have to first take course 1. Return true if you can finish all courses. Otherwise, return false.',
-    difficulty: 'Medium',
-    topics: ['Data Structures', 'Algorithms'],
-    tags: ['leetcode', 'graph', 'topological-sort'],
+      'You are playing the following Nim Game with your friend: Initially, there is a heap of stones on the table. You and your friend will alternate taking turns, and you go first. On each turn, the person whose turn it is will remove 1 to 3 stones from the heap. The one who removes the last stone is the winner. Given n, the number of stones in the heap, return true if you can win the game assuming both you and your friend play optimally, otherwise return false.',
+    difficulty: 'Easy',
+    topics: ['Brainteaser'],
+    tags: ['leetcode', 'math', 'brainteaser', 'game-theory'],
     testCases: [
       {
-        input: 'numCourses = 2, prerequisites = [[1,0]]',
-        expectedOutput: 'true',
+        params: [4],
+        expected: false,
         explanation:
-          'There are a total of 2 courses to take. To take course 1 you should have finished course 0. So it is possible.',
+          'These are the possible outcomes: 1. You remove 1 stone. Your friend removes 3 stones, including the last stone. Your friend wins. 2. You remove 2 stones. Your friend removes 2 stones, including the last stone. Your friend wins. 3. You remove 3 stones. Your friend removes the last stone. Your friend wins. In all outcomes, your friend wins.',
         type: 'Sample',
       },
       {
-        input: 'numCourses = 2, prerequisites = [[1,0],[0,1]]',
-        expectedOutput: 'false',
-        explanation:
-          'There are a total of 2 courses to take. To take course 1 you should have finished course 0, and to take course 0 you should also have finished course 1. So it is impossible.',
+        params: [1],
+        expected: true,
+        explanation: 'You can remove the last stone and win',
+        type: 'Sample',
+      },
+      {
+        params: [2],
+        expected: true,
+        explanation: 'You can remove 2 stones and win',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= n <= 2^31 - 1'],
+  },
+  {
+    title: 'Power of Two',
+    description:
+      'Given an integer n, return true if it is a power of two. Otherwise, return false. An integer n is a power of two, if there exists an integer x such that n == 2^x.',
+    difficulty: 'Easy',
+    topics: ['Brainteaser'],
+    tags: ['leetcode', 'math', 'bit-manipulation', 'recursion'],
+    testCases: [
+      {
+        params: [1],
+        expected: true,
+        explanation: '2^0 = 1',
+        type: 'Sample',
+      },
+      {
+        params: [16],
+        expected: true,
+        explanation: '2^4 = 16',
+        type: 'Sample',
+      },
+      {
+        params: [3],
+        expected: false,
+        explanation: '3 is not a power of two',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['-2^31 <= n <= 2^31 - 1'],
+  },
+
+  // ==================== MEDIUM QUESTIONS ====================
+
+  // STRINGS - MEDIUM
+  {
+    title: 'Longest Substring Without Repeating Characters',
+    description:
+      'Given a string s, find the length of the longest substring without repeating characters.',
+    difficulty: 'Medium',
+    topics: ['Strings', 'Algorithms'],
+    tags: ['leetcode', 'hash-table', 'string', 'sliding-window'],
+    testCases: [
+      {
+        params: ['abcabcbb'],
+        expected: 3,
+        explanation: 'The answer is "abc", with the length of 3',
+        type: 'Sample',
+      },
+      {
+        params: ['bbbbb'],
+        expected: 1,
+        explanation: 'The answer is "b", with the length of 1',
+        type: 'Sample',
+      },
+      {
+        params: ['pwwkew'],
+        expected: 3,
+        explanation: 'The answer is "wke", with the length of 3',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['0 <= s.length <= 5 * 10^4'],
+  },
+  {
+    title: 'Longest Common Subsequence',
+    description:
+      'Given two strings text1 and text2, return the length of their longest common subsequence. If there is no common subsequence, return 0.',
+    difficulty: 'Medium',
+    topics: ['Strings', 'Algorithms'],
+    tags: ['leetcode', 'dynamic-programming', 'string'],
+    testCases: [
+      {
+        params: ['abcde', 'ace'],
+        expected: 3,
+        explanation: 'The longest common subsequence is "ace" and its length is 3',
+        type: 'Sample',
+      },
+      {
+        params: ['abc', 'abc'],
+        expected: 3,
+        explanation: 'The longest common subsequence is "abc" and its length is 3',
+        type: 'Sample',
+      },
+      {
+        params: ['abc', 'def'],
+        expected: 0,
+        explanation: 'There is no such common subsequence, so the result is 0',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= text1.length, text2.length <= 1000'],
+  },
+
+  // ARRAYS - MEDIUM
+  {
+    title: 'Rotate Image',
+    description:
+      'You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise). You have to rotate the image in-place.',
+    difficulty: 'Medium',
+    topics: ['Arrays', 'Algorithms'],
+    tags: ['leetcode', 'array', 'matrix'],
+    testCases: [
+      {
+        params: [
+          [
+            [1, 2, 3],
+            [4, 5, 6],
+            [7, 8, 9],
+          ],
+        ],
+        expected: [
+          [7, 4, 1],
+          [8, 5, 2],
+          [9, 6, 3],
+        ],
+        explanation: 'Rotate the matrix 90 degrees clockwise',
+        type: 'Sample',
+      },
+      {
+        params: [
+          [
+            [5, 1, 9, 11],
+            [2, 4, 8, 10],
+            [13, 3, 6, 7],
+            [15, 14, 12, 16],
+          ],
+        ],
+        expected: [
+          [15, 13, 2, 5],
+          [14, 3, 4, 1],
+          [12, 6, 8, 9],
+          [16, 7, 10, 11],
+        ],
+        explanation: 'Rotate the 4x4 matrix 90 degrees clockwise',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['n == matrix.length == matrix[i].length', '1 <= n <= 20'],
+  },
+  {
+    title: 'Product of Array Except Self',
+    description:
+      'Given an integer array nums, return an array answer such that answer[i] is equal to the product of all the elements of nums except nums[i]. You must write an algorithm that runs in O(n) time and without using the division operation.',
+    difficulty: 'Medium',
+    topics: ['Arrays', 'Algorithms'],
+    tags: ['leetcode', 'array', 'prefix-sum'],
+    testCases: [
+      {
+        params: [[1, 2, 3, 4]],
+        expected: [24, 12, 8, 6],
+        explanation: 'Output[0] = 2*3*4 = 24, Output[1] = 1*3*4 = 12, etc.',
+        type: 'Sample',
+      },
+      {
+        params: [[-1, 1, 0, -3, 3]],
+        expected: [0, 0, 9, 0, 0],
+        explanation: 'Product of all except self',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['2 <= nums.length <= 10^5', '-30 <= nums[i] <= 30'],
+  },
+
+  // DATA STRUCTURES - MEDIUM
+  {
+    title: 'Course Schedule',
+    description:
+      'There are a total of numCourses courses you have to take, labeled from 0 to numCourses - 1. You are given an array prerequisites where prerequisites[i] = [ai, bi] indicates that you must take course bi first if you want to take course ai. Return true if you can finish all courses.',
+    difficulty: 'Medium',
+    topics: ['Data Structures', 'Algorithms'],
+    tags: ['leetcode', 'graph', 'topological-sort', 'dfs'],
+    testCases: [
+      {
+        params: [2, [[1, 0]]],
+        expected: true,
+        explanation: 'To take course 1 you should have finished course 0. So it is possible',
+        type: 'Sample',
+      },
+      {
+        params: [2, [[1, 0], [0, 1]]],
+        expected: false,
+        explanation: 'Circular dependency - impossible to finish',
         type: 'Sample',
       },
     ],
@@ -237,260 +611,754 @@ const sampleQuestions = [
   },
   {
     title: 'LRU Cache Design',
-    description: 'Design and implement an LRU (Least Recently Used) cache.',
+    description:
+      'Design a data structure that follows the constraints of a Least Recently Used (LRU) cache. Implement the LRUCache class with get and put methods.',
     difficulty: 'Medium',
     topics: ['Data Structures'],
     tags: ['leetcode', 'hash-table', 'linked-list', 'design'],
     testCases: [
       {
-        input:
-          '["LRUCache", "put", "put", "get", "put", "get", "put", "get", "get", "get"]\n[[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]]',
-        expectedOutput: '[null, null, null, 1, null, -1, null, -1, 3, 4]',
-        explanation:
-          'LRUCache lRUCache = new LRUCache(2);\nlRUCache.put(1, 1); // cache is {1=1}\nlRUCache.put(2, 2); // cache is {1=1, 2=2}\nlRUCache.get(1);    // return 1\nlRUCache.put(3, 3); // LRU key was 2, evicts key 2, cache is {1=1, 3=3}\nlRUCache.get(2);    // returns -1 (not found)\nlRUCache.put(4, 4); // LRU key was 1, evicts key 1, cache is {4=4, 3=3}\nlRUCache.get(1);    // return -1 (not found)\nlRUCache.get(3);    // return 3\nlRUCache.get(4);    // return 4',
+        params: [
+          ['LRUCache', 'put', 'put', 'get', 'put', 'get', 'put', 'get', 'get', 'get'],
+          [[2], [1, 1], [2, 2], [1], [3, 3], [2], [4, 4], [1], [3], [4]],
+        ],
+        expected: [null, null, null, 1, null, -1, null, -1, 3, 4],
+        explanation: 'LRU cache operations',
         type: 'Sample',
       },
     ],
     constraints: ['1 <= capacity <= 3000', '0 <= key <= 10^4'],
   },
+
+  // ALGORITHMS - MEDIUM
   {
-    title: 'Longest Common Subsequence',
+    title: 'Repeated DNA Sequences',
     description:
-      'Given two strings text1 and text2, return the length of their longest common subsequence. If there is no common subsequence, return 0. A subsequence of a string is a new string generated from the original string with some characters (can be none) deleted without changing the relative order of the remaining characters. A common subsequence of two strings is a subsequence that is common to both strings.',
+      'Given a string s that represents a DNA sequence, return all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule.',
     difficulty: 'Medium',
-    topics: ['Strings', 'Algorithms'],
-    tags: ['leetcode', 'dynamic-programming'],
+    topics: ['Algorithms', 'Bit Manipulation'],
+    tags: ['leetcode', 'hash-table', 'string', 'sliding-window'],
     testCases: [
       {
-        input: 'text1 = "abcde", text2 = "ace"',
-        expectedOutput: '3',
-        explanation: 'The longest common subsequence is "ace" and its length is 3.',
+        params: ['AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT'],
+        expected: ['AAAAACCCCC', 'CCCCCAAAAA'],
+        explanation: 'These 10-letter sequences appear more than once',
         type: 'Sample',
       },
       {
-        input: 'text1 = "abc", text2 = "abc"',
-        expectedOutput: '3',
-        explanation: 'The longest common subsequence is "abc" and its length is 3.',
-        type: 'Sample',
-      },
-      {
-        input: 'text1 = "abc", text2 = "def"',
-        expectedOutput: '0',
-        explanation: 'There is no such common subsequence, so the result is 0.',
+        params: ['AAAAAAAAAAAAA'],
+        expected: ['AAAAAAAAAA'],
+        explanation: 'The sequence AAAAAAAAAA appears multiple times',
         type: 'Sample',
       },
     ],
-    constraints: ['1 <= text1.length, text2.length <= 1000'],
+    constraints: ['1 <= s.length <= 10^5', "s[i] is either 'A', 'C', 'G', or 'T'"],
   },
   {
-    title: 'Rotate Image',
+    title: 'Container With Most Water',
     description:
-      'You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise).',
+      'You are given an integer array height of length n. There are n vertical lines drawn such that the two endpoints of the ith line are (i, 0) and (i, height[i]). Find two lines that together with the x-axis form a container that contains the most water.',
     difficulty: 'Medium',
-    topics: ['Arrays', 'Algorithms'],
-    tags: ['leetcode', 'matrix'],
+    topics: ['Algorithms', 'Arrays'],
+    tags: ['leetcode', 'array', 'two-pointers', 'greedy'],
     testCases: [
       {
-        input: 'matrix = [[1,2,3],[4,5,6],[7,8,9]]',
-        expectedOutput: '[[7,4,1],[8,5,2],[9,6,3]]',
-        explanation: '',
+        params: [[1, 8, 6, 2, 5, 4, 8, 3, 7]],
+        expected: 49,
+        explanation: 'The vertical lines at indices 1 and 8 form a container with area 7*7=49',
         type: 'Sample',
       },
       {
-        input: 'matrix = [[5,1,9,11],[2,4,8,10],[13,3,6,7],[15,14,12,16]]',
-        expectedOutput: '[[15,13,2,5],[14,3,4,1],[12,6,8,9],[16,7,10,11]]',
-        explanation: '',
+        params: [[1, 1]],
+        expected: 1,
+        explanation: 'The only container has area 1*1=1',
         type: 'Sample',
       },
     ],
-    constraints: ['n == matrix.length == matrix[i].length', '1 <= n <= 20'],
+    constraints: ['n == height.length', '2 <= n <= 10^5'],
   },
+
+  // BIT MANIPULATION - MEDIUM
+  {
+    title: 'Single Number II',
+    description:
+      'Given an integer array nums where every element appears three times except for one, which appears exactly once. Find the single element and return it.',
+    difficulty: 'Medium',
+    topics: ['Bit Manipulation', 'Algorithms'],
+    tags: ['leetcode', 'bit-manipulation', 'array'],
+    testCases: [
+      {
+        params: [[2, 2, 3, 2]],
+        expected: 3,
+        explanation: '3 appears once while 2 appears three times',
+        type: 'Sample',
+      },
+      {
+        params: [[0, 1, 0, 1, 0, 1, 99]],
+        expected: 99,
+        explanation: '99 appears once',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= nums.length <= 3 * 10^4', '-2^31 <= nums[i] <= 2^31 - 1'],
+  },
+  {
+    title: 'Bitwise AND of Numbers Range',
+    description:
+      'Given two integers left and right that represent the range [left, right], return the bitwise AND of all numbers in this range, inclusive.',
+    difficulty: 'Medium',
+    topics: ['Bit Manipulation', 'Algorithms'],
+    tags: ['leetcode', 'bit-manipulation'],
+    testCases: [
+      {
+        params: [5, 7],
+        expected: 4,
+        explanation: '5 & 6 & 7 = 4',
+        type: 'Sample',
+      },
+      {
+        params: [0, 0],
+        expected: 0,
+        explanation: '0 & 0 = 0',
+        type: 'Sample',
+      },
+      {
+        params: [1, 2147483647],
+        expected: 0,
+        explanation: 'Range is too large, result is 0',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['0 <= left <= right <= 2^31 - 1'],
+  },
+
+  // RECURSION - MEDIUM
+  {
+    title: 'Generate Parentheses',
+    description:
+      'Given n pairs of parentheses, write a function to generate all combinations of well-formed parentheses.',
+    difficulty: 'Medium',
+    topics: ['Recursion', 'Algorithms'],
+    tags: ['leetcode', 'string', 'backtracking', 'recursion'],
+    testCases: [
+      {
+        params: [3],
+        expected: ['((()))', '(()())', '(())()', '()(())', '()()()'],
+        explanation: 'All possible combinations of 3 pairs of parentheses',
+        type: 'Sample',
+      },
+      {
+        params: [1],
+        expected: ['()'],
+        explanation: 'Only one combination possible',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= n <= 8'],
+  },
+  {
+    title: 'Letter Combinations of a Phone Number',
+    description:
+      'Given a string containing digits from 2-9 inclusive, return all possible letter combinations that the number could represent (like on a phone keypad).',
+    difficulty: 'Medium',
+    topics: ['Recursion', 'Algorithms'],
+    tags: ['leetcode', 'string', 'backtracking', 'recursion'],
+    testCases: [
+      {
+        params: ['23'],
+        expected: ['ad', 'ae', 'af', 'bd', 'be', 'bf', 'cd', 'ce', 'cf'],
+        explanation: 'All possible letter combinations from digits 2 and 3',
+        type: 'Sample',
+      },
+      {
+        params: [''],
+        expected: [],
+        explanation: 'Empty input returns empty array',
+        type: 'Sample',
+      },
+      {
+        params: ['2'],
+        expected: ['a', 'b', 'c'],
+        explanation: 'Digit 2 maps to abc',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['0 <= digits.length <= 4'],
+  },
+
+  // BRAINTEASER - MEDIUM
   {
     title: 'Airplane Seat Assignment Probability',
     description:
-      'n passengers board an airplane with exactly n seats. The first passenger has lost the ticket and picks a seat randomly. But after that, the rest of the passengers will: Take their own seat if it is still available, and pick other seats randomly when they find their seat occupied. Return the probability that the nth person gets his own seat.',
+      'n passengers board an airplane with exactly n seats. The first passenger has lost the ticket and picks a seat randomly. Return the probability that the nth person gets his own seat.',
     difficulty: 'Medium',
     topics: ['Brainteaser'],
-    tags: ['leetcode', 'math', 'probability'],
+    tags: ['leetcode', 'math', 'probability', 'brainteaser'],
     testCases: [
       {
-        input: 'n = 1',
-        expectedOutput: '1.00000',
-        explanation: 'The first person can only get the first seat.',
+        params: [1],
+        expected: 1.0,
+        explanation: 'The first person can only get the first seat',
         type: 'Sample',
       },
       {
-        input: 'n = 2',
-        expectedOutput: '0.50000',
-        explanation:
-          'The second person has a probability of 0.5 to get the second seat (when first person gets the first seat).',
+        params: [2],
+        expected: 0.5,
+        explanation: 'The second person has a probability of 0.5 to get their seat',
         type: 'Sample',
       },
     ],
     constraints: ['1 <= n <= 10^5'],
   },
   {
-    title: 'Validate Binary Search Tree',
+    title: 'Bulb Switcher',
     description:
-      'Given the root of a binary tree, determine if it is a valid binary search tree (BST).',
+      'There are n bulbs that are initially off. You first turn on all the bulbs, then you turn off every second bulb. On the third round, you toggle every third bulb. For the ith round, you toggle every i bulb. Return the number of bulbs that are on after n rounds.',
     difficulty: 'Medium',
-    topics: ['Data Structures', 'Algorithms'],
-    tags: ['leetcode', 'tree', 'binary-search-tree'],
+    topics: ['Brainteaser'],
+    tags: ['leetcode', 'math', 'brainteaser'],
     testCases: [
       {
-        input: 'root = [2,1,3]',
-        expectedOutput: 'true',
-        explanation: '',
+        params: [3],
+        expected: 1,
+        explanation: 'After 3 rounds, only bulb 1 is on',
         type: 'Sample',
       },
       {
-        input: 'root = [5,1,4,null,null,3,6]',
-        expectedOutput: 'false',
-        explanation: "The root node's value is 5 but its right child's value is 4.",
+        params: [0],
+        expected: 0,
+        explanation: 'No bulbs',
+        type: 'Sample',
+      },
+      {
+        params: [1],
+        expected: 1,
+        explanation: 'Only one bulb, turned on in round 1',
         type: 'Sample',
       },
     ],
-    constraints: ['The number of nodes in the tree is in the range [1, 10^4]'],
+    constraints: ['0 <= n <= 10^9'],
+  },
+
+  // DATABASES - MEDIUM
+  {
+    title: 'Rank Scores',
+    description:
+      'Write a SQL query to rank scores. If there is a tie between two scores, both should have the same ranking. Note that after a tie, the next ranking number should be the next consecutive integer value.',
+    difficulty: 'Medium',
+    topics: ['Databases'],
+    tags: ['leetcode', 'sql', 'database'],
+    testCases: [
+      {
+        params: [
+          {
+            Scores: [
+              { id: 1, score: 3.5 },
+              { id: 2, score: 3.65 },
+              { id: 3, score: 4.0 },
+              { id: 4, score: 3.85 },
+              { id: 5, score: 4.0 },
+              { id: 6, score: 3.65 },
+            ],
+          },
+        ],
+        expected: [
+          { score: 4.0, rank: 1 },
+          { score: 4.0, rank: 1 },
+          { score: 3.85, rank: 2 },
+          { score: 3.65, rank: 3 },
+          { score: 3.65, rank: 3 },
+          { score: 3.5, rank: 4 },
+        ],
+        explanation: 'Rank scores with ties getting same rank',
+        type: 'Sample',
+      },
+    ],
+    constraints: [],
   },
   {
-    title: 'Sliding Window Maximum',
+    title: 'Department Highest Salary',
     description:
-      'You are given an array of integers nums, there is a sliding window of size k which is moving from the very left of the array to the very right. You can only see the k numbers in the window. Each time the sliding window moves right by one position. Return the max sliding window.',
-    difficulty: 'Hard',
-    topics: ['Arrays', 'Algorithms'],
-    tags: ['leetcode', 'sliding-window', 'queue'],
+      'Write a SQL query to find employees who have the highest salary in each of the departments.',
+    difficulty: 'Medium',
+    topics: ['Databases'],
+    tags: ['leetcode', 'sql', 'database'],
     testCases: [
       {
-        input: 'nums = [1,3,-1,-3,5,3,6,7], k = 3',
-        expectedOutput: '[3,3,5,5,6,7]',
-        explanation:
-          'Window position                Max\n---------------               -----\n[1  3  -1] -3  5  3  6  7       3\n 1 [3  -1  -3] 5  3  6  7       3\n 1  3 [-1  -3  5] 3  6  7       5\n 1  3  -1 [-3  5  3] 6  7       5\n 1  3  -1  -3 [5  3  6] 7       6\n 1  3  -1  -3  5 [3  6  7]      7',
-        type: 'Sample',
-      },
-      {
-        input: 'nums = [1], k = 1',
-        expectedOutput: '[1]',
-        explanation: '',
+        params: [
+          {
+            Employee: [
+              { id: 1, name: 'Joe', salary: 70000, departmentId: 1 },
+              { id: 2, name: 'Jim', salary: 90000, departmentId: 1 },
+              { id: 3, name: 'Henry', salary: 80000, departmentId: 2 },
+              { id: 4, name: 'Sam', salary: 60000, departmentId: 2 },
+            ],
+            Department: [
+              { id: 1, name: 'IT' },
+              { id: 2, name: 'Sales' },
+            ],
+          },
+        ],
+        expected: [
+          { department: 'IT', employee: 'Jim', salary: 90000 },
+          { department: 'Sales', employee: 'Henry', salary: 80000 },
+        ],
+        explanation: 'Highest salary in each department',
         type: 'Sample',
       },
     ],
-    constraints: ['1 <= nums.length <= 10^5', '1 <= k <= nums.length'],
+    constraints: [],
   },
-  {
-    title: 'N-Queen Problem',
-    description:
-      "The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other. Given an integer n, return all distinct solutions to the n-queens puzzle. You may return the answer in any order. Each solution contains a distinct board configuration of the n-queens' placement, where 'Q' and '.' both indicate a queen and an empty space, respectively.",
-    difficulty: 'Hard',
-    topics: ['Algorithms'],
-    tags: ['leetcode', 'backtracking'],
-    testCases: [
-      {
-        input: 'n = 4',
-        expectedOutput: '[[".Q..","...Q","Q...","..Q."],["..Q.","Q...","...Q",".Q.."]]',
-        explanation: 'There exist two distinct solutions to the 4-queens puzzle.',
-        type: 'Sample',
-      },
-      {
-        input: 'n = 1',
-        expectedOutput: '[["Q"]]',
-        explanation: '',
-        type: 'Sample',
-      },
-    ],
-    constraints: ['1 <= n <= 9'],
-  },
-  {
-    title: 'Serialize and Deserialize a Binary Tree',
-    description:
-      'Serialization is the process of converting a data structure or object into a sequence of bits so that it can be stored in a file or memory buffer, or transmitted across a network connection link to be reconstructed later in the same or another computer environment. Design an algorithm to serialize and deserialize a binary tree. There is no restriction on how your serialization/deserialization algorithm should work. You just need to ensure that a binary tree can be serialized to a string and this string can be deserialized to the original tree structure.',
-    difficulty: 'Hard',
-    topics: ['Data Structures', 'Algorithms'],
-    tags: ['leetcode', 'tree', 'design'],
-    testCases: [
-      {
-        input: 'root = [1,2,3,null,null,4,5]',
-        expectedOutput: '[1,2,3,null,null,4,5]',
-        explanation: '',
-        type: 'Sample',
-      },
-      {
-        input: 'root = []',
-        expectedOutput: '[]',
-        explanation: '',
-        type: 'Sample',
-      },
-    ],
-    constraints: ['The number of nodes in the tree is in the range [0, 10^4]'],
-  },
+
+  // ==================== HARD QUESTIONS ====================
+
+  // STRINGS - HARD
   {
     title: 'Wildcard Matching',
     description:
-      "Given an input string (s) and a pattern (p), implement wildcard pattern matching with support for '?' and '*' where: '?' Matches any single character. '*' Matches any sequence of characters (including the empty sequence). The matching should cover the entire input string (not partial).",
+      "Given an input string (s) and a pattern (p), implement wildcard pattern matching with support for '?' and '*' where '?' matches any single character and '*' matches any sequence of characters.",
     difficulty: 'Hard',
     topics: ['Strings', 'Algorithms'],
-    tags: ['leetcode', 'dynamic-programming', 'greedy'],
+    tags: ['leetcode', 'dynamic-programming', 'greedy', 'string'],
     testCases: [
       {
-        input: 's = "aa", p = "a"',
-        expectedOutput: 'false',
-        explanation: '"a" does not match the entire string "aa".',
+        params: ['aa', 'a'],
+        expected: false,
+        explanation: '"a" does not match the entire string "aa"',
         type: 'Sample',
       },
       {
-        input: 's = "aa", p = "*"',
-        expectedOutput: 'true',
-        explanation: "'*' matches any sequence.",
+        params: ['aa', '*'],
+        expected: true,
+        explanation: "'*' matches any sequence",
         type: 'Sample',
       },
       {
-        input: 's = "cb", p = "?a"',
-        expectedOutput: 'false',
-        explanation: "'?' matches 'c', but the second letter is 'a', which does not match 'b'.",
+        params: ['cb', '?a'],
+        expected: false,
+        explanation: "'?' matches 'c', but the second letter is 'a', which does not match 'b'",
         type: 'Sample',
       },
     ],
     constraints: ['0 <= s.length, p.length <= 2000'],
   },
   {
-    title: 'Chalkboard XOR Game',
+    title: 'Regular Expression Matching',
     description:
-      'You are given an array of integers nums represents the numbers written on a chalkboard. Alice and Bob take turns erasing exactly one number from the chalkboard, with Alice starting first. If erasing a number causes the bitwise XOR of all the elements of the chalkboard to become 0, then that player loses. The bitwise XOR of one element is that element itself, and the bitwise XOR of no elements is 0. Also, if any player starts their turn with the bitwise XOR of all the elements of the chalkboard equal to 0, then that player wins. Return true if and only if Alice wins the game, assuming both players play optimally.',
+      "Given an input string s and a pattern p, implement regular expression matching with support for '.' and '*' where '.' matches any single character and '*' matches zero or more of the preceding element.",
     difficulty: 'Hard',
-    topics: ['Brainteaser'],
-    tags: ['leetcode', 'math', 'game-theory'],
+    topics: ['Strings', 'Algorithms'],
+    tags: ['leetcode', 'dynamic-programming', 'string', 'recursion'],
     testCases: [
       {
-        input: 'nums = [1,1,2]',
-        expectedOutput: 'false',
-        explanation:
-          'Alice has two choices: erase 1 or erase 2. If she erases 1, the nums array becomes [1, 2]. The bitwise XOR of all the elements of the chalkboard is 1 XOR 2 = 3. Now Bob can remove any element he wants, because Alice will be the one to erase the last element and she will lose. If Alice erases 2 first, now nums become [1, 1]. The bitwise XOR of all the elements of the chalkboard is 1 XOR 1 = 0. Alice will lose.',
+        params: ['aa', 'a'],
+        expected: false,
+        explanation: '"a" does not match the entire string "aa"',
         type: 'Sample',
       },
       {
-        input: 'nums = [0,1]',
-        expectedOutput: 'true',
-        explanation:
-          'Alice has two choices: erase 0 or erase 1. If she erases 0, the nums array becomes [1]. The bitwise XOR of all the elements of the chalkboard is 1. Now Bob will be the one to erase the last element and he will lose. If Alice erases 1 first, now nums become [0]. The bitwise XOR of all the elements of the chalkboard is 0. Alice will win.',
+        params: ['aa', 'a*'],
+        expected: true,
+        explanation: "'*' means zero or more of the preceding element 'a'",
+        type: 'Sample',
+      },
+      {
+        params: ['ab', '.*'],
+        expected: true,
+        explanation: "'.*' means zero or more of any character",
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= s.length <= 20', '1 <= p.length <= 30'],
+  },
+
+  // ARRAYS - HARD
+  {
+    title: 'Sliding Window Maximum',
+    description:
+      'You are given an array of integers nums and a sliding window of size k. Return the max sliding window as the window moves from left to right.',
+    difficulty: 'Hard',
+    topics: ['Arrays', 'Algorithms'],
+    tags: ['leetcode', 'array', 'queue', 'sliding-window', 'heap'],
+    testCases: [
+      {
+        params: [[1, 3, -1, -3, 5, 3, 6, 7], 3],
+        expected: [3, 3, 5, 5, 6, 7],
+        explanation: 'Maximum of each window of size 3',
+        type: 'Sample',
+      },
+      {
+        params: [[1], 1],
+        expected: [1],
+        explanation: 'Only one element',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= nums.length <= 10^5', '1 <= k <= nums.length'],
+  },
+  {
+    title: 'Median of Two Sorted Arrays',
+    description:
+      'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays. The overall run time complexity should be O(log (m+n)).',
+    difficulty: 'Hard',
+    topics: ['Arrays', 'Algorithms'],
+    tags: ['leetcode', 'array', 'binary-search', 'divide-and-conquer'],
+    testCases: [
+      {
+        params: [[1, 3], [2]],
+        expected: 2.0,
+        explanation: 'Merged array = [1,2,3] and median is 2',
+        type: 'Sample',
+      },
+      {
+        params: [[1, 2], [3, 4]],
+        expected: 2.5,
+        explanation: 'Merged array = [1,2,3,4] and median is (2+3)/2 = 2.5',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['nums1.length == m', 'nums2.length == n', '0 <= m <= 1000', '0 <= n <= 1000'],
+  },
+
+  // DATA STRUCTURES - HARD
+  {
+    title: 'Serialize and Deserialize Binary Tree',
+    description:
+      'Design an algorithm to serialize and deserialize a binary tree. Serialization is converting a tree to a string, and deserialization is converting the string back to the tree structure.',
+    difficulty: 'Hard',
+    topics: ['Data Structures', 'Algorithms'],
+    tags: ['leetcode', 'tree', 'design', 'string', 'binary-tree'],
+    testCases: [
+      {
+        params: [[1, 2, 3, null, null, 4, 5]],
+        expected: [1, 2, 3, null, null, 4, 5],
+        explanation: 'Serialize and deserialize should return the same tree',
+        type: 'Sample',
+      },
+      {
+        params: [[]],
+        expected: [],
+        explanation: 'Empty tree',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['The number of nodes in the tree is in the range [0, 10^4]'],
+  },
+  {
+    title: 'Design In-Memory File System',
+    description:
+      'Design a data structure that simulates an in-memory file system. Implement functions to create paths, list directory contents, read file contents, and write file contents.',
+    difficulty: 'Hard',
+    topics: ['Data Structures'],
+    tags: ['leetcode', 'design', 'hash-table', 'trie', 'string'],
+    testCases: [
+      {
+        params: [
+          ['FileSystem', 'ls', 'mkdir', 'addContentToFile', 'ls', 'readContentFromFile'],
+          [[], ['/'], ['/a/b/c'], ['/a/b/c/d', 'hello'], ['/'], ['/a/b/c/d']],
+        ],
+        expected: [null, [], null, null, ['a'], 'hello'],
+        explanation: 'File system operations',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= path.length <= 100'],
+  },
+
+  // ALGORITHMS - HARD
+  {
+    title: 'N-Queens Problem',
+    description:
+      "The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other. Given an integer n, return all distinct solutions to the n-queens puzzle.",
+    difficulty: 'Hard',
+    topics: ['Algorithms'],
+    tags: ['leetcode', 'backtracking', 'array'],
+    testCases: [
+      {
+        params: [4],
+        expected: [
+          ['.Q..', '...Q', 'Q...', '..Q.'],
+          ['..Q.', 'Q...', '...Q', '.Q..'],
+        ],
+        explanation: 'There exist two distinct solutions to the 4-queens puzzle',
+        type: 'Sample',
+      },
+      {
+        params: [1],
+        expected: [['Q']],
+        explanation: 'Only one solution for n=1',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= n <= 9'],
+  },
+  {
+    title: 'Word Ladder II',
+    description:
+      'Given two words, beginWord and endWord, and a dictionary wordList, return all the shortest transformation sequences from beginWord to endWord.',
+    difficulty: 'Hard',
+    topics: ['Algorithms'],
+    tags: ['leetcode', 'hash-table', 'string', 'backtracking', 'bfs'],
+    testCases: [
+      {
+        params: ['hit', 'cog', ['hot', 'dot', 'dog', 'lot', 'log', 'cog']],
+        expected: [
+          ['hit', 'hot', 'dot', 'dog', 'cog'],
+          ['hit', 'hot', 'lot', 'log', 'cog'],
+        ],
+        explanation: 'Two shortest transformation sequences',
+        type: 'Sample',
+      },
+      {
+        params: ['hit', 'cog', ['hot', 'dot', 'dog', 'lot', 'log']],
+        expected: [],
+        explanation: 'No transformation sequence exists',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= beginWord.length <= 5', 'endWord.length == beginWord.length'],
+  },
+
+  // BIT MANIPULATION - HARD
+  {
+    title: 'Maximum XOR of Two Numbers in an Array',
+    description:
+      'Given an integer array nums, return the maximum result of nums[i] XOR nums[j], where 0 <= i <= j < n.',
+    difficulty: 'Hard',
+    topics: ['Bit Manipulation', 'Algorithms'],
+    tags: ['leetcode', 'bit-manipulation', 'trie', 'array'],
+    testCases: [
+      {
+        params: [[3, 10, 5, 25, 2, 8]],
+        expected: 28,
+        explanation: 'The maximum result is 5 XOR 25 = 28',
+        type: 'Sample',
+      },
+      {
+        params: [[14, 70, 53, 83, 49, 91, 36, 80, 92, 51, 66, 70]],
+        expected: 127,
+        explanation: 'The maximum XOR result',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= nums.length <= 2 * 10^5', '0 <= nums[i] <= 2^31 - 1'],
+  },
+  {
+    title: 'Count Total Set Bits',
+    description:
+      'Given a positive integer n, count the total number of set bits in binary representation of all numbers from 1 to n.',
+    difficulty: 'Hard',
+    topics: ['Bit Manipulation', 'Algorithms'],
+    tags: ['leetcode', 'bit-manipulation', 'math', 'dynamic-programming'],
+    testCases: [
+      {
+        params: [3],
+        expected: 4,
+        explanation: 'Binary: 1(1), 10(1), 11(2) = total 4 set bits',
+        type: 'Sample',
+      },
+      {
+        params: [6],
+        expected: 9,
+        explanation: 'Binary: 1(1), 10(1), 11(2), 100(1), 101(2), 110(2) = total 9 set bits',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= n <= 10^9'],
+  },
+
+  // RECURSION - HARD
+  {
+    title: 'Sudoku Solver',
+    description:
+      'Write a program to solve a Sudoku puzzle by filling the empty cells. A sudoku solution must satisfy all of the following rules: Each of the digits 1-9 must occur exactly once in each row, column, and 3x3 sub-box.',
+    difficulty: 'Hard',
+    topics: ['Recursion', 'Algorithms'],
+    tags: ['leetcode', 'array', 'backtracking', 'matrix'],
+    testCases: [
+      {
+        params: [
+          [
+            ['5', '3', '.', '.', '7', '.', '.', '.', '.'],
+            ['6', '.', '.', '1', '9', '5', '.', '.', '.'],
+            ['.', '9', '8', '.', '.', '.', '.', '6', '.'],
+            ['8', '.', '.', '.', '6', '.', '.', '.', '3'],
+            ['4', '.', '.', '8', '.', '3', '.', '.', '1'],
+            ['7', '.', '.', '.', '2', '.', '.', '.', '6'],
+            ['.', '6', '.', '.', '.', '.', '2', '8', '.'],
+            ['.', '.', '.', '4', '1', '9', '.', '.', '5'],
+            ['.', '.', '.', '.', '8', '.', '.', '7', '9'],
+          ],
+        ],
+        expected: [
+          [
+            ['5', '3', '4', '6', '7', '8', '9', '1', '2'],
+            ['6', '7', '2', '1', '9', '5', '3', '4', '8'],
+            ['1', '9', '8', '3', '4', '2', '5', '6', '7'],
+            ['8', '5', '9', '7', '6', '1', '4', '2', '3'],
+            ['4', '2', '6', '8', '5', '3', '7', '9', '1'],
+            ['7', '1', '3', '9', '2', '4', '8', '5', '6'],
+            ['9', '6', '1', '5', '3', '7', '2', '8', '4'],
+            ['2', '8', '7', '4', '1', '9', '6', '3', '5'],
+            ['3', '4', '5', '2', '8', '6', '1', '7', '9'],
+          ],
+        ],
+        explanation: 'Fill the empty cells to solve the Sudoku',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['board.length == 9', 'board[i].length == 9'],
+  },
+  {
+    title: 'Expression Add Operators',
+    description:
+      'Given a string num that contains only digits and an integer target, return all possibilities to insert the binary operators +, -, or * between the digits of num so that the resultant expression evaluates to the target value.',
+    difficulty: 'Hard',
+    topics: ['Recursion', 'Algorithms'],
+    tags: ['leetcode', 'string', 'backtracking', 'math'],
+    testCases: [
+      {
+        params: ['123', 6],
+        expected: ['1*2*3', '1+2+3'],
+        explanation: 'Both expressions evaluate to 6',
+        type: 'Sample',
+      },
+      {
+        params: ['232', 8],
+        expected: ['2*3+2', '2+3*2'],
+        explanation: 'Both expressions evaluate to 8',
+        type: 'Sample',
+      },
+      {
+        params: ['3456237490', 9191],
+        expected: [],
+        explanation: 'No valid expressions',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['1 <= num.length <= 10', 'num consists of only digits'],
+  },
+
+  // BRAINTEASER - HARD
+  {
+    title: 'Chalkboard XOR Game',
+    description:
+      'You are given an array of integers nums. Alice and Bob take turns erasing exactly one number from the chalkboard, with Alice starting first. Return true if Alice wins the game, assuming both players play optimally.',
+    difficulty: 'Hard',
+    topics: ['Brainteaser'],
+    tags: ['leetcode', 'math', 'game-theory', 'brainteaser'],
+    testCases: [
+      {
+        params: [[1, 1, 2]],
+        expected: false,
+        explanation: 'Alice loses with optimal play',
+        type: 'Sample',
+      },
+      {
+        params: [[0, 1]],
+        expected: true,
+        explanation: 'Alice wins',
         type: 'Sample',
       },
     ],
     constraints: ['1 <= nums.length <= 1000'],
   },
   {
+    title: 'Cat and Mouse',
+    description:
+      'A game on an undirected graph is played by two players, Mouse and Cat, who alternate turns. Return 1 if the mouse wins the game, 2 if the cat wins, or 0 if the game is a draw.',
+    difficulty: 'Hard',
+    topics: ['Brainteaser'],
+    tags: ['leetcode', 'graph', 'topological-sort', 'game-theory'],
+    testCases: [
+      {
+        params: [[[2, 5], [3], [0, 4, 5], [1, 4, 5], [2, 3], [0, 2, 3]]],
+        expected: 0,
+        explanation: 'The game ends in a draw',
+        type: 'Sample',
+      },
+      {
+        params: [[[1, 3], [0], [3], [0, 2]]],
+        expected: 1,
+        explanation: 'Mouse wins',
+        type: 'Sample',
+      },
+    ],
+    constraints: ['3 <= graph.length <= 50'],
+  },
+
+  // DATABASES - HARD
+  {
     title: 'Trips and Users',
     description:
-      "Given table Trips with columns id, client_id, driver_id, city_id, status (ENUM: 'completed', 'cancelled_by_driver', 'cancelled_by_client'), request_at (date), and table Users with columns users_id, banned (ENUM: 'Yes', 'No'), role (ENUM: 'client', 'driver', 'partner'). The cancellation rate is computed by dividing the number of canceled (by client or driver) requests with unbanned users by the total number of requests with unbanned users on that day. Write a solution to find the cancellation rate of requests with unbanned users (both client and driver must not be banned) each day between '2013-10-01' and '2013-10-03'. Round Cancellation Rate to two decimal points.",
+      'Write a SQL query to find the cancellation rate of requests with unbanned users (both client and driver must not be banned) each day between "2013-10-01" and "2013-10-03". Round the cancellation rate to two decimal points.',
     difficulty: 'Hard',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
     testCases: [
       {
-        input:
-          'Trips table:\n+----+-----------+-----------+---------+---------------------+------------+\n| id | client_id | driver_id | city_id | status              | request_at |\n+----+-----------+-----------+---------+---------------------+------------+\n| 1  | 1         | 10        | 1       | completed           | 2013-10-01 |\n| 2  | 2         | 11        | 1       | cancelled_by_driver | 2013-10-01 |\n| 3  | 3         | 12        | 6       | completed           | 2013-10-01 |\n| 4  | 4         | 13        | 6       | cancelled_by_client | 2013-10-01 |\n| 5  | 1         | 10        | 1       | completed           | 2013-10-02 |\n| 6  | 2         | 11        | 6       | completed           | 2013-10-02 |\n| 7  | 3         | 12        | 6       | completed           | 2013-10-02 |\n| 8  | 2         | 12        | 12      | completed           | 2013-10-03 |\n| 9  | 3         | 10        | 12      | completed           | 2013-10-03 |\n| 10 | 4         | 13        | 12      | cancelled_by_driver | 2013-10-03 |\n+----+-----------+-----------+---------+---------------------+------------+\nUsers table:\n+----------+--------+--------+\n| users_id | banned | role   |\n+----------+--------+--------+\n| 1        | No     | client |\n| 2        | Yes    | client |\n| 3        | No     | client |\n| 4        | No     | client |\n| 10       | No     | driver |\n| 11       | No     | driver |\n| 12       | No     | driver |\n| 13       | No     | driver |\n+----------+--------+--------+',
-        expectedOutput:
-          '+------------+-------------------+\n| Day        | Cancellation Rate |\n+------------+-------------------+\n| 2013-10-01 | 0.33              |\n| 2013-10-02 | 0.00              |\n| 2013-10-03 | 0.50              |\n+------------+-------------------+',
-        explanation:
-          'On 2013-10-01: There were 4 requests in total, 2 of which were canceled. However, the request with Id=2 was made by a banned client (User_Id=2), so it is ignored in the calculation. Hence there are 3 unbanned requests in total, 1 of which was canceled. The Cancellation Rate is (1 / 3) = 0.33',
+        params: [
+          {
+            Trips: [
+              { id: 1, client_id: 1, driver_id: 10, city_id: 1, status: 'completed', request_at: '2013-10-01' },
+              { id: 2, client_id: 2, driver_id: 11, city_id: 1, status: 'cancelled_by_driver', request_at: '2013-10-01' },
+              { id: 3, client_id: 3, driver_id: 12, city_id: 6, status: 'completed', request_at: '2013-10-01' },
+              { id: 4, client_id: 4, driver_id: 13, city_id: 6, status: 'cancelled_by_client', request_at: '2013-10-01' },
+            ],
+            Users: [
+              { users_id: 1, banned: 'No', role: 'client' },
+              { users_id: 2, banned: 'Yes', role: 'client' },
+              { users_id: 3, banned: 'No', role: 'client' },
+              { users_id: 4, banned: 'No', role: 'client' },
+              { users_id: 10, banned: 'No', role: 'driver' },
+            ],
+          },
+        ],
+        expected: [
+          { Day: '2013-10-01', 'Cancellation Rate': 0.33 },
+          { Day: '2013-10-02', 'Cancellation Rate': 0.0 },
+          { Day: '2013-10-03', 'Cancellation Rate': 0.5 },
+        ],
+        explanation: 'Calculate cancellation rate for each day',
+        type: 'Sample',
+      },
+    ],
+    constraints: [],
+  },
+  {
+    title: 'Department Top Three Salaries',
+    description:
+      'Write a SQL query to find employees who earn the top three unique salaries in each department. Return the result in any order.',
+    difficulty: 'Hard',
+    topics: ['Databases'],
+    tags: ['leetcode', 'sql', 'database'],
+    testCases: [
+      {
+        params: [
+          {
+            Employee: [
+              { id: 1, name: 'Joe', salary: 85000, departmentId: 1 },
+              { id: 2, name: 'Henry', salary: 80000, departmentId: 2 },
+              { id: 3, name: 'Sam', salary: 60000, departmentId: 2 },
+              { id: 4, name: 'Max', salary: 90000, departmentId: 1 },
+              { id: 5, name: 'Janet', salary: 69000, departmentId: 1 },
+              { id: 6, name: 'Randy', salary: 85000, departmentId: 1 },
+            ],
+            Department: [
+              { id: 1, name: 'IT' },
+              { id: 2, name: 'Sales' },
+            ],
+          },
+        ],
+        expected: [
+          { department: 'IT', employee: 'Max', salary: 90000 },
+          { department: 'IT', employee: 'Joe', salary: 85000 },
+          { department: 'IT', employee: 'Randy', salary: 85000 },
+          { department: 'IT', employee: 'Janet', salary: 69000 },
+          { department: 'Sales', employee: 'Henry', salary: 80000 },
+          { department: 'Sales', employee: 'Sam', salary: 60000 },
+        ],
+        explanation: 'Top three salaries in each department',
         type: 'Sample',
       },
     ],
@@ -530,6 +1398,22 @@ const seedDatabase = async () => {
     console.log(`   Medium: ${medium} questions`);
     console.log(`   Hard: ${hard} questions`);
     console.log(`   Total: ${result.length} questions`);
+
+    // Display topic breakdown
+    const topics = {};
+    result.forEach((q) => {
+      q.topics.forEach((topic) => {
+        topics[topic] = topics[topic] || { Easy: 0, Medium: 0, Hard: 0 };
+        topics[topic][q.difficulty]++;
+      });
+    });
+
+    console.log('\n📚 Questions by Topic:');
+    Object.keys(topics)
+      .sort()
+      .forEach((topic) => {
+        console.log(`   ${topic}: Easy(${topics[topic].Easy}) Medium(${topics[topic].Medium}) Hard(${topics[topic].Hard})`);
+      });
 
     // Close connection
     await mongoose.connection.close();

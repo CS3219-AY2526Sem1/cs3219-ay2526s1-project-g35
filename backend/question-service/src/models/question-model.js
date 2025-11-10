@@ -4,10 +4,16 @@ const mongoose = require('mongoose');
  * Question Schema - MongoDB/Mongoose Implementation
  * Supports all Functional Requirements:
  * - Store questions with metadata (title, description, difficulty, topics, tags)
- * - Store test cases (input, output, explanation)
+ * - Store test cases (params array, expected output, explanation)
  * - Store constraints
  * - Retrieve by difficulty and topic
  * - Support random question selection
+ * 
+ * Test Case Format:
+ * - params: Array of parameters to pass to the solution function
+ * - expected: Expected output (any type: number, string, array, object, boolean)
+ * - explanation: Human-readable explanation
+ * - type: 'Sample' or 'Hidden'
  */
 
 const questionSchema = new mongoose.Schema(
@@ -50,12 +56,12 @@ const questionSchema = new mongoose.Schema(
     testCases: {
       type: [
         {
-          input: {
-            type: String,
-            required: [true, 'Test case input is required'],
+          params: {
+            type: [mongoose.Schema.Types.Mixed],
+            required: [true, 'Test case params array is required'],
           },
-          expectedOutput: {
-            type: String,
+          expected: {
+            type: mongoose.Schema.Types.Mixed,
             required: [true, 'Test case expected output is required'],
           },
           explanation: {
@@ -142,6 +148,20 @@ questionSchema.statics.getRandomByDifficulty = async function (difficulty) {
 questionSchema.statics.getRandomByTopicAndDifficulty = async function (topic, difficulty) {
   const questions = await this.aggregate([
     { $match: { topics: topic, difficulty } },
+    { $sample: { size: 1 } },
+  ]);
+  return questions.length > 0 ? questions[0] : null;
+};
+
+// Get random question by multiple topics and difficulty (for matching)
+questionSchema.statics.getRandomByTopicsAndDifficulty = async function (topics, difficulty) {
+  const questions = await this.aggregate([
+    { 
+      $match: { 
+        topics: { $in: topics },  // Match any of the provided topics
+        difficulty 
+      } 
+    },
     { $sample: { size: 1 } },
   ]);
   return questions.length > 0 ? questions[0] : null;
