@@ -103,3 +103,30 @@ export async function createQuestion(payload: CreateQuestionPayload) {
   const res = await questionApi.post('/api/questions', payload);
   return res.data;
 }
+
+export async function fetchQuestionById(id: string): Promise<QuestionDto> {
+  const res = await questionApi.get<{ success: boolean; data: QuestionDto }>(
+    `/api/questions/${id}`,
+  );
+  return res.data?.data;
+}
+
+export type UpdateQuestionPayload = Partial<CreateQuestionPayload> & {
+  title?: string;
+  description?: string;
+  difficulty?: QuestionDifficulty;
+  topics?: string[];
+  tags?: string[];
+  testCases?: QuestionTestCase[];
+  constraints?: string[];
+};
+
+export async function updateQuestion(id: string, payload: UpdateQuestionPayload) {
+  const res = await questionApi.put(`/api/questions/${id}`, payload);
+  return res.data;
+}
+
+export async function deleteQuestion(id: string) {
+  const res = await questionApi.delete(`/api/questions/${id}`);
+  return res.data;
+}
