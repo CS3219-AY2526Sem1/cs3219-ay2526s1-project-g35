@@ -39,6 +39,7 @@ interface LanguageChangeData {
   sessionId: string;
   userId: string;
   language: string;
+  code?: string; // Optional: new starter code if auto-updated
 }
 
 interface ChatMessageData {

@@ -153,6 +153,7 @@ const setupSocketHandlers = (io, sessionManager) => {
 
     /**
      * LANGUAGE_CHANGE - Update programming language for the session
+     * Also updates starter code if available for the new language
      */
     socket.on('language-change', (data, callback) => {
       try {
@@ -163,14 +164,43 @@ const setupSocketHandlers = (io, sessionManager) => {
           return callback?.({ success: false, error: 'Not in session' });
         }
 
+        // Get session and check for starter code
+        const session = sessionManager.getSession(sessionId);
+        const oldLanguage = session?.language;
+
         // Update language in session
         const result = sessionManager.updateLanguage(sessionId, language);
 
         if (result.success) {
+          let newCode = null;
+
+          // If question has starterCode object with multiple languages, update code
+          if (session?.problem?.starterCode && typeof session.problem.starterCode === 'object') {
+            const starterCode = session.problem.starterCode;
+
+            // Get new language's starter code
+            const newLanguageCode = starterCode[language];
+
+            if (newLanguageCode) {
+              // Check if current code is empty or is the old language's starter code
+              const oldLanguageCode = starterCode[oldLanguage];
+              const currentCode = session.code || '';
+
+              // Auto-switch to new starter code if:
+              // 1. Current code is empty or whitespace only
+              // 2. Current code matches the old language's starter code (user hasn't modified it)
+              if (!currentCode.trim() || currentCode.trim() === oldLanguageCode?.trim()) {
+                newCode = newLanguageCode;
+                sessionManager.updateCode(sessionId, newCode);
+              }
+            }
+          }
+
           // Broadcast language change to all users
           io.to(sessionId).emit('language-update', {
             language,
             userId,
+            code: newCode, // Include new starter code if it was updated
             timestamp: Date.now(),
           });
         }
@@ -303,8 +333,9 @@ const setupSocketHandlers = (io, sessionManager) => {
           return;
         }
 
-        // Get test cases from the question
+        // Get test cases and function signature from the question
         const testCases = session.testCases || [];
+        const functionSignature = session.problem?.functionSignature || null;
 
         // Import code executor
         const codeExecutor = require('./codeExecutor');
@@ -312,8 +343,18 @@ const setupSocketHandlers = (io, sessionManager) => {
         // Parse test cases first
         const parsedTestCases = codeExecutor.parseTestCases(testCases);
 
+        // Prepare test case parameters based on function signature
+        const preparedTestCases = parsedTestCases.map((tc) => ({
+          ...tc,
+          params: codeExecutor.prepareTestCaseParams(tc, functionSignature),
+        }));
+
         // Execute code
-        const result = await codeExecutor.execute(session.code, session.language, parsedTestCases);
+        const result = await codeExecutor.execute(
+          session.code,
+          session.language,
+          preparedTestCases,
+        );
 
         // Send results back to the socket
         io.to(socket.id).emit('code-execution-result', result);

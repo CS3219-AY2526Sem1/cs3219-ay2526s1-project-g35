@@ -17,8 +17,12 @@ interface Message {
 
 interface TestCase {
   id: string;
+  // New format
+  params?: unknown[];
+  expected?: unknown;
+  // Old format (backward compatibility)
   input?: string;
-  expected?: string;
+  expectedOutput?: string;
   explanation?: string;
 }
 
@@ -34,8 +38,11 @@ interface QuestionData {
   starterCode?: string;
   examples?: QuestionExample[];
   testCases?: Array<{
+    // New format
+    params?: unknown[];
+    expected?: unknown;
+    // Old format
     input?: string;
-    expected?: string;
     expectedOutput?: string;
     explanation?: string;
   }>;
@@ -143,7 +150,19 @@ const Session = (): React.ReactElement => {
 
         // Update code with starter code if available
         if (matchedData.question.starterCode) {
-          setCode(matchedData.question.starterCode);
+          // starterCode can be either a string (old format) or object with language keys (new format)
+          if (typeof matchedData.question.starterCode === 'string') {
+            setCode(matchedData.question.starterCode);
+          } else if (typeof matchedData.question.starterCode === 'object') {
+            // Use the current language's starter code, fallback to python
+            const starterCodeObj = matchedData.question.starterCode as Record<string, string>;
+            const languageCode =
+              starterCodeObj[selectedLanguage] ||
+              starterCodeObj.python ||
+              starterCodeObj.javascript ||
+              '';
+            setCode(languageCode);
+          }
         }
 
         // Update examples if available
@@ -156,8 +175,12 @@ const Session = (): React.ReactElement => {
           setTestCases(
             matchedData.question.testCases.map((tc, index: number) => ({
               id: `Case ${index + 1}`,
+              // New format
+              params: tc.params,
+              expected: tc.expected,
+              // Old format (backward compatibility)
               input: tc.input || '',
-              expected: (tc.expected ?? tc.expectedOutput) || '',
+              expectedOutput: tc.expectedOutput || '',
               explanation: tc.explanation || '',
             })),
           );
@@ -179,6 +202,10 @@ const Session = (): React.ReactElement => {
         if (langKey) {
           setSelectedLanguage(data.language);
         }
+      }
+      // If new starter code is provided (auto-switched), update it
+      if (data.code) {
+        setCode(data.code);
       }
     });
 
@@ -577,18 +604,34 @@ const Session = (): React.ReactElement => {
 
                 {currentTestCase && (
                   <div className="bg-muted p-4 rounded-2xl">
-                    {currentTestCase.input && (
+                    {(currentTestCase.input || currentTestCase.params) && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Input:</p>
                         <p className="font-mono text-sm whitespace-pre-wrap">
-                          {currentTestCase.input}
+                          {currentTestCase.input ||
+                            (currentTestCase.params
+                              ? currentTestCase.params
+                                  .map((param: unknown) =>
+                                    typeof param === 'string'
+                                      ? `"${param}"`
+                                      : JSON.stringify(param),
+                                  )
+                                  .join(', ')
+                              : '')}
                         </p>
                       </div>
                     )}
-                    {currentTestCase.expected && (
+                    {(currentTestCase.expected !== undefined || currentTestCase.expectedOutput) && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Expected Output:</p>
-                        <p className="font-mono text-sm">{currentTestCase.expected}</p>
+                        <p className="font-mono text-sm">
+                          {currentTestCase.expectedOutput ||
+                            (currentTestCase.expected !== undefined
+                              ? typeof currentTestCase.expected === 'string'
+                                ? `"${currentTestCase.expected}"`
+                                : JSON.stringify(currentTestCase.expected)
+                              : '')}
+                        </p>
                       </div>
                     )}
                     {currentTestCase.explanation && (

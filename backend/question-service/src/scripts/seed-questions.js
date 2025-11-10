@@ -19,6 +19,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Strings', 'Algorithms'],
     tags: ['leetcode', 'two-pointers'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 's', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [['h', 'e', 'l', 'l', 'o']],
@@ -42,6 +47,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Strings', 'Algorithms'],
     tags: ['leetcode', 'two-pointers', 'string'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 's', type: 'string' }],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: ['A man, a plan, a canal: Panama'],
@@ -74,6 +84,14 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Arrays', 'Algorithms'],
     tags: ['leetcode', 'hash-table', 'array'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'nums', type: 'array' },
+        { name: 'target', type: 'number' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [[2, 7, 11, 15], 9],
@@ -107,6 +125,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Arrays', 'Algorithms'],
     tags: ['leetcode', 'array', 'dynamic-programming'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'prices', type: 'array' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [[7, 1, 5, 3, 6, 4]],
@@ -132,6 +155,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Data Structures', 'Algorithms'],
     tags: ['leetcode', 'linked-list', 'two-pointers'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'head', type: 'ListNode', constructFrom: 'array' }],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: [[3, 2, 0, -4], 1],
@@ -165,6 +193,14 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Data Structures'],
     tags: ['leetcode', 'stack', 'queue', 'design'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'operations', type: 'array' },
+        { name: 'values', type: 'array' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -187,6 +223,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Algorithms'],
     tags: ['leetcode', 'hash-table', 'math', 'string'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 's', type: 'string' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: ['III'],
@@ -219,6 +260,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Algorithms', 'Data Structures'],
     tags: ['leetcode', 'stack', 'string'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 's', type: 'string' }],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: ['()'],
@@ -249,6 +295,14 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Bit Manipulation', 'Algorithms'],
     tags: ['leetcode', 'math', 'string', 'bit-manipulation'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'a', type: 'string' },
+        { name: 'b', type: 'string' },
+      ],
+      returnType: 'string',
+    },
     testCases: [
       {
         params: ['11', '1'],
@@ -275,6 +329,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Bit Manipulation', 'Algorithms'],
     tags: ['leetcode', 'bit-manipulation'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [11],
@@ -306,6 +365,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Recursion', 'Algorithms'],
     tags: ['leetcode', 'dynamic-programming', 'math', 'recursion'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [2],
@@ -335,6 +399,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Recursion', 'Algorithms'],
     tags: ['leetcode', 'dynamic-programming', 'math'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [2],
@@ -360,6 +429,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'tables', type: 'object' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -391,6 +465,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'person', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -418,6 +497,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Brainteaser'],
     tags: ['leetcode', 'math', 'brainteaser', 'game-theory'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: [4],
@@ -448,6 +532,11 @@ const sampleQuestions = [
     difficulty: 'Easy',
     topics: ['Brainteaser'],
     tags: ['leetcode', 'math', 'bit-manipulation', 'recursion'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: [1],
@@ -481,6 +570,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Strings', 'Algorithms'],
     tags: ['leetcode', 'hash-table', 'string', 'sliding-window'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 's', type: 'string' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: ['abcabcbb'],
@@ -510,6 +604,14 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Strings', 'Algorithms'],
     tags: ['leetcode', 'dynamic-programming', 'string'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'text1', type: 'string' },
+        { name: 'text2', type: 'string' },
+      ],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: ['abcde', 'ace'],
@@ -541,6 +643,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Arrays', 'Algorithms'],
     tags: ['leetcode', 'array', 'matrix'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'matrix', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -586,6 +693,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Arrays', 'Algorithms'],
     tags: ['leetcode', 'array', 'prefix-sum'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'nums', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [[1, 2, 3, 4]],
@@ -611,6 +723,14 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Data Structures', 'Algorithms'],
     tags: ['leetcode', 'graph', 'topological-sort', 'dfs'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'numCourses', type: 'number' },
+        { name: 'prerequisites', type: 'array' },
+      ],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: [2, [[1, 0]]],
@@ -640,6 +760,14 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Data Structures'],
     tags: ['leetcode', 'hash-table', 'linked-list', 'design'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'operations', type: 'array' },
+        { name: 'values', type: 'array' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -662,6 +790,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Algorithms', 'Bit Manipulation'],
     tags: ['leetcode', 'hash-table', 'string', 'sliding-window'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 's', type: 'string' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: ['AAAAACCCCCAAAAACCCCCCAAAAAGGGTTT'],
@@ -685,6 +818,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Algorithms', 'Arrays'],
     tags: ['leetcode', 'array', 'two-pointers', 'greedy'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'height', type: 'array' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [[1, 8, 6, 2, 5, 4, 8, 3, 7]],
@@ -710,6 +848,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Bit Manipulation', 'Algorithms'],
     tags: ['leetcode', 'bit-manipulation', 'array'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'nums', type: 'array' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [[2, 2, 3, 2]],
@@ -733,6 +876,14 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Bit Manipulation', 'Algorithms'],
     tags: ['leetcode', 'bit-manipulation'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'left', type: 'number' },
+        { name: 'right', type: 'number' },
+      ],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [5, 7],
@@ -764,6 +915,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Recursion', 'Algorithms'],
     tags: ['leetcode', 'string', 'backtracking', 'recursion'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [3],
@@ -787,6 +943,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Recursion', 'Algorithms'],
     tags: ['leetcode', 'string', 'backtracking', 'recursion'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'digits', type: 'string' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: ['23'],
@@ -818,6 +979,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Brainteaser'],
     tags: ['leetcode', 'math', 'probability', 'brainteaser'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [1],
@@ -841,6 +1007,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Brainteaser'],
     tags: ['leetcode', 'math', 'brainteaser'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [3],
@@ -872,6 +1043,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'scores', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -907,6 +1083,11 @@ const sampleQuestions = [
     difficulty: 'Medium',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'tables', type: 'object' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -944,6 +1125,14 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Strings', 'Algorithms'],
     tags: ['leetcode', 'dynamic-programming', 'greedy', 'string'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 's', type: 'string' },
+        { name: 'p', type: 'string' },
+      ],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: ['aa', 'a'],
@@ -973,6 +1162,14 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Strings', 'Algorithms'],
     tags: ['leetcode', 'dynamic-programming', 'string', 'recursion'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 's', type: 'string' },
+        { name: 'p', type: 'string' },
+      ],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: ['aa', 'a'],
@@ -1004,6 +1201,14 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Arrays', 'Algorithms'],
     tags: ['leetcode', 'array', 'queue', 'sliding-window', 'heap'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'nums', type: 'array' },
+        { name: 'k', type: 'number' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [[1, 3, -1, -3, 5, 3, 6, 7], 3],
@@ -1027,6 +1232,14 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Arrays', 'Algorithms'],
     tags: ['leetcode', 'array', 'binary-search', 'divide-and-conquer'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'nums1', type: 'array' },
+        { name: 'nums2', type: 'array' },
+      ],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [[1, 3], [2]],
@@ -1055,6 +1268,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Data Structures', 'Algorithms'],
     tags: ['leetcode', 'tree', 'design', 'string', 'binary-tree'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'root', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [[1, 2, 3, null, null, 4, 5]],
@@ -1078,6 +1296,14 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Data Structures'],
     tags: ['leetcode', 'design', 'hash-table', 'trie', 'string'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'operations', type: 'array' },
+        { name: 'values', type: 'array' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -1100,6 +1326,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Algorithms'],
     tags: ['leetcode', 'backtracking', 'array'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [4],
@@ -1126,6 +1357,15 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Algorithms'],
     tags: ['leetcode', 'hash-table', 'string', 'backtracking', 'bfs'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'beginWord', type: 'string' },
+        { name: 'endWord', type: 'string' },
+        { name: 'wordList', type: 'array' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: ['hit', 'cog', ['hot', 'dot', 'dog', 'lot', 'log', 'cog']],
@@ -1154,6 +1394,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Bit Manipulation', 'Algorithms'],
     tags: ['leetcode', 'bit-manipulation', 'trie', 'array'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'nums', type: 'array' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [[3, 10, 5, 25, 2, 8]],
@@ -1177,6 +1422,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Bit Manipulation', 'Algorithms'],
     tags: ['leetcode', 'bit-manipulation', 'math', 'dynamic-programming'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'n', type: 'number' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [3],
@@ -1202,6 +1452,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Recursion', 'Algorithms'],
     tags: ['leetcode', 'array', 'backtracking', 'matrix'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'board', type: 'array' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -1243,6 +1498,14 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Recursion', 'Algorithms'],
     tags: ['leetcode', 'string', 'backtracking', 'math'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [
+        { name: 'num', type: 'string' },
+        { name: 'target', type: 'number' },
+      ],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: ['123', 6],
@@ -1274,6 +1537,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Brainteaser'],
     tags: ['leetcode', 'math', 'game-theory', 'brainteaser'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'nums', type: 'array' }],
+      returnType: 'boolean',
+    },
     testCases: [
       {
         params: [[1, 1, 2]],
@@ -1297,6 +1565,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Brainteaser'],
     tags: ['leetcode', 'graph', 'topological-sort', 'game-theory'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'graph', type: 'array' }],
+      returnType: 'number',
+    },
     testCases: [
       {
         params: [[[2, 5], [3], [0, 4, 5], [1, 4, 5], [2, 3], [0, 2, 3]]],
@@ -1322,6 +1595,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'tables', type: 'object' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [
@@ -1387,6 +1665,11 @@ const sampleQuestions = [
     difficulty: 'Hard',
     topics: ['Databases'],
     tags: ['leetcode', 'sql', 'database'],
+    functionSignature: {
+      name: 'solution',
+      parameters: [{ name: 'tables', type: 'object' }],
+      returnType: 'array',
+    },
     testCases: [
       {
         params: [

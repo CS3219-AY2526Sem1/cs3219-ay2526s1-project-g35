@@ -65,43 +65,47 @@ const QUESTION_FETCH_ERROR_MESSAGE = 'Unable to retrieve a coding question. Plea
 const fetchQuestionId = async ({ topics, difficulty, userId }) => {
   const topicsToTry = Array.isArray(topics) && topics.length > 0 ? topics : DEFAULT_TOPICS;
 
-  for (const topic of topicsToTry) {
-    try {
-      console.log(`Trying to get question for topic="${topic}", difficulty="${difficulty}"`);
+  try {
+    // Join all topics as comma-separated string for the question service
+    const topicsParam = topicsToTry.join(',');
 
-      const serviceToken = createServiceJwt({
-        scope: 'question:random',
-        topic,
-        difficulty,
-        subjectUserId: userId,
-      });
+    console.log(`Trying to get question for topics="${topicsParam}", difficulty="${difficulty}"`);
 
-      const requestConfig = {
-        params: { topic, difficulty },
-        headers: {},
-      };
+    const serviceToken = createServiceJwt({
+      scope: 'question:random',
+      topics: topicsParam,
+      difficulty,
+      subjectUserId: userId,
+    });
 
-      if (serviceToken) {
-        requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
-        requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
-      } else {
-        console.warn('Service JWT unavailable when requesting random question');
-      }
+    const requestConfig = {
+      params: { topics: topicsParam, difficulty },
+      headers: {},
+    };
 
-      const response = await axios.get(
-        `${QUESTION_SERVICE_BASE_URL}/api/questions/random`,
-        requestConfig,
-      );
-
-      if (response.data.success && response.data.questionId) {
-        console.log(
-          `Found question for topic "${topic}" and difficulty "${difficulty}": ${response.data.questionId}`,
-        );
-        return response.data.questionId;
-      }
-    } catch (error) {
-      console.warn(`Could not get question for topic "${topic}":`, error.message || error);
+    if (serviceToken) {
+      requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
+      requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
+    } else {
+      console.warn('Service JWT unavailable when requesting random question');
     }
+
+    const response = await axios.get(
+      `${QUESTION_SERVICE_BASE_URL}/api/questions/random`,
+      requestConfig,
+    );
+
+    if (response.data.success && response.data.questionId) {
+      console.log(
+        `Found question for topics "${topicsParam}" and difficulty "${difficulty}": ${response.data.questionId}`,
+      );
+      return response.data.questionId;
+    }
+  } catch (error) {
+    console.warn(
+      `Could not get question for topics "${topicsToTry.join(',')}":`,
+      error.message || error,
+    );
   }
 
   return null;

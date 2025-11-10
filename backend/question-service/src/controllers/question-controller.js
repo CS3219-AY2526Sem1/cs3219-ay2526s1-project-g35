@@ -7,6 +7,29 @@ const cache = require('../utils/cacheService');
  * Includes Redis caching for improved performance
  */
 
+/**
+ * Helper function to enrich question data with starter code templates
+ * @param {Object} question - Question document
+ * @returns {Object} - Enriched question with starterCode field
+ */
+function enrichQuestionWithStarterCode(question) {
+  if (!question) return question;
+
+  const questionObj = question.toObject ? question.toObject() : question;
+
+  // Only generate starter code if functionSignature exists
+  if (questionObj.functionSignature) {
+    questionObj.starterCode = {
+      python: Question.generateStarterCode(questionObj.functionSignature, 'python'),
+      javascript: Question.generateStarterCode(questionObj.functionSignature, 'javascript'),
+      java: Question.generateStarterCode(questionObj.functionSignature, 'java'),
+      cpp: Question.generateStarterCode(questionObj.functionSignature, 'cpp'),
+    };
+  }
+
+  return questionObj;
+}
+
 const QuestionController = {
   /**
    * Get all questions
@@ -95,6 +118,7 @@ const QuestionController = {
    * Get a single question by ID
    * GET /api/questions/:id
    * Uses Redis cache for improved performance
+   * Returns question with starter code templates
    */
   async getQuestionById(req, res, next) {
     try {
@@ -103,9 +127,10 @@ const QuestionController = {
       // Try to get from cache first
       const cachedQuestion = await cache.getQuestion(id);
       if (cachedQuestion) {
+        const enrichedQuestion = enrichQuestionWithStarterCode(cachedQuestion);
         return res.status(200).json({
           success: true,
-          data: cachedQuestion,
+          data: enrichedQuestion,
           cached: true,
         });
       }
@@ -123,9 +148,12 @@ const QuestionController = {
       // Store in cache for future requests
       await cache.setQuestion(id, question);
 
+      // Enrich with starter code before returning
+      const enrichedQuestion = enrichQuestionWithStarterCode(question);
+
       res.status(200).json({
         success: true,
-        data: question,
+        data: enrichedQuestion,
         cached: false,
       });
     } catch (error) {
