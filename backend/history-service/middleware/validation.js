@@ -41,6 +41,10 @@ const schemas = {
       'string.max': 'Category must not exceed 255 characters',
       'any.required': 'Category is required',
     }),
+
+    status: Joi.string().valid('attempted', 'incomplete', 'completed').optional().default('attempted').messages({
+      'any.only': 'Status must be attempted, incomplete, or completed',
+    }),
   }),
 
   // Get user history query parameters

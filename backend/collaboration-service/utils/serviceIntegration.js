@@ -12,6 +12,7 @@ class ServiceIntegration {
     this.questionServiceUrl = process.env.QUESTION_SERVICE_URL || 'http://question-service:8001';
     this.matchingServiceUrl = process.env.MATCHING_SERVICE_URL || 'http://matching-service:8003';
     this.userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:8000';
+    this.historyServiceUrl = process.env.HISTORY_SERVICE_URL || 'http://history-service:8004';
     this.serviceName = process.env.SERVICE_NAME || 'collaboration-service';
     this.jwtSecret = process.env.JWT_SECRET;
     this.serviceTokenDefaults = {
@@ -49,6 +50,14 @@ class ServiceIntegration {
 
     this.userServiceClient = axios.create({
       baseURL: this.userServiceUrl,
+      timeout: 5000,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    this.historyServiceClient = axios.create({
+      baseURL: this.historyServiceUrl,
       timeout: 5000,
       headers: {
         'Content-Type': 'application/json',
@@ -239,6 +248,59 @@ class ServiceIntegration {
   }
 
   /**
+   * Create history entry for a collaboration session
+   * @param {Object} historyData - History entry data
+   * @param {string} historyData.user_id - User ID
+   * @param {string} historyData.session_id - Session ID
+   * @param {string} historyData.question_title - Question title
+   * @param {string} historyData.difficulty - Question difficulty (Easy, Medium, Hard)
+   * @param {string} historyData.category - Question category/topic
+   * @returns {Promise<Object>} Result of history creation
+   */
+  async createHistoryEntry(historyData) {
+    try {
+      console.log(`Creating history entry for user ${historyData.user_id} and session ${historyData.session_id}`);
+
+      const response = await this.historyServiceClient.post('/history', {
+        user_id: historyData.user_id,
+        session_id: historyData.session_id,
+        question_title: historyData.question_title,
+        difficulty: historyData.difficulty,
+        category: historyData.category,
+      });
+
+      if (response.data && response.data.success) {
+        console.log(`History entry created successfully for user ${historyData.user_id}`);
+        return {
+          success: true,
+          data: response.data.data,
+        };
+      } else {
+        throw new Error('Invalid response format from history service');
+      }
+    } catch (error) {
+      console.error('Error creating history entry:', error.message);
+
+      if (error.response) {
+        return {
+          success: false,
+          error: `History service error: ${error.response.status} - ${error.response.data?.message || 'Unknown error'}`,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'History service is unavailable',
+        };
+      } else {
+        return {
+          success: false,
+          error: `Request error: ${error.message}`,
+        };
+      }
+    }
+  }
+
+  /**
    * Health check for all services
    */
   async healthCheck() {
@@ -254,6 +316,11 @@ class ServiceIntegration {
         url: this.matchingServiceUrl,
       },
       { name: 'User Service', client: this.userServiceClient, url: this.userServiceUrl },
+      {
+        name: 'History Service',
+        client: this.historyServiceClient,
+        url: this.historyServiceUrl,
+      },
     ];
 
     const results = {};

@@ -128,14 +128,44 @@ services:
       - ./backend/history-service/gcp-service-account-key.json:/app/gcp-key.json:ro
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-key.json
+      - DB_HOST=history-postgres
+      - DB_PORT=5432
+      - DB_NAME=historydb
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      history-postgres:
+        condition: service_healthy
     networks:
       - peerprep-network
     healthcheck:
       test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8004/health" ]
       interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # History service PostgreSQL database
+  history-postgres:
+    container_name: history-postgres
+    image: postgres:15-alpine
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_DB=historydb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - history_postgres_data:/var/lib/postgresql/data
+    networks:
+      - peerprep-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
       timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 5s
     restart: unless-stopped
   # Redis instances for each service - separated for scalability
   user-service-redis:

@@ -54,6 +54,9 @@ router.use(sanitizeInput);
  *       500:
  *         description: Server error
  */
+// Routes are at root level since gateway strips /api/history prefix
+// Handle both root path and /history for backward compatibility
+router.post('/', validateBody(schemas.createHistory), HistoryController.createHistory);
 router.post('/history', validateBody(schemas.createHistory), HistoryController.createHistory);
 
 /**
@@ -121,8 +124,24 @@ router.post('/history', validateBody(schemas.createHistory), HistoryController.c
  *       500:
  *         description: Server error
  */
+// Routes are at root level since gateway strips /api/history prefix
+// Handle both root path and /history for backward compatibility
+router.get(
+  '/',
+  (req, res, next) => {
+    console.log('GET / route hit - Path:', req.path, 'Query:', req.query);
+    next();
+  },
+  verifyToken,
+  validateQuery(schemas.getUserHistory),
+  HistoryController.getUserHistory
+);
 router.get(
   '/history',
+  (req, res, next) => {
+    console.log('GET /history route hit - Path:', req.path, 'Query:', req.query);
+    next();
+  },
   verifyToken,
   validateQuery(schemas.getUserHistory),
   HistoryController.getUserHistory

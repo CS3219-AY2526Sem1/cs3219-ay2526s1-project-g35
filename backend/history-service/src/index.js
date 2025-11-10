@@ -65,40 +65,13 @@ app.get('/health', (req, res) => {
   });
 });
 
-/**
- * @swagger
- * /:
- *   get:
- *     summary: Root endpoint
- *     tags: [Health]
- *     responses:
- *       200:
- *         description: Service information
- */
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    service: 'History Service',
-    version: '1.0.0',
-    description: 'Tracks user question attempts and provides statistics',
-    endpoints: {
-      health: '/health',
-      docs: '/api-docs',
-      history: {
-        create: 'POST /history',
-        getUserHistory: 'GET /history?user_id=:userId',
-      },
-      admin: {
-        stats: 'GET /admin/stats',
-        statsByCategory: 'GET /admin/stats/category',
-        statsByDifficulty: 'GET /admin/stats/difficulty',
-        statsByUser: 'GET /admin/stats/user',
-      },
-    },
-  });
-});
-
 // API Routes
+// Mount at root since gateway strips /api/history prefix
+// Add debug middleware to log all incoming requests
+app.use((req, res, next) => {
+  console.log(`[History Service] ${req.method} ${req.path} - Query:`, req.query);
+  next();
+});
 app.use('/', historyRoutes);
 
 // 404 handler

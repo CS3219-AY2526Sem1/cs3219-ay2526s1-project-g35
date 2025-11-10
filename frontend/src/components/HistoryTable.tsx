@@ -9,6 +9,7 @@ export type HistoryItem = {
   title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   category: string;
+  status: 'attempted' | 'incomplete' | 'completed';
   created_at: string;
   session_id?: string;
 };
@@ -41,15 +42,37 @@ export default function HistoryTable({
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, totalItems);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatDate = (dateString: string | Date | unknown) => {
+    try {
+      // Handle both string and object dates
+      let date: Date;
+      if (typeof dateString === 'string') {
+        date = new Date(dateString);
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else if (dateString && typeof dateString === 'object') {
+        // Handle date-like objects
+        date = new Date(dateString as string | number | Date);
+      } else {
+        return 'Invalid date';
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, dateString);
+      return 'Invalid date';
+    }
   };
 
   return (
@@ -64,19 +87,20 @@ export default function HistoryTable({
                 <th className="text-left min-w-[220px]">Question Title</th>
                 <th className="text-left w-[110px]">Difficulty</th>
                 <th className="text-left min-w-[150px]">Category</th>
+                <th className="text-left w-[120px]">Status</th>
                 <th className="text-left min-w-[180px]">Date Attempted</th>
               </tr>
             </thead>
             <tbody className="[&_td]:py-4 [&_td]:px-4">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
                     Loading...
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
                     No history entries found
                   </td>
                 </tr>
@@ -95,6 +119,9 @@ export default function HistoryTable({
                       <span className="inline-flex items-center rounded-md border px-2 py-1 text-xs text-muted-foreground">
                         {row.category}
                       </span>
+                    </td>
+                    <td className="align-top">
+                      <StatusPill value={row.status} />
                     </td>
                     <td className="align-top text-muted-foreground text-xs">
                       {formatDate(row.created_at)}
@@ -179,6 +206,31 @@ function DifficultyPill({ value }: { value: HistoryItem['difficulty'] }) {
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${color}`}
     >
       {value}
+    </span>
+  );
+}
+
+function StatusPill({ value }: { value: HistoryItem['status'] }) {
+  const colorMap = {
+    attempted:
+      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    incomplete:
+      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    completed:
+      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+  };
+
+  const labelMap = {
+    attempted: 'Attempted',
+    incomplete: 'Incomplete',
+    completed: 'Completed',
+  };
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorMap[value]}`}
+    >
+      {labelMap[value]}
     </span>
   );
 }

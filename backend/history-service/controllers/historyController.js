@@ -67,7 +67,7 @@ const HistoryController = {
 
       res.status(200).json({
         success: true,
-        count: result.histories.length,
+        count: result.totalCount, // Use totalCount for pagination
         totalCount: result.totalCount,
         data: result.histories,
         pagination: {

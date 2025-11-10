@@ -24,7 +24,7 @@ class HistoryService {
    * @returns {Promise<Object>} Created history entry
    */
   async createHistory(historyData) {
-    const { user_id, session_id, question_title, difficulty, category } = historyData;
+    const { user_id, session_id, question_title, difficulty, category, status } = historyData;
 
     // Business logic: Create history entry
     const history = await getHistoryModel().createHistory({
@@ -33,9 +33,16 @@ class HistoryService {
       question_title,
       difficulty,
       category,
+      status: status || 'attempted',
     });
 
-    return history;
+    // Ensure created_at is serialized as string
+    const historyJson = history.toJSON();
+    if (historyJson.created_at instanceof Date) {
+      historyJson.created_at = historyJson.created_at.toISOString();
+    }
+
+    return historyJson;
   } /**
    * Get history for a specific user
    * @param {string} userId - User ID
@@ -78,8 +85,31 @@ class HistoryService {
     // Fetch history entries
     const { rows, count } = await getHistoryModel().findAndCountAll(queryOptions);
 
+    // Ensure created_at is serialized as string for all entries
+    // Also ensure all Date objects and other complex types are properly serialized
+    const serializedHistories = rows.map((history) => {
+      const historyJson = history.toJSON();
+      // Convert Date to ISO string
+      if (historyJson.created_at instanceof Date) {
+        historyJson.created_at = historyJson.created_at.toISOString();
+      } else if (historyJson.created_at && typeof historyJson.created_at === 'object') {
+        // Handle Sequelize date objects
+        historyJson.created_at = new Date(historyJson.created_at).toISOString();
+      }
+      // Ensure all fields are primitives
+      Object.keys(historyJson).forEach((key) => {
+        if (historyJson[key] instanceof Date) {
+          historyJson[key] = historyJson[key].toISOString();
+        } else if (historyJson[key] && typeof historyJson[key] === 'object' && historyJson[key].constructor !== Object) {
+          // Convert non-plain objects to strings to avoid [object Object]
+          historyJson[key] = String(historyJson[key]);
+        }
+      });
+      return historyJson;
+    });
+
     return {
-      histories: rows,
+      histories: serializedHistories,
       totalCount: count,
       limit: queryOptions.limit,
       offset: queryOptions.offset,

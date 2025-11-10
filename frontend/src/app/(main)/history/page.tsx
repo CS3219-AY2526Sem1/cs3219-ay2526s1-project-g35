@@ -29,7 +29,8 @@ export default function HistoryPage() {
     if (user?.id) {
       fetchHistory(currentPage);
     }
-  }, [user, currentPage, isAuthenticated, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, currentPage, isAuthenticated, router]);
 
   const fetchHistory = async (page: number) => {
     if (!user?.id) return;
@@ -42,14 +43,25 @@ export default function HistoryPage() {
       const response = await historyService.getUserHistory(user.id, ITEMS_PER_PAGE, offset);
 
       // Transform API response to match HistoryItem interface
-      const transformedData: HistoryItem[] = response.data.map((entry: HistoryEntry) => ({
-        id: entry.id,
-        title: entry.question_title,
-        difficulty: entry.difficulty,
-        category: entry.category,
-        created_at: entry.created_at,
-        session_id: entry.session_id,
-      }));
+      const transformedData: HistoryItem[] = response.data.map((entry: HistoryEntry) => {
+        // Ensure created_at is a string, not an object
+        let created_at = entry.created_at;
+        if (created_at && typeof created_at === 'object') {
+          created_at = new Date(created_at).toISOString();
+        } else if (created_at && typeof created_at !== 'string') {
+          created_at = String(created_at);
+        }
+        
+        return {
+          id: entry.id,
+          title: entry.question_title,
+          difficulty: entry.difficulty,
+          category: entry.category,
+          status: entry.status || 'attempted',
+          created_at: created_at || new Date().toISOString(),
+          session_id: entry.session_id,
+        };
+      });
 
       setHistoryData(transformedData);
       setTotalItems(response.count);

@@ -55,7 +55,7 @@ function initHistoryModel(sequelize) {
         },
       },
       difficulty: {
-        type: DataTypes.ENUM('Easy', 'Medium', 'Hard'),
+        type: DataTypes.STRING(10),
         allowNull: false,
         validate: {
           isIn: {
@@ -74,6 +74,17 @@ function initHistoryModel(sequelize) {
           len: {
             args: [1, 100],
             msg: 'Category must be between 1 and 100 characters',
+          },
+        },
+      },
+      status: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'attempted',
+        validate: {
+          isIn: {
+            args: [['attempted', 'incomplete', 'completed']],
+            msg: 'Status must be attempted, incomplete, or completed',
           },
         },
       },
@@ -112,6 +123,10 @@ function initHistoryModel(sequelize) {
           name: 'idx_user_created',
           fields: ['user_id', 'created_at'],
         },
+        {
+          name: 'idx_status',
+          fields: ['status'],
+        },
       ],
     }
   );
@@ -133,6 +148,7 @@ function initHistoryModel(sequelize) {
         question_title: data.question_title,
         difficulty: data.difficulty,
         category: data.category,
+        status: data.status || 'attempted',
         created_at: new Date(),
       });
       return history;
