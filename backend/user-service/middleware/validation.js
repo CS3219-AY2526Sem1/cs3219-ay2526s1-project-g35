@@ -93,6 +93,53 @@ export const userSchemas = {
         'any.required': 'OTP is required',
       }),
   }),
+
+  initiatePasswordReset: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
+  }),
+
+  verifyPasswordResetOTP: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
+    otp: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'OTP must be a 6-digit number',
+        'any.required': 'OTP is required',
+      }),
+  }),
+
+  resetPassword: Joi.object({
+    email: Joi.string().email().required().messages({
+      'string.email': 'Please provide a valid email address',
+      'any.required': 'Email is required',
+    }),
+    otp: Joi.string()
+      .pattern(/^\d{6}$/)
+      .required()
+      .messages({
+        'string.pattern.base': 'OTP must be a 6-digit number',
+        'any.required': 'OTP is required',
+      }),
+    newPassword: Joi.string()
+      .min(6)
+      .max(128)
+      .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])'))
+      .required()
+      .messages({
+        'string.min': 'Password must be at least 6 characters long',
+        'string.max': 'Password cannot exceed 128 characters',
+        'string.pattern.base':
+          'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+        'any.required': 'New password is required',
+      }),
+  }),
 };
 
 /**
