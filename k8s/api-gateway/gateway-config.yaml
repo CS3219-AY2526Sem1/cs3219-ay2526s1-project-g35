@@ -84,6 +84,19 @@ data:
         - POST
         - OPTIONS
 
+    # History Service
+    - name: history-service
+      url: http://history-service.peerprep.svc.cluster.local:8004
+      routes:
+      - name: history-routes
+        paths:
+        - /api/history
+        strip_path: true
+        methods:
+        - GET
+        - POST
+        - OPTIONS
+
     # Global plugins
     plugins:
     - name: cors
