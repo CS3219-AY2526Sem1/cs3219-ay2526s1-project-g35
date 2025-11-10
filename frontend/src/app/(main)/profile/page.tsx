@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import Header from '@/components/ui/Header';
 import { useAuth } from '@/contexts/AuthContext';
 import userService, { UserServiceError } from '@/services/user.service';
-import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
 type ProfileFormData = {
@@ -18,7 +19,7 @@ type ProfileFormData = {
 };
 
 export default function ProfilePage(): React.ReactElement {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout, updateUser, initiatePasswordReset, resetPassword } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<ProfileFormData>({
     username: '',
@@ -36,6 +37,19 @@ export default function ProfilePage(): React.ReactElement {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Inline password change states
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [sendOtpMessage, setSendOtpMessage] = useState<string | null>(null);
+  const [changePwdMessage, setChangePwdMessage] = useState<string | null>(null);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState<number>(0);
+  const [otpIntervalId, setOtpIntervalId] = useState<NodeJS.Timeout | null>(null);
 
   // Fetch user profile on mount
   const fetchProfile = useCallback(async () => {
@@ -67,6 +81,13 @@ export default function ProfilePage(): React.ReactElement {
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  // Cleanup cooldown interval on unmount
+  useEffect(() => {
+    return () => {
+      if (otpIntervalId) clearInterval(otpIntervalId);
+    };
+  }, [otpIntervalId]);
 
   function handleChange<K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) {
     setData((d) => ({ ...d, [key]: value }));
@@ -353,6 +374,217 @@ export default function ProfilePage(): React.ReactElement {
                 disabled
                 className="w-full px-3 py-2 border rounded mt-1 bg-muted cursor-not-allowed opacity-60"
               />
+            </div>
+
+            {/* Inline Change Password Section */}
+            <div className="mt-6">
+              <label className="text-sm font-medium">Change your password</label>
+              <div className="mt-2 grid gap-3 md:grid-cols-2">
+                <div className="space-y-1">
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => {
+                      setNewPassword(e.target.value);
+                      setPwdError(null);
+                      setSendOtpMessage(null);
+                      setChangePwdMessage(null);
+                    }}
+                    className="w-full px-3 py-2 border rounded"
+                    placeholder="New password"
+                  />
+                  {pwdError ? (
+                    <p className="text-xs text-destructive">{pwdError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      6-128 chars incl. uppercase, lowercase, number & special character.
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <label className="sr-only" htmlFor="confirm-password">
+                    Confirm your new password
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setConfirmError(null);
+                      setSendOtpMessage(null);
+                      setChangePwdMessage(null);
+                    }}
+                    className="w-full px-3 py-2 border rounded"
+                    placeholder="Confirm your new password"
+                  />
+                  {confirmError && <p className="text-xs text-destructive">{confirmError}</p>}
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <label className="text-sm font-medium" htmlFor="otp-input">
+                  OTP verification
+                </label>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    id="otp-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={otp}
+                    onChange={(e) => {
+                      setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                      setOtpError(null);
+                      setChangePwdMessage(null);
+                    }}
+                    className="flex-1 px-3 py-2 border rounded"
+                    placeholder="Enter 6-digit code"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isSendingOtp || otpCooldown > 0}
+                    onClick={async () => {
+                      // Validate passwords before sending OTP
+                      const validatePassword = (value: string) => {
+                        if (!value) return 'Password is required.';
+                        if (value.length < 6) return 'Password must be at least 6 characters long';
+                        if (value.length > 128) return 'Password cannot exceed 128 characters';
+                        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(value)) {
+                          return 'Must include uppercase, lowercase, number & special character';
+                        }
+                        return null;
+                      };
+
+                      const pErr = validatePassword(newPassword);
+                      const cErr = !confirmPassword
+                        ? 'Please confirm your new password.'
+                        : confirmPassword !== newPassword
+                          ? 'Passwords do not match.'
+                          : null;
+
+                      setPwdError(pErr);
+                      setConfirmError(cErr);
+                      setSendOtpMessage(null);
+
+                      if (pErr || cErr) return;
+
+                      try {
+                        setIsSendingOtp(true);
+                        // Send OTP to user's email
+                        const resp = await initiatePasswordReset(data.email);
+                        setSendOtpMessage(resp.message || 'OTP sent to your email.');
+                        // Start 60s UI cooldown
+                        setOtpCooldown(60);
+                        const id = setInterval(() => {
+                          setOtpCooldown((s) => {
+                            if (s <= 1) {
+                              clearInterval(id);
+                              return 0;
+                            }
+                            return s - 1;
+                          });
+                        }, 1000);
+                        setOtpIntervalId(id);
+                      } catch (err: unknown) {
+                        // Fallback and attempt to parse remaining seconds if present
+                        const msg = err instanceof Error ? err.message : 'Failed to send OTP.';
+                        setSendOtpMessage(msg);
+                        const m = msg.match(/(\d+)\s*seconds?/i);
+                        if (m && m[1]) {
+                          const secs = parseInt(m[1], 10);
+                          if (!Number.isNaN(secs) && secs > 0) {
+                            setOtpCooldown(secs);
+                            const id = setInterval(() => {
+                              setOtpCooldown((s) => {
+                                if (s <= 1) {
+                                  clearInterval(id);
+                                  return 0;
+                                }
+                                return s - 1;
+                              });
+                            }, 1000);
+                            setOtpIntervalId(id);
+                          }
+                        }
+                      } finally {
+                        setIsSendingOtp(false);
+                      }
+                    }}
+                  >
+                    {isSendingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {isSendingOtp ? 'Sending...' : otpCooldown > 0 ? 'Wait' : 'Send OTP'}
+                  </Button>
+                </div>
+                {otpCooldown > 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    You can request another OTP in {otpCooldown} seconds
+                  </p>
+                )}
+                {sendOtpMessage && (
+                  <p
+                    className={`mt-1 text-sm ${
+                      /sent|success/i.test(sendOtpMessage) ? 'text-emerald-600' : 'text-destructive'
+                    }`}
+                  >
+                    {sendOtpMessage}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="attention"
+                  disabled={isChangingPwd || !otp}
+                  onClick={async () => {
+                    setChangePwdMessage(null);
+                    setOtpError(null);
+
+                    if (!otp || otp.length !== 6) {
+                      setOtpError('Please enter the 6-digit code.');
+                      return;
+                    }
+                    // Ensure password still valid
+                    const invalid =
+                      !newPassword || !confirmPassword || newPassword !== confirmPassword;
+                    if (invalid) {
+                      setChangePwdMessage('Please ensure passwords are valid and matching.');
+                      return;
+                    }
+
+                    try {
+                      setIsChangingPwd(true);
+                      await resetPassword(data.email, otp, newPassword);
+                      setChangePwdMessage('Password changed successfully.');
+                      router.push('/login');
+                    } catch (err: unknown) {
+                      const msg = err instanceof Error ? err.message : 'Failed to change password.';
+                      setChangePwdMessage(msg);
+                    } finally {
+                      setIsChangingPwd(false);
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  {isChangingPwd ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {isChangingPwd ? 'Changing...' : 'Change Password'}
+                </Button>
+                <p className={`ml-4 text-sm text-muted-foreground inline-block`}>
+                  Note: You will be logged out once you successfully change your password
+                </p>
+                {otpError && <p className="mt-1 text-sm text-destructive">{otpError}</p>}
+                {changePwdMessage && (
+                  <p
+                    className={`mt-1 text-sm ${
+                      /success/i.test(changePwdMessage) ? 'text-emerald-600' : 'text-destructive'
+                    }`}
+                  >
+                    {changePwdMessage}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="mt-6">
