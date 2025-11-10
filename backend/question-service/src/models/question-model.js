@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
  * - Store constraints
  * - Retrieve by difficulty and topic
  * - Support random question selection
- * 
+ *
  * Test Case Format:
  * - params: Array of parameters to pass to the solution function
  * - expected: Expected output (any type: number, string, array, object, boolean)
@@ -156,11 +156,11 @@ questionSchema.statics.getRandomByTopicAndDifficulty = async function (topic, di
 // Get random question by multiple topics and difficulty (for matching)
 questionSchema.statics.getRandomByTopicsAndDifficulty = async function (topics, difficulty) {
   const questions = await this.aggregate([
-    { 
-      $match: { 
-        topics: { $in: topics },  // Match any of the provided topics
-        difficulty 
-      } 
+    {
+      $match: {
+        topics: { $in: topics }, // Match any of the provided topics
+        difficulty,
+      },
     },
     { $sample: { size: 1 } },
   ]);

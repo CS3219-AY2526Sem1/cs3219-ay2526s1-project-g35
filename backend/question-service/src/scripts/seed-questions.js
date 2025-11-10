@@ -46,7 +46,8 @@ const sampleQuestions = [
       {
         params: ['A man, a plan, a canal: Panama'],
         expected: true,
-        explanation: 'After removing non-alphanumeric characters: "amanaplanacanalpanama" is a palindrome',
+        explanation:
+          'After removing non-alphanumeric characters: "amanaplanacanalpanama" is a palindrome',
         type: 'Sample',
       },
       {
@@ -93,7 +94,11 @@ const sampleQuestions = [
         type: 'Sample',
       },
     ],
-    constraints: ['2 <= nums.length <= 10^4', '-10^9 <= nums[i] <= 10^9', 'Only one valid answer exists'],
+    constraints: [
+      '2 <= nums.length <= 10^4',
+      '-10^9 <= nums[i] <= 10^9',
+      'Only one valid answer exists',
+    ],
   },
   {
     title: 'Best Time to Buy and Sell Stock',
@@ -131,7 +136,8 @@ const sampleQuestions = [
       {
         params: [[3, 2, 0, -4], 1],
         expected: true,
-        explanation: 'There is a cycle in the linked list, where the tail connects to the 1st node (0-indexed)',
+        explanation:
+          'There is a cycle in the linked list, where the tail connects to the 1st node (0-indexed)',
         type: 'Sample',
       },
       {
@@ -147,7 +153,10 @@ const sampleQuestions = [
         type: 'Sample',
       },
     ],
-    constraints: ['The number of nodes in the list is in the range [0, 10^4]', '-10^5 <= Node.val <= 10^5'],
+    constraints: [
+      'The number of nodes in the list is in the range [0, 10^4]',
+      '-10^5 <= Node.val <= 10^5',
+    ],
   },
   {
     title: 'Implement Stack using Queues',
@@ -158,7 +167,10 @@ const sampleQuestions = [
     tags: ['leetcode', 'stack', 'queue', 'design'],
     testCases: [
       {
-        params: [['MyStack', 'push', 'push', 'top', 'pop', 'empty'], [[], [1], [2], [], [], []]],
+        params: [
+          ['MyStack', 'push', 'push', 'top', 'pop', 'empty'],
+          [[], [1], [2], [], [], []],
+        ],
         expected: [null, null, null, 2, 2, false],
         explanation: 'Implement stack operations using queues',
         type: 'Sample',
@@ -195,7 +207,10 @@ const sampleQuestions = [
         type: 'Sample',
       },
     ],
-    constraints: ['1 <= s.length <= 15', "s contains only the characters ('I', 'V', 'X', 'L', 'C', 'D', 'M')"],
+    constraints: [
+      '1 <= s.length <= 15',
+      "s contains only the characters ('I', 'V', 'X', 'L', 'C', 'D', 'M')",
+    ],
   },
   {
     title: 'Valid Parentheses',
@@ -248,7 +263,10 @@ const sampleQuestions = [
         type: 'Sample',
       },
     ],
-    constraints: ['1 <= a.length, b.length <= 10^4', "a and b consist only of '0' or '1' characters"],
+    constraints: [
+      '1 <= a.length, b.length <= 10^4',
+      "a and b consist only of '0' or '1' characters",
+    ],
   },
   {
     title: 'Number of 1 Bits',
@@ -601,7 +619,13 @@ const sampleQuestions = [
         type: 'Sample',
       },
       {
-        params: [2, [[1, 0], [0, 1]]],
+        params: [
+          2,
+          [
+            [1, 0],
+            [0, 1],
+          ],
+        ],
         expected: false,
         explanation: 'Circular dependency - impossible to finish',
         type: 'Sample',
@@ -1011,7 +1035,10 @@ const sampleQuestions = [
         type: 'Sample',
       },
       {
-        params: [[1, 2], [3, 4]],
+        params: [
+          [1, 2],
+          [3, 4],
+        ],
         expected: 2.5,
         explanation: 'Merged array = [1,2,3,4] and median is (2+3)/2 = 2.5',
         type: 'Sample',
@@ -1069,7 +1096,7 @@ const sampleQuestions = [
   {
     title: 'N-Queens Problem',
     description:
-      "The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other. Given an integer n, return all distinct solutions to the n-queens puzzle.",
+      'The n-queens puzzle is the problem of placing n queens on an n x n chessboard such that no two queens attack each other. Given an integer n, return all distinct solutions to the n-queens puzzle.',
     difficulty: 'Hard',
     topics: ['Algorithms'],
     tags: ['leetcode', 'backtracking', 'array'],
@@ -1300,10 +1327,38 @@ const sampleQuestions = [
         params: [
           {
             Trips: [
-              { id: 1, client_id: 1, driver_id: 10, city_id: 1, status: 'completed', request_at: '2013-10-01' },
-              { id: 2, client_id: 2, driver_id: 11, city_id: 1, status: 'cancelled_by_driver', request_at: '2013-10-01' },
-              { id: 3, client_id: 3, driver_id: 12, city_id: 6, status: 'completed', request_at: '2013-10-01' },
-              { id: 4, client_id: 4, driver_id: 13, city_id: 6, status: 'cancelled_by_client', request_at: '2013-10-01' },
+              {
+                id: 1,
+                client_id: 1,
+                driver_id: 10,
+                city_id: 1,
+                status: 'completed',
+                request_at: '2013-10-01',
+              },
+              {
+                id: 2,
+                client_id: 2,
+                driver_id: 11,
+                city_id: 1,
+                status: 'cancelled_by_driver',
+                request_at: '2013-10-01',
+              },
+              {
+                id: 3,
+                client_id: 3,
+                driver_id: 12,
+                city_id: 6,
+                status: 'completed',
+                request_at: '2013-10-01',
+              },
+              {
+                id: 4,
+                client_id: 4,
+                driver_id: 13,
+                city_id: 6,
+                status: 'cancelled_by_client',
+                request_at: '2013-10-01',
+              },
             ],
             Users: [
               { users_id: 1, banned: 'No', role: 'client' },
@@ -1412,7 +1467,9 @@ const seedDatabase = async () => {
     Object.keys(topics)
       .sort()
       .forEach((topic) => {
-        console.log(`   ${topic}: Easy(${topics[topic].Easy}) Medium(${topics[topic].Medium}) Hard(${topics[topic].Hard})`);
+        console.log(
+          `   ${topic}: Easy(${topics[topic].Easy}) Medium(${topics[topic].Medium}) Hard(${topics[topic].Hard})`,
+        );
       });
 
     // Close connection

@@ -353,7 +353,10 @@ const QuestionController = {
       // Parse topics - support both comma-separated string and array
       let topicsArray = [];
       if (typeof topics === 'string') {
-        topicsArray = topics.split(',').map((t) => t.trim()).filter((t) => t.length > 0);
+        topicsArray = topics
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
       } else if (Array.isArray(topics)) {
         topicsArray = topics;
       }
