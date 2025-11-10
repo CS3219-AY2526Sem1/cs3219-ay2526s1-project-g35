@@ -5,18 +5,19 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function RootPage() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.push('/home');
+        const targetPath = user?.isAdmin ? '/admin/home' : '/home';
+        router.push(targetPath);
       } else {
         router.push('/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   // Show loading state while determining authentication status
   if (isLoading) {

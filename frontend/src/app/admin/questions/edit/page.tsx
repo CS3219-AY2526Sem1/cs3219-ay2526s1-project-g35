@@ -1,6 +1,11 @@
 'use client';
 
-import Header from '@/components/ui/Header';
+import { isAxiosError } from 'axios';
+import { Loader2, Trash2, X } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import type { FormEvent, KeyboardEvent, RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,166 +17,735 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, HelpCircle } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/DropdownMenu';
+import Header from '@/components/ui/Header';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  CreateQuestionPayload,
+  QuestionDifficulty,
+  QuestionTestCase,
+  deleteQuestion,
+  fetchCategories,
+  fetchDifficulties,
+  fetchQuestionById,
+  updateQuestion,
+} from '@/services/question.service';
 
-type Difficulty = 'Easy' | 'Medium' | 'Hard';
+type EditableTestCase = QuestionTestCase & { id: string };
 
-export default function EditQuestionPage() {
-  const params = useSearchParams();
-  const id = params.get('id') ?? '1'; // placeholder id
+const TEST_CASE_TYPES: QuestionTestCase['type'][] = ['Sample', 'Hidden'];
 
-  // Placeholder data – in real integration, fetch by id
-  const initial = useMemo(
-    () => ({
-      title: 'Two Sum',
-      description:
-        'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.',
-      difficulty: 'Easy' as Difficulty,
-      topics: 'HashMap',
-      tags: 'Beginner-friendly, Completed',
-    }),
-    [],
-  );
+const DEFAULT_DIFFICULTIES: QuestionDifficulty[] = ['Easy', 'Medium', 'Hard'];
 
-  const [title, setTitle] = useState(initial.title);
-  const [description, setDescription] = useState(initial.description);
-  const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty);
-  const [topics, setTopics] = useState(initial.topics);
-  const [tags, setTags] = useState(initial.tags);
+const createTestCase = (
+  initial?: Partial<QuestionTestCase> & { id?: string },
+): EditableTestCase => ({
+  id:
+    initial?.id ??
+    (typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`),
+  input: initial?.input ?? '',
+  expectedOutput: initial?.expectedOutput ?? '',
+  explanation: initial?.explanation ?? '',
+  type: initial?.type ?? 'Sample',
+});
 
-  const [showSave, setShowSave] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
+type MultiValuePopoverProps = {
+  buttonLabel: string;
+  open: boolean;
+  onOpenChange: (state: boolean) => void;
+  inputRef: RefObject<HTMLInputElement | null>;
+  inputValue: string;
+  onInputChange: (value: string) => void;
+  onInputKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+  values: string[];
+  onRemoveValue: (value: string) => void;
+  onAddValues: (values: string[]) => void;
+  suggestions: string[];
+  onSelectSuggestion: (value: string) => void;
+  placeholder: string;
+  helperText?: string;
+};
 
-  const onSaveConfirm = () => {
-    // TODO: integrate API call
-    setShowSave(false);
-  };
-  const onDeleteConfirm = () => {
-    // TODO: integrate API call
-    setShowDelete(false);
+function MultiValuePopover({
+  buttonLabel,
+  open,
+  onOpenChange,
+  inputRef,
+  inputValue,
+  onInputChange,
+  onInputKeyDown,
+  values,
+  onRemoveValue,
+  onAddValues,
+  suggestions,
+  onSelectSuggestion,
+  placeholder,
+  helperText,
+}: MultiValuePopoverProps) {
+  const count = values.length;
+  const triggerLabel = count > 0 ? `${buttonLabel} (${count})` : buttonLabel;
+  const inputId = `${buttonLabel.toLowerCase().replace(/\s+/g, '-')}-input`;
+
+  const handleBlur = () => {
+    if (!inputValue.trim()) return;
+    onAddValues(inputValue.split(','));
+    onInputChange('');
   };
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10">
-      <Header>Edit Question</Header>
-
-      <form className="space-y-6">
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="w-full justify-between">
+          {triggerLabel}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="min-w-0 w-[var(--radix-popover-trigger-width)] space-y-2"
+      >
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Title <span className="text-destructive">*</span>
+          <label className="text-xs font-medium text-muted-foreground" htmlFor={inputId}>
+            {helperText ?? 'Press Enter to add values'}
           </label>
           <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            id={inputId}
+            ref={inputRef}
+            value={inputValue}
+            onChange={(event) => onInputChange(event.target.value)}
+            onKeyDown={onInputKeyDown}
+            onBlur={handleBlur}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Enter question title"
+            placeholder={placeholder}
           />
         </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Description <span className="text-destructive">*</span>
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {suggestions.length > 0 && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Difficulty <span className="text-destructive">*</span>
-            </label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option>Easy</option>
-              <option>Medium</option>
-              <option>Hard</option>
-            </select>
+            <p className="text-xs font-medium text-muted-foreground">Suggestions</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onSelectSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Topics <span className="text-destructive">*</span>
-            </label>
-            <input
-              value={topics}
-              onChange={(e) => setTopics(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Comma-separated topics"
-            />
+        )}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            {values.length > 0 ? 'Selected' : 'No values added yet.'}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {values.length > 0 ? (
+              values.map((value) => (
+                <TagChip key={value} label={value} onRemove={() => onRemoveValue(value)} />
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground">Add items to see them here.</span>
+            )}
           </div>
         </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Tags <span className="text-destructive">*</span>
-          </label>
-          <input
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Comma-separated tags"
-          />
+function TagChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs text-muted-foreground">
+      {label}
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={onRemove}
+        className="ml-1 rounded-full p-0.5 transition hover:bg-muted/80 hover:text-foreground"
+        aria-label={`Remove ${label}`}
+      >
+        {'x'}
+      </button>
+    </span>
+  );
+}
+
+export default function EditQuestionPage() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const questionId = params.get('id');
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<QuestionDifficulty | ''>('');
+
+  const [availableDifficulties, setAvailableDifficulties] = useState<QuestionDifficulty[]>([]);
+  const [availableTopics, setAvailableTopics] = useState<string[]>([]);
+
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [topicInput, setTopicInput] = useState('');
+  const [topicsPopoverOpen, setTopicsPopoverOpen] = useState(false);
+  const topicsInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [tagsPopoverOpen, setTagsPopoverOpen] = useState(false);
+  const tagsInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [testCases, setTestCases] = useState<EditableTestCase[]>([]);
+
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [loadingQuestion, setLoadingQuestion] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const difficultyOptions = useMemo(
+    () => (availableDifficulties.length ? availableDifficulties : DEFAULT_DIFFICULTIES),
+    [availableDifficulties],
+  );
+
+  const addValues = (current: string[], values: string[]) => {
+    const normalized = values.map((value) => value.trim()).filter((value) => value.length > 0);
+    const merged = new Set([...current, ...normalized]);
+    return Array.from(merged);
+  };
+
+  const handleTopicKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    setSelectedTopics((prev) => addValues(prev, topicInput.split(',')));
+    setTopicInput('');
+  };
+
+  const handleTagKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    setSelectedTags((prev) => addValues(prev, tagInput.split(',')));
+    setTagInput('');
+  };
+
+  const handleTestCaseChange = <K extends keyof QuestionTestCase>(
+    id: string,
+    field: K,
+    value: QuestionTestCase[K],
+  ) => {
+    setTestCases((prev) =>
+      prev.map((testCase) => (testCase.id === id ? { ...testCase, [field]: value } : testCase)),
+    );
+  };
+
+  const handleRemoveTestCase = (id: string) => {
+    setTestCases((prev) =>
+      prev.length <= 1 ? prev : prev.filter((testCase) => testCase.id !== id),
+    );
+  };
+
+  const handleAddTestCase = () => {
+    setTestCases((prev) => [...prev, createTestCase()]);
+  };
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        const [difficulties, topics] = await Promise.all([
+          fetchDifficulties().catch(() => DEFAULT_DIFFICULTIES),
+          fetchCategories().catch(() => []),
+        ]);
+
+        if (!ignore) {
+          const nextDifficulties =
+            difficulties.length > 0 ? (difficulties as QuestionDifficulty[]) : DEFAULT_DIFFICULTIES;
+
+          setAvailableDifficulties(nextDifficulties);
+          setAvailableTopics(topics);
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingOptions(false);
+        }
+      }
+    };
+
+    const loadQuestion = async () => {
+      if (!questionId) {
+        if (!ignore) {
+          setLoadError('Question not found.');
+          setLoadingQuestion(false);
+        }
+        return;
+      }
+
+      try {
+        setLoadingQuestion(true);
+        setLoadError(null);
+        const question = await fetchQuestionById(questionId);
+
+        if (!question) {
+          if (!ignore) {
+            setLoadError('Question not found.');
+          }
+          return;
+        }
+
+        if (ignore) return;
+
+        const normalizedTopics = Array.from(
+          new Set((question.topics ?? []).map((topic) => topic.trim()).filter((topic) => topic)),
+        );
+        const normalizedTags = Array.from(
+          new Set((question.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag)),
+        );
+
+        setTitle(question.title);
+        setDescription(question.description);
+        setSelectedDifficulty(question.difficulty);
+        setSelectedTopics(normalizedTopics);
+        setSelectedTags(normalizedTags);
+        setTestCases(() => {
+          const nextCases = (question.testCases ?? []).map((testCase, index) =>
+            createTestCase({ ...testCase, id: `${question._id}-${index}` }),
+          );
+          return nextCases.length > 0 ? nextCases : [createTestCase()];
+        });
+      } catch (error) {
+        console.error('Failed to load question', error);
+        if (!ignore) {
+          setLoadError('Unable to load question. Please try again later.');
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingQuestion(false);
+        }
+      }
+    };
+
+    void loadOptions();
+    void loadQuestion();
+
+    return () => {
+      ignore = true;
+    };
+  }, [questionId]);
+
+  useEffect(() => {
+    if (topicsPopoverOpen) {
+      requestAnimationFrame(() => {
+        topicsInputRef.current?.focus();
+      });
+    }
+  }, [topicsPopoverOpen]);
+
+  useEffect(() => {
+    if (tagsPopoverOpen) {
+      requestAnimationFrame(() => {
+        tagsInputRef.current?.focus();
+      });
+    }
+  }, [tagsPopoverOpen]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting || !questionId) return;
+
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+    const difficulty = selectedDifficulty as QuestionDifficulty | '';
+
+    if (!trimmedTitle || !trimmedDescription || !difficulty) {
+      setFormError('Title, description, and difficulty are required.');
+      return;
+    }
+
+    if (trimmedTitle.length < 5) {
+      setFormError('Title must be at least 5 characters long.');
+      return;
+    }
+
+    if (trimmedDescription.length < 10) {
+      setFormError('Description must be at least 10 characters long.');
+      return;
+    }
+
+    const sanitizedTopics = Array.from(
+      new Set(selectedTopics.map((topic) => topic.trim()).filter((topic) => topic.length > 0)),
+    );
+
+    if (sanitizedTopics.length === 0) {
+      setFormError('Please add at least one topic.');
+      return;
+    }
+
+    const sanitizedTags = Array.from(
+      new Set(selectedTags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)),
+    );
+
+    const preparedTestCases = testCases.map(({ input, expectedOutput, type, explanation }) => {
+      const trimmedInput = input.trim();
+      const trimmedExpectedOutput = expectedOutput.trim();
+      return {
+        input: trimmedInput,
+        expectedOutput: trimmedExpectedOutput,
+        type,
+        explanation: explanation?.trim() ?? '',
+      };
+    });
+
+    const hasInvalidTestCase = preparedTestCases.some(
+      (testCase) => !testCase.input || !testCase.expectedOutput,
+    );
+
+    if (hasInvalidTestCase) {
+      setFormError('Each test case requires input and expected output.');
+      return;
+    }
+
+    const payload: CreateQuestionPayload = {
+      title: trimmedTitle,
+      description: trimmedDescription,
+      difficulty,
+      topics: sanitizedTopics,
+      tags: sanitizedTags,
+      testCases: preparedTestCases,
+    };
+
+    try {
+      setSubmitting(true);
+      setFormError(null);
+      await updateQuestion(questionId, payload);
+      router.push('/admin/questions');
+    } catch (error) {
+      console.error('Failed to update question', error);
+      let message = 'Failed to update question. Please try again.';
+      if (isAxiosError(error)) {
+        const responseMessage = error.response?.data?.error;
+        if (typeof responseMessage === 'string' && responseMessage.trim().length > 0) {
+          message = responseMessage;
+        }
+      }
+      setFormError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
+    if (!questionId || deleting) return;
+
+    try {
+      setDeleting(true);
+      setFormError(null);
+      await deleteQuestion(questionId);
+      router.push('/admin/questions');
+    } catch (error) {
+      console.error('Failed to delete question', error);
+      let message = 'Failed to delete question. Please try again.';
+      if (isAxiosError(error)) {
+        const responseMessage = error.response?.data?.error;
+        if (typeof responseMessage === 'string' && responseMessage.trim().length > 0) {
+          message = responseMessage;
+        }
+      }
+      setFormError(message);
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  if (loadingQuestion) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Loading question...</span>
         </div>
+      </div>
+    );
+  }
 
-        <div className="flex items-center justify-between pt-4">
-          <Button type="button" variant="destructive" onClick={() => setShowDelete(true)}>
+  if (loadError) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 text-center">
+        <Header className="text-center">Edit Question</Header>
+        <p className="max-w-md text-sm text-muted-foreground">{loadError}</p>
+        <Button variant="outline" onClick={() => router.push('/admin/questions')}>
+          Back to Question Bank
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto max-w-5xl px-4 py-10">
+      <Header className="text-center">Edit Question</Header>
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+        <section className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+          <h2 className="text-lg font-semibold tracking-tight">Question Details</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">
+                Title <span className="text-destructive">*</span>
+              </label>
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Enter question title"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">
+                Description <span className="text-destructive">*</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                className="min-h-32 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Describe the problem, requirements, and constraints"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Difficulty <span className="text-destructive">*</span>
+              </label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {selectedDifficulty || 'Select difficulty'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                >
+                  <DropdownMenuRadioGroup
+                    value={selectedDifficulty}
+                    onValueChange={(value) => setSelectedDifficulty(value as QuestionDifficulty)}
+                  >
+                    {difficultyOptions.map((option) => (
+                      <DropdownMenuRadioItem key={option} value={option}>
+                        {option}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Topics <span className="text-destructive">*</span>
+              </label>
+              <MultiValuePopover
+                buttonLabel="Topics"
+                open={topicsPopoverOpen}
+                onOpenChange={setTopicsPopoverOpen}
+                inputRef={topicsInputRef}
+                inputValue={topicInput}
+                onInputChange={setTopicInput}
+                onInputKeyDown={handleTopicKeyDown}
+                values={selectedTopics}
+                onRemoveValue={(value: string) =>
+                  setSelectedTopics((prev) => prev.filter((topic) => topic !== value))
+                }
+                onAddValues={(next: string[]) => setSelectedTopics((prev) => addValues(prev, next))}
+                suggestions={availableTopics}
+                onSelectSuggestion={(suggestion: string) =>
+                  setSelectedTopics((prev) => addValues(prev, [suggestion]))
+                }
+                placeholder="arrays, hashmap"
+                helperText="Press Enter to add comma-separated topics."
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">Tags</label>
+              <MultiValuePopover
+                buttonLabel="Tags"
+                open={tagsPopoverOpen}
+                onOpenChange={setTagsPopoverOpen}
+                inputRef={tagsInputRef}
+                inputValue={tagInput}
+                onInputChange={setTagInput}
+                onInputKeyDown={handleTagKeyDown}
+                values={selectedTags}
+                onRemoveValue={(value: string) =>
+                  setSelectedTags((prev) => prev.filter((tag) => tag !== value))
+                }
+                onAddValues={(next: string[]) => setSelectedTags((prev) => addValues(prev, next))}
+                suggestions={[]}
+                onSelectSuggestion={(suggestion: string) =>
+                  setSelectedTags((prev) => addValues(prev, [suggestion]))
+                }
+                placeholder="beginner-friendly, interview"
+                helperText="Press Enter to add comma-separated tags."
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4 rounded-xl border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">Test Cases</h2>
+            <Button type="button" variant="secondary" onClick={handleAddTestCase}>
+              + Add New
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Provide at least one sample test case outlining the input, expected output, and optional
+            explanation.
+          </p>
+          <div className="space-y-4">
+            {testCases.map((testCase, index) => (
+              <Card key={testCase.id} className="border-muted">
+                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                  <CardTitle className="text-base font-semibold">Test Case {index + 1}</CardTitle>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveTestCase(testCase.id)}
+                    disabled={testCases.length <= 1}
+                    aria-label={`Remove test case ${index + 1}`}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Input <span className="text-destructive">*</span>
+                      </label>
+                      <textarea
+                        value={testCase.input}
+                        onChange={(event) =>
+                          handleTestCaseChange(testCase.id, 'input', event.target.value)
+                        }
+                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="nums = [2,7,11,15], target = 9"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Expected Output <span className="text-destructive">*</span>
+                      </label>
+                      <textarea
+                        value={testCase.expectedOutput}
+                        onChange={(event) =>
+                          handleTestCaseChange(testCase.id, 'expectedOutput', event.target.value)
+                        }
+                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="[0,1]"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Explanation</label>
+                      <textarea
+                        value={testCase.explanation ?? ''}
+                        onChange={(event) =>
+                          handleTestCaseChange(testCase.id, 'explanation', event.target.value)
+                        }
+                        className="min-h-20 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Explain why the expected output is correct"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Type</label>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full justify-between">
+                            {testCase.type}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="start"
+                          className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                        >
+                          <DropdownMenuRadioGroup
+                            value={testCase.type}
+                            onValueChange={(value) =>
+                              handleTestCaseChange(
+                                testCase.id,
+                                'type',
+                                value as QuestionTestCase['type'],
+                              )
+                            }
+                          >
+                            {TEST_CASE_TYPES.map((option) => (
+                              <DropdownMenuRadioItem key={option} value={option}>
+                                {option}
+                              </DropdownMenuRadioItem>
+                            ))}
+                          </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {formError && <p className="text-center text-sm text-destructive">{formError}</p>}
+
+        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={deleting || submitting}
+            className="gap-2"
+          >
+            {deleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
             Delete Question
           </Button>
-          <Button type="button" onClick={() => setShowSave(true)}>
-            Save Changes
+          <Button type="submit" disabled={submitting || loadingOptions} className="gap-2">
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {submitting ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </form>
 
-      {/* Save Confirmation Modal */}
-      <AlertDialog open={showSave} onOpenChange={setShowSave}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => setDeleteDialogOpen(open)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <HelpCircle className="h-10 w-10" />
-            </div>
-            <AlertDialogTitle className="text-center">Save These Changes?</AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              Your updates will be applied to question #{id}.
-            </AlertDialogDescription>
+            <AlertDialogTitle>Delete this question?</AlertDialogTitle>
+            <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="justify-center gap-3">
-            <AlertDialogAction onClick={onSaveConfirm} className="min-w-[80px]">
-              Yes
-            </AlertDialogAction>
-            <AlertDialogCancel className="min-w-[80px]">No</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete Confirmation Modal */}
-      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-              <AlertCircle className="h-10 w-10" />
-            </div>
-            <AlertDialogTitle className="text-center">
-              Are you sure you want to delete this question?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-center">
-              This action is irreversible!
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="justify-center gap-3">
-            <Button variant="destructive" onClick={onDeleteConfirm} className="min-w-[88px]">
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteQuestion}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete
-            </Button>
-            <AlertDialogCancel className="min-w-[88px]">Cancel</AlertDialogCancel>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

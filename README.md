@@ -8,22 +8,14 @@
 ## Project Structure
 
 ```
-├── frontend/                    # React frontend application
-│   ├── src/
-│   │   ├── components/         # Reusable UI components
-│   │   ├── pages/             # Page components
-│   │   ├── services/          # API service calls
-│   │   ├── utils/             # Utility functions
-│   │   ├── hooks/             # Custom React hooks
-│   │   ├── contexts/          # React contexts
-│   │   └── assets/            # Static assets
-│   ├── public/                # Public static files
-│   └── config/                # Frontend configuration
-├── backend/                    # Backend microservices
-│   ├── UserService/           # User management microservice
-│   ├── CollaborationService/  # Real-time collaboration microservice
-│   ├── QuestionService/       # Question management microservice
-│   └── MatchingService/       # User matching microservice
+├── frontend/                    # Next.js frontend application
+│   └── src/                     # App router, components, services, hooks, contexts
+├── backend/                     # Backend microservices
+│   ├── analytics-service/       # Admin metrics + downtime tracking (MongoDB)
+│   ├── collaboration-service/   # Real-time collaboration (Redis + WebSockets)
+│   ├── matching-service/        # Queue and pairing logic
+│   ├── question-service/        # Question catalogue (MongoDB)
+│   └── user-service/            # Authentication and profile management
 ├── docker-compose.yml         # Multi-service orchestration
 └── .env.example              # Environment variables template
 ```
@@ -49,6 +41,11 @@
 - User matching algorithm
 - Queue management
 - Match notification system
+
+### Analytics Service *(new)*
+- Records site visits and aggregates metrics for the admin dashboard
+- Tracks system downtime (manual + automated uptime monitor)
+- Exposes admin-only endpoints consumed by the Chart.js graphs
 
 ## Getting Started
 

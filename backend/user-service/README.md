@@ -550,6 +550,105 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
     | 404 (Not Found)             | User with specified ID not found                   |
     | 500 (Internal Server Error) | Database or server error                           |
 
+## Forgot Password (OTP-based)
+
+The forgot password feature allows users to securely reset their password by verifying their email through an OTP (One-Time Password).
+
+### Initiate Password Reset
+
+- This endpoint sends a 6-digit OTP to the user's email for password reset.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/password-reset/initiate
+- Body
+  - Required: `email` (string)
+
+    ```json
+    {
+      "email": "sample@gmail.com"
+    }
+    ```
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | OTP sent successfully (always returns 200 for security) |
+    | 400 (Bad Request)           | Invalid email format or OTP cooldown active        |
+    | 500 (Internal Server Error) | Email service error or server error               |
+
+### Verify Password Reset OTP
+
+- This endpoint verifies the OTP without resetting the password (optional step for multi-step UIs).
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/password-reset/verify
+- Body
+  - Required: `email` (string), `otp` (string)
+
+    ```json
+    {
+      "email": "sample@gmail.com",
+      "otp": "123456"
+    }
+    ```
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | OTP verified successfully                          |
+    | 400 (Bad Request)           | Invalid/expired OTP                                |
+    | 404 (Not Found)             | User not found                                     |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+### Reset Password
+
+- This endpoint resets the user's password after OTP verification.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/password-reset/reset
+- Body
+  - Required: `email` (string), `otp` (string), `newPassword` (string)
+
+    ```json
+    {
+      "email": "sample@gmail.com",
+      "otp": "123456",
+      "newPassword": "NewSecurePassword123!"
+    }
+    ```
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | Password reset successfully                        |
+    | 400 (Bad Request)           | Invalid OTP, password validation failed            |
+    | 404 (Not Found)             | User not found                                     |
+    | 500 (Internal Server Error) | Database or server error                           |
+
+### Resend Password Reset OTP
+
+- This endpoint resends the password reset OTP to the user's email.
+- HTTP Method: `POST`
+- Endpoint: http://localhost:3001/auth/password-reset/resend-otp
+- Body
+  - Required: `email` (string)
+
+    ```json
+    {
+      "email": "sample@gmail.com"
+    }
+    ```
+
+- Responses:
+
+    | Response Code               | Explanation                                        |
+    |-----------------------------|----------------------------------------------------|
+    | 200 (OK)                    | OTP resent successfully (always returns 200 for security) |
+    | 400 (Bad Request)           | OTP cooldown active                                |
+    | 500 (Internal Server Error) | Email service error or server error               |
+
+For detailed API documentation including request/response examples and error codes, see [FORGOT_PASSWORD_API.md](./FORGOT_PASSWORD_API.md).
+
 ## API Endpoints Summary
 
 ### Authentication Routes (`/auth`)
@@ -561,6 +660,10 @@ Note: The Docker setup includes Redis for token whitelisting and uses the enviro
 - `POST /auth/send-otp` - Send email verification OTP
 - `POST /auth/verify-otp` - Verify email with OTP code
 - `GET /auth/verification-status` - Check email verification status
+- `POST /auth/password-reset/initiate` - Initiate password reset (sends OTP)
+- `POST /auth/password-reset/verify` - Verify password reset OTP
+- `POST /auth/password-reset/reset` - Reset password with OTP
+- `POST /auth/password-reset/resend-otp` - Resend password reset OTP
 
 ### User Routes (`/users`)
 - `POST /users` - Create new user (registration)

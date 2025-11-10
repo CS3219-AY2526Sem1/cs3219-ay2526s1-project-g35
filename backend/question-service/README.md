@@ -436,6 +436,65 @@ GET /api/questions
 
 ---
 
+##### 2a. Get the 10 Most Recently Updated Questions
+```http
+GET /api/questions/recent10
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 10,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439021",
+      "title": "Most Recent Question",
+      "updatedAt": "2025-10-12T15:42:00.000Z",
+      ...
+    }
+  ]
+}
+```
+
+Returns up to ten questions ordered by `updatedAt` (descending). If fewer than ten questions exist, all available questions are returned.
+
+---
+
+##### 2b. Search Questions with Filters
+```http
+GET /api/questions/search?q=two&difficulty=Easy,Medium&topics=Arrays,HashMap&tags=interview,beginner-friendly
+```
+
+**Query Parameters:**
+- `q` *(optional)*: Substring matched (case-insensitive) against `title` and `description`.
+- `difficulty` *(optional)*: Comma-separated list (OR logic). Also accepts repeated params.
+- `topics` *(optional)*: Comma-separated list (OR logic).
+- `tags` *(optional)*: Comma-separated list (AND logic – all tags must be present).
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "count": 3,
+  "data": [
+    {
+      "_id": "507f1f77bcf86cd799439111",
+      "title": "Two Sum",
+      "difficulty": "Easy",
+      "topics": ["Arrays", "Hash Table"],
+      "tags": ["interview", "beginner-friendly"],
+      "updatedAt": "2025-10-12T15:45:11.000Z",
+      ...
+    }
+  ]
+}
+```
+
+Returns all matching questions sorted by `updatedAt` (descending). When no filters are supplied the endpoint returns the full question list.
+
+---
+
 #### 3. Get Question by ID
 ```http
 GET /api/questions/:id

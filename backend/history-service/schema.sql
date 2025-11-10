@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS histories (
     question_title VARCHAR(500) NOT NULL,
     difficulty VARCHAR(10) NOT NULL CHECK (difficulty IN ('Easy', 'Medium', 'Hard')),
     category VARCHAR(100) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'attempted' CHECK (status IN ('attempted', 'incomplete', 'completed')),
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -26,6 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_difficulty ON histories(difficulty);
 CREATE INDEX IF NOT EXISTS idx_category ON histories(category);
 CREATE INDEX IF NOT EXISTS idx_created_at ON histories(created_at);
 CREATE INDEX IF NOT EXISTS idx_user_created ON histories(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_status ON histories(status);
 
 -- ============================================
 -- Verify table creation
