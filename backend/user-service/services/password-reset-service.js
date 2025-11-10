@@ -74,8 +74,8 @@ export async function verifyPasswordResetOTP(email, otp) {
     throw error;
   }
 
-  await otpRedisService.deleteOTP(normalizedEmail, OTP_PURPOSE);
-
+  // Do NOT delete the OTP here to allow a second step (change password) using the same OTP.
+  // The OTP will be deleted only after a successful password reset.
   return {
     email: normalizedEmail,
     verified: true,
