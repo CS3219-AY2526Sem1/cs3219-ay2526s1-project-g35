@@ -19,7 +19,7 @@ spec:
       containers:
         # Main application container
         - name: history-service
-          image: gcr.io/peerprep-475911/history-service:v1.2
+          image: gcr.io/peerprep-475911/history-service:v1.3
           imagePullPolicy: Always
           ports:
             - containerPort: 8004
@@ -39,7 +39,7 @@ spec:
               path: /health
               port: 8004
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 300
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
@@ -47,7 +47,7 @@ spec:
               path: /health
               port: 8004
             initialDelaySeconds: 10
-            periodSeconds: 5
+            periodSeconds: 300
             timeoutSeconds: 3
             failureThreshold: 3
 

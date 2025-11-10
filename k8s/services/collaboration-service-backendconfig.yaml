@@ -1,0 +1,14 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: collaboration-websocket-config
+  namespace: peerprep
+spec:
+  timeoutSec: 3600
+  connectionDraining:
+    drainingTimeoutSec: 60
+  # Enable WebSocket support
+  customRequestHeaders:
+    headers:
+      - "Connection: Upgrade"
+      - "Upgrade: websocket"

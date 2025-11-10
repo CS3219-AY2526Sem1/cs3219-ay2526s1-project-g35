@@ -18,7 +18,7 @@ async function loadSecrets() {
 
   const secrets = {
     MONGODB_URI: 'analytics-service-mongodb-uri',
-    JWT_SECRET: 'analytics-service-jwt-secret',
+    JWT_SECRET: 'user-service-jwt-secret',
   };
 
   try {

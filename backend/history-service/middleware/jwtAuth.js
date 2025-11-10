@@ -10,6 +10,14 @@ const axios = require('axios');
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:8000';
 
 /**
+ * Get JWT secret at runtime
+ * This ensures we read the secret after it's been loaded by Secret Manager
+ */
+function getJwtSecret() {
+  return process.env.JWT_SECRET;
+}
+
+/**
  * Verify JWT token and extract user information
  * Supports both cookie-based and header-based authentication
  * Also verifies with user service to get complete user data including isAdmin
@@ -32,7 +40,7 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = getJwtSecret();
     if (!jwtSecret) {
       console.error('JWT_SECRET is not configured');
       return res.status(500).json({
@@ -124,7 +132,7 @@ const optionalAuth = (req, res, next) => {
       return next();
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = getJwtSecret();
     const decoded = jwt.verify(token, jwtSecret);
 
     req.user = {

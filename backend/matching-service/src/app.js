@@ -263,10 +263,28 @@ wss.on('connection', (ws) => {
           }
 
           try {
-            const sessionResponse = await collaborationServiceClient.post('/api/sessions/matched', {
-              userIds: [user.userId, bestMatch.userId],
-              questionId,
+            const serviceToken = createServiceJwt({
+              scope: 'collaboration:create',
+              subjectUserId: user.userId,
             });
+
+            const requestConfig = {
+              headers: {},
+            };
+
+            if (serviceToken) {
+              requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
+              requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
+            }
+
+            const sessionResponse = await collaborationServiceClient.post(
+              '/api/sessions/matched',
+              {
+                userIds: [user.userId, bestMatch.userId],
+                questionId,
+              },
+              requestConfig,
+            );
 
             if (sessionResponse.data.success) {
               const sessionId = sessionResponse.data.sessionId;
@@ -469,10 +487,28 @@ wss.on('connection', (ws) => {
 
         // Create collaboration session
         try {
-          const sessionResponse = await collaborationServiceClient.post('/api/sessions/matched', {
-            userIds: [user.userId, bestMatch.userId],
-            questionId,
+          const serviceToken = createServiceJwt({
+            scope: 'collaboration:create',
+            subjectUserId: user.userId,
           });
+
+          const requestConfig = {
+            headers: {},
+          };
+
+          if (serviceToken) {
+            requestConfig.headers.Authorization = `Bearer ${serviceToken}`;
+            requestConfig.headers.Cookie = `accessToken=${serviceToken}`;
+          }
+
+          const sessionResponse = await collaborationServiceClient.post(
+            '/api/sessions/matched',
+            {
+              userIds: [user.userId, bestMatch.userId],
+              questionId,
+            },
+            requestConfig,
+          );
 
           if (sessionResponse.data.success) {
             const sessionId = sessionResponse.data.sessionId;

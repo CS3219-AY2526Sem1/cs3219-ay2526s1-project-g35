@@ -27,7 +27,7 @@ async function loadSecrets() {
 
     const secrets = {
       DB_CONNECTION_STRING: await accessSecretVersion('history-service-db-connection-string'),
-      JWT_SECRET: await accessSecretVersion('history-service-jwt-secret'),
+      JWT_SECRET: await accessSecretVersion('user-service-jwt-secret'),
     };
 
     console.log('✓ Loaded DB_CONNECTION_STRING from Secret Manager');

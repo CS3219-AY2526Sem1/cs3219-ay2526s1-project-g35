@@ -17,6 +17,8 @@ export async function handleLogin(req, res) {
     return res.status(200).json({
       message: 'User logged in successfully',
       data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn,
         tokenReused: tokens.wasReused,
         user: formatUserResponse(user),

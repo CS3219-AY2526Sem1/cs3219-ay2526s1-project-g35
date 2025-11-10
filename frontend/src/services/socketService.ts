@@ -108,6 +108,11 @@ class SocketService {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      withCredentials: true,
+      extraHeaders: {
+        // Send token in Authorization header for LoadBalancer scenario
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
     });
 
     this.setupConnectionHandlers();

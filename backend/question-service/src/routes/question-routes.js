@@ -49,6 +49,13 @@ router.get('/categories', verifyToken, QuestionController.getAllCategories);
 
 // GET /api/questions/difficulties - Get all difficulty levels
 router.get('/difficulties', verifyToken, QuestionController.getAllDifficulties);
+
+// GET /api/questions/recent10 - Get 10 most recently created questions
+router.get('/recent10', verifyToken, QuestionController.getRecentTenQuestions);
+
+// GET /api/questions/search - Search questions with filters
+router.get('/search', verifyToken, QuestionController.searchQuestions);
+
 // GET /api/questions/:id - Get a single question by ID
 router.get('/:id', verifyToken, QuestionController.getQuestionById);
 

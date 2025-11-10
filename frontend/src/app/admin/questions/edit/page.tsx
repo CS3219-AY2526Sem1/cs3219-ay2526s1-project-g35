@@ -319,9 +319,22 @@ export default function EditQuestionPage() {
         setSelectedTopics(normalizedTopics);
         setSelectedTags(normalizedTags);
         setTestCases(() => {
-          const nextCases = (question.testCases ?? []).map((testCase, index) =>
-            createTestCase({ ...testCase, id: `${question._id}-${index}` }),
-          );
+          const nextCases = (question.testCases ?? []).map((testCase, index) => {
+            const hasOldFormat = 'params' in testCase || 'expected' in testCase;
+            
+            if (hasOldFormat) {
+              const oldTestCase = testCase as Record<string, unknown>;
+              return createTestCase({
+                input: JSON.stringify(oldTestCase.params ?? ''),
+                expectedOutput: JSON.stringify(oldTestCase.expected ?? ''),
+                explanation: testCase.explanation,
+                type: testCase.type,
+                id: `${question._id}-${index}`,
+              });
+            }
+
+            return createTestCase({ ...testCase, id: `${question._id}-${index}` });
+          });
           return nextCases.length > 0 ? nextCases : [createTestCase()];
         });
       } catch (error) {

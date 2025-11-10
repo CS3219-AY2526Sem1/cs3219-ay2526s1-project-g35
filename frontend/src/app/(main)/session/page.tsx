@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import socketService from '@/services/socketService';
+import { getAccessToken } from '@/lib/cookies';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 
 // Original React Code made by Basil - Enhanced with Collaboration
@@ -263,8 +264,13 @@ const Session = (): React.ReactElement => {
         // Set the session ID
         setSessionId(finalSessionId);
 
+        // Get access token from cookies
+        const accessToken = getAccessToken() || '';
+        console.log('🔐 Access token from cookies:', accessToken ? `${accessToken.substring(0, 20)}...` : 'EMPTY');
+        console.log('🍪 All cookies:', document.cookie);
+
         // Connect to collaboration service
-        const socket = socketService.connect('test-token', userId);
+        const socket = socketService.connect(accessToken, userId);
 
         if (socket) {
           // Wait for connection to be established before joining session

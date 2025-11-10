@@ -39,6 +39,8 @@ export interface RegisterCredentials {
 export interface AuthResponse {
   message: string;
   data: {
+    accessToken?: string;
+    refreshToken?: string;
     expiresIn: number;
     tokenReused: boolean;
     user: User;

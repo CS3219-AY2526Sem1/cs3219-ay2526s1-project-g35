@@ -48,12 +48,12 @@ export type CreateQuestionPayload = {
 
 export async function fetchRecentQuestions(): Promise<QuestionDto[]> {
   const res =
-    await questionApi.get<QuestionsListResponse<QuestionDto[]>>('/api/questions/recent10');
+    await questionApi.get<QuestionsListResponse<QuestionDto[]>>('/questions/recent10');
   return res.data?.data ?? [];
 }
 
 export async function fetchAllQuestions(): Promise<QuestionDto[]> {
-  const res = await questionApi.get<QuestionsListResponse<QuestionDto[]>>('/api/questions');
+  const res = await questionApi.get<QuestionsListResponse<QuestionDto[]>>('/questions');
   return res.data?.data ?? [];
 }
 
@@ -82,7 +82,7 @@ export async function searchQuestionsApi(params: {
     searchParams.tags = tags.join(',');
   }
 
-  const res = await questionApi.get<QuestionsListResponse<QuestionDto[]>>('/api/questions/search', {
+  const res = await questionApi.get<QuestionsListResponse<QuestionDto[]>>('/questions/search', {
     params: searchParams,
   });
 
@@ -90,23 +90,23 @@ export async function searchQuestionsApi(params: {
 }
 
 export async function fetchCategories(): Promise<string[]> {
-  const res = await questionApi.get<QuestionsListResponse<string[]>>('/api/questions/categories');
+  const res = await questionApi.get<QuestionsListResponse<string[]>>('/questions/categories');
   return res.data?.data ?? [];
 }
 
 export async function fetchDifficulties(): Promise<string[]> {
-  const res = await questionApi.get<QuestionsListResponse<string[]>>('/api/questions/difficulties');
+  const res = await questionApi.get<QuestionsListResponse<string[]>>('/questions/difficulties');
   return res.data?.data ?? [];
 }
 
 export async function createQuestion(payload: CreateQuestionPayload) {
-  const res = await questionApi.post('/api/questions', payload);
+  const res = await questionApi.post('/questions', payload);
   return res.data;
 }
 
 export async function fetchQuestionById(id: string): Promise<QuestionDto> {
   const res = await questionApi.get<{ success: boolean; data: QuestionDto }>(
-    `/api/questions/${id}`,
+    `/questions/${id}`,
   );
   return res.data?.data;
 }
@@ -122,11 +122,11 @@ export type UpdateQuestionPayload = Partial<CreateQuestionPayload> & {
 };
 
 export async function updateQuestion(id: string, payload: UpdateQuestionPayload) {
-  const res = await questionApi.put(`/api/questions/${id}`, payload);
+  const res = await questionApi.put(`/questions/${id}`, payload);
   return res.data;
 }
 
 export async function deleteQuestion(id: string) {
-  const res = await questionApi.delete(`/api/questions/${id}`);
+  const res = await questionApi.delete(`/questions/${id}`);
   return res.data;
 }

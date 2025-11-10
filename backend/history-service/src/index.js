@@ -98,8 +98,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/', historyRoutes);
+// API Routes - handle full ingress path /api/history
+app.use('/api/history', historyRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

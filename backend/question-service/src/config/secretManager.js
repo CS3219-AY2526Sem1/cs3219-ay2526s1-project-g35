@@ -22,7 +22,7 @@ async function loadSecrets() {
 
     const secrets = {
       MONGODB_URI: await accessSecretVersion('question-service-mongodb-uri'),
-      JWT_SECRET: await accessSecretVersion('question-service-jwt-secret'),
+      JWT_SECRET: await accessSecretVersion('user-service-jwt-secret'),
     };
 
     console.log('✓ Loaded MONGODB_URI from Secret Manager');

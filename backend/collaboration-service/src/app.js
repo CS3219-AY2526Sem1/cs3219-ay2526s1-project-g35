@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const jwt = require('jsonwebtoken');
+const { initializeSecrets } = require('../config/secretManager');
 require('dotenv').config();
 
 const SessionManager = require('../models/SessionManager');
@@ -242,6 +243,13 @@ app.use('*', (req, res) => {
 // Initialize Redis and start server
 const startServer = async () => {
   try {
+    // Initialize secrets from Google Secret Manager if enabled
+    if (process.env.USE_SECRET_MANAGER === 'true') {
+      console.log('USE_SECRET_MANAGER is enabled, loading secrets...');
+      await initializeSecrets();
+      console.log('Secrets loaded successfully');
+    }
+
     // Initialize Redis (optional)
     await initRedis();
 

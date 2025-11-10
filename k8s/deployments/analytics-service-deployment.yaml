@@ -17,35 +17,35 @@ spec:
     spec:
       serviceAccountName: peerprep-analytics-service
       containers:
-        - name: analytics-service
-          image: gcr.io/peerprep-475911/analytics-service:v1.0.2
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8005
-              name: http
-          envFrom:
-            - configMapRef:
-                name: analytics-service-config
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "250m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8005
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8005
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
+      - name: analytics-service
+        image: gcr.io/peerprep-475911/analytics-service:v1.0.7
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 8005
+            name: http
+        envFrom:
+          - configMapRef:
+              name: analytics-service-config
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 30
+          periodSeconds: 300
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8005
+          initialDelaySeconds: 10
+          periodSeconds: 300
+          timeoutSeconds: 3
+          failureThreshold: 3

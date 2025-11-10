@@ -52,8 +52,26 @@ spec:
                 port:
                   number: 8002
 
+          # Collaboration Service WebSocket
+          - path: /socket.io/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: collaboration-service
+                port:
+                  number: 8002
+
           # Matching Service
           - path: /api/matching/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: matching-service
+                port:
+                  number: 8003
+
+          # Matching Service WebSocket
+          - path: /matching-ws
             pathType: ImplementationSpecific
             backend:
               service:

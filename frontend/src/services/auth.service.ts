@@ -38,6 +38,15 @@ class AuthService {
         `${this.AUTH_BASE_PATH}/login`,
         credentials,
       );
+      
+      // Store tokens in localStorage for cross-domain WebSocket authentication
+      if (response.data.data?.accessToken) {
+        localStorage.setItem('accessToken', response.data.data.accessToken);
+      }
+      if (response.data.data?.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.data.refreshToken);
+      }
+      
       return response.data;
     } catch (error) {
       throw this.handleError(error);

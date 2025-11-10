@@ -1,10 +1,12 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  console.error('⚠️  WARNING: JWT_SECRET not set for analytics-service. Authentication will fail.');
-}
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error('CRITICAL: JWT_SECRET not available at verification time');
+  }
+  return secret;
+};
 
 const extractToken = (req) => {
   if (req.cookies?.accessToken) {
@@ -28,6 +30,16 @@ const verifyToken = (req, res, next) => {
         success: false,
         error: 'AUTHENTICATION_REQUIRED',
         message: 'Access token is required. Please log in.',
+      });
+    }
+
+    const JWT_SECRET = getJwtSecret();
+    if (!JWT_SECRET) {
+      console.error('JWT_SECRET is not available');
+      return res.status(500).json({
+        success: false,
+        error: 'CONFIGURATION_ERROR',
+        message: 'Server configuration error.',
       });
     }
 

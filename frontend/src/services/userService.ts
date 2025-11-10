@@ -31,9 +31,9 @@ class UserService {
    */
   async getCurrentUser(): Promise<UserData | null> {
     try {
-      console.log('[UserService] Fetching from:', `${this.userServiceUrl}/api/users/profile`);
+      console.log('[UserService] Fetching from:', `${this.userServiceUrl}/users/profile`);
 
-      const response = await fetch(`${this.userServiceUrl}/api/users/profile`, {
+      const response = await fetch(`${this.userServiceUrl}/users/profile`, {
         method: 'GET',
         credentials: 'include', // Include cookies (access token)
         headers: {
@@ -50,7 +50,7 @@ class UserService {
 
       const result = await response.json();
       console.log('[UserService] Response data:', result);
-      const userData: UserProfile = result.data; // Extract data from response wrapper
+      const userData: UserProfile = result.data;
 
       return {
         userId: userData.id || userData._id || '',

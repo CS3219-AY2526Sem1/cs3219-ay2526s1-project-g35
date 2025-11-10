@@ -18,7 +18,7 @@ spec:
       serviceAccountName: collaboration-service-sa
       containers:
         - name: collaboration-service
-          image: gcr.io/peerprep-475911/collaboration-service:v1.9
+          image: gcr.io/peerprep-475911/collaboration-service:v2.4
           ports:
             - containerPort: 8002
               name: http
