@@ -259,7 +259,9 @@ class ServiceIntegration {
    */
   async createHistoryEntry(historyData) {
     try {
-      console.log(`Creating history entry for user ${historyData.user_id} and session ${historyData.session_id}`);
+      console.log(
+        `Creating history entry for user ${historyData.user_id} and session ${historyData.session_id}`,
+      );
 
       const response = await this.historyServiceClient.post('/history', {
         user_id: historyData.user_id,

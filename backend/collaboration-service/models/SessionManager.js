@@ -12,7 +12,7 @@ class SessionManager {
 
     // Track pending sessions waiting for users to join
     this.pendingSessions = new Map(); // sessionId -> { userIds: [], questionId, createdAt }
-    
+
     // Service integration for creating history entries
     this.serviceIntegration = serviceIntegration;
   }
@@ -144,12 +144,16 @@ class SessionManager {
 
       existingUser.socketId = socketId;
       existingUser.reconnectedAt = Date.now();
-      
+
       // Ensure user is tracked in allUsers
       if (!session.allUsers.some((u) => u.userId === userId)) {
-        session.allUsers.push({ userId, username: existingUser.username, joinedAt: existingUser.joinedAt });
+        session.allUsers.push({
+          userId,
+          username: existingUser.username,
+          joinedAt: existingUser.joinedAt,
+        });
       }
-      
+
       console.log(
         `User reconnected: ${userId} to session ${sessionId}, updating from socket ${oldSocketId} to ${socketId}`,
       );
@@ -196,12 +200,12 @@ class SessionManager {
       joinedAt: Date.now(),
     };
     session.users.push(userData);
-    
+
     // Track user in allUsers if not already there
     if (!session.allUsers.some((u) => u.userId === userId)) {
       session.allUsers.push({ userId, username: userData.username, joinedAt: userData.joinedAt });
     }
-    
+
     console.log(`User joined: ${userId} to session ${sessionId}`);
 
     // Track user's session
@@ -304,7 +308,10 @@ class SessionManager {
 
     // Get all users who were in the session (including those who just left)
     // Use allUsers to track all participants, fallback to matchedUserIds or current users
-    const userIds = session.allUsers?.map((u) => u.userId) || session.matchedUserIds || session.users.map((u) => u.userId);
+    const userIds =
+      session.allUsers?.map((u) => u.userId) ||
+      session.matchedUserIds ||
+      session.users.map((u) => u.userId);
 
     if (!userIds || userIds.length === 0) {
       console.log(`No users found for session ${sessionId}, skipping history creation`);

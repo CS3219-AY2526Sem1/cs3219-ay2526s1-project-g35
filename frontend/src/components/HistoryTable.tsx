@@ -56,12 +56,12 @@ export default function HistoryTable({
       } else {
         return 'Invalid date';
       }
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return 'Invalid date';
       }
-      
+
       return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -212,12 +212,9 @@ function DifficultyPill({ value }: { value: HistoryItem['difficulty'] }) {
 
 function StatusPill({ value }: { value: HistoryItem['status'] }) {
   const colorMap = {
-    attempted:
-      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    incomplete:
-      'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    completed:
-      'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    attempted: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    incomplete: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
   };
 
   const labelMap = {

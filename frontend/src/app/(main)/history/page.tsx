@@ -51,7 +51,7 @@ export default function HistoryPage() {
         } else if (created_at && typeof created_at !== 'string') {
           created_at = String(created_at);
         }
-        
+
         return {
           id: entry.id,
           title: entry.question_title,
