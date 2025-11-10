@@ -30,6 +30,68 @@ const QuestionController = {
   },
 
   /**
+   * Get the 10 most recently updated questions
+   * GET /api/questions/recent10
+   */
+  async getRecentTenQuestions(req, res) {
+    try {
+      const questions = await Question.getFirstTen();
+      res.status(200).json({
+        success: true,
+        count: questions.length,
+        data: questions,
+      });
+    } catch (error) {
+      console.error('Error getting first 10 questions', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve questions',
+      });
+    }
+  },
+
+  /**
+   * Search questions with optional filters
+   * GET /api/questions/search
+   */
+  async searchQuestions(req, res) {
+    try {
+      const parseToArray = (value) => {
+        if (!value) return [];
+        const rawValues = Array.isArray(value) ? value : [value];
+        return rawValues
+          .flatMap((item) => item.split(','))
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0);
+      };
+
+      const searchText = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      const difficulties = parseToArray(req.query.difficulty ?? req.query.difficulties);
+      const topics = parseToArray(req.query.topic ?? req.query.topics);
+      const tags = parseToArray(req.query.tag ?? req.query.tags);
+
+      const questions = await Question.searchQuestions({
+        searchText,
+        difficulties,
+        topics,
+        tags,
+      });
+
+      res.status(200).json({
+        success: true,
+        count: questions.length,
+        data: questions,
+      });
+    } catch (error) {
+      console.error('Error searching questions:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to search questions',
+      });
+    }
+  },
+
+  /**
    * Get a single question by ID
    * GET /api/questions/:id
    * Uses Redis cache for improved performance

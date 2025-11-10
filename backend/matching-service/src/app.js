@@ -134,10 +134,7 @@ const sendMatchError = (participants, message) => {
 const removeActivePair = (user, partner) => {
   activePairs = activePairs.filter(
     ([first, second]) =>
-      !(
-        (first === user && second === partner) ||
-        (first === partner && second === user)
-      ),
+      !((first === user && second === partner) || (first === partner && second === user)),
   );
 };
 
@@ -317,16 +314,16 @@ wss.on('connection', (ws) => {
           activePairs.push([user, bestMatch]);
 
           // Proceed to create collaboration session (same flow as before)
-        const questionId = await fetchQuestionId({
-          topics: user.topics,
-          difficulty: user.difficulty,
-          userId: user.userId,
-        });
+          const questionId = await fetchQuestionId({
+            topics: user.topics,
+            difficulty: user.difficulty,
+            userId: user.userId,
+          });
 
-        if (!questionId) {
-          handleQuestionFetchFailure(user, bestMatch);
-          return;
-        }
+          if (!questionId) {
+            handleQuestionFetchFailure(user, bestMatch);
+            return;
+          }
 
           try {
             const sessionResponse = await collaborationServiceClient.post('/api/sessions/matched', {

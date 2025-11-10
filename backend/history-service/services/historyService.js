@@ -11,48 +11,36 @@ function getHistoryModel() {
   return History;
 }
 
-/**
- * History Service
- * Contains business logic for history operations
- * Separated from controllers for better testability and maintainability
- */
-
 class HistoryService {
-  /**
-   * Create a new history entry
-   * @param {Object} historyData - History entry data
-   * @returns {Promise<Object>} Created history entry
-   */
   async createHistory(historyData) {
-    const { user_id, session_id, question_title, difficulty, category } = historyData;
+    const { user_id, session_id, question_title, difficulty, category, status } = historyData;
 
-    // Business logic: Create history entry
     const history = await getHistoryModel().createHistory({
       user_id,
       session_id: session_id || null,
       question_title,
       difficulty,
       category,
+      status: status || 'attempted',
     });
 
-    return history;
-  } /**
-   * Get history for a specific user
-   * @param {string} userId - User ID
-   * @param {Object} options - Query options (limit, offset, filters)
-   * @returns {Promise<Object>} User history with metadata
-   */
+    const historyJson = history.toJSON();
+    if (historyJson.created_at instanceof Date) {
+      historyJson.created_at = historyJson.created_at.toISOString();
+    }
+
+    return historyJson;
+  }
+
   async getUserHistory(userId, options = {}) {
     const { limit = 100, offset = 0, difficulty, category, from_date, to_date } = options;
 
-    // Build query options
     const queryOptions = {
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
       order: [['created_at', 'DESC']],
     };
 
-    // Add filters if provided
     const where = { user_id: userId };
 
     if (difficulty) {
@@ -75,11 +63,31 @@ class HistoryService {
 
     queryOptions.where = where;
 
-    // Fetch history entries
     const { rows, count } = await getHistoryModel().findAndCountAll(queryOptions);
 
+    const serializedHistories = rows.map((history) => {
+      const historyJson = history.toJSON();
+      if (historyJson.created_at instanceof Date) {
+        historyJson.created_at = historyJson.created_at.toISOString();
+      } else if (historyJson.created_at && typeof historyJson.created_at === 'object') {
+        historyJson.created_at = new Date(historyJson.created_at).toISOString();
+      }
+      Object.keys(historyJson).forEach((key) => {
+        if (historyJson[key] instanceof Date) {
+          historyJson[key] = historyJson[key].toISOString();
+        } else if (
+          historyJson[key] &&
+          typeof historyJson[key] === 'object' &&
+          historyJson[key].constructor !== Object
+        ) {
+          historyJson[key] = String(historyJson[key]);
+        }
+      });
+      return historyJson;
+    });
+
     return {
-      histories: rows,
+      histories: serializedHistories,
       totalCount: count,
       limit: queryOptions.limit,
       offset: queryOptions.offset,
@@ -87,38 +95,21 @@ class HistoryService {
     };
   }
 
-  /**
-   * Get comprehensive admin statistics
-   * @returns {Promise<Object>} Admin statistics
-   */
   async getAdminStats() {
     const stats = await getHistoryModel().getAdminStats();
     return stats;
   }
 
-  /**
-   * Get statistics grouped by category
-   * @returns {Promise<Array>} Category statistics
-   */
   async getStatsByCategory() {
     const stats = await getHistoryModel().getStatsByCategory();
     return stats;
   }
 
-  /**
-   * Get statistics grouped by difficulty
-   * @returns {Promise<Array>} Difficulty statistics
-   */
   async getStatsByDifficulty() {
     const stats = await getHistoryModel().getStatsByDifficulty();
     return stats;
   }
 
-  /**
-   * Get statistics grouped by user
-   * @param {Object} options - Query options
-   * @returns {Promise<Array>} User statistics
-   */
   async getStatsByUser(options = {}) {
     const { limit = 100, offset = 0 } = options;
 
@@ -130,25 +121,15 @@ class HistoryService {
     return stats;
   }
 
-  /**
-   * Check if user can access history
-   * @param {Object} requestUser - Authenticated user from JWT
-   * @param {string} targetUserId - User ID being accessed
-   * @returns {boolean} Whether access is allowed
-   */
   canAccessUserHistory(requestUser, targetUserId) {
-    // No user authenticated
     if (!requestUser) {
       return false;
     }
 
-    // Admin can access any user's history
     if (requestUser.isAdmin === true || requestUser.role === 'admin') {
       return true;
     }
 
-    // User can access their own history
-    // Compare as strings to handle different formats
     if (requestUser.id && targetUserId && requestUser.id.toString() === targetUserId.toString()) {
       return true;
     }
@@ -156,11 +137,6 @@ class HistoryService {
     return false;
   }
 
-  /**
-   * Validate difficulty value
-   * @param {string} difficulty - Difficulty level
-   * @returns {boolean} Whether difficulty is valid
-   */
   isValidDifficulty(difficulty) {
     const validDifficulties = ['Easy', 'Medium', 'Hard'];
     return validDifficulties.includes(difficulty);

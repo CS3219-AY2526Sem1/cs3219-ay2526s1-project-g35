@@ -8,6 +8,12 @@ import {
   handleVerifyToken,
 } from '../controller/auth-controller.js';
 import {
+  handleInitiatePasswordReset,
+  handleResendPasswordResetOTP,
+  handleResetPassword,
+  handleVerifyPasswordResetOTP,
+} from '../controller/password-reset-controller.js';
+import {
   handleCompleteRegistration,
   handleInitiateRegistration,
   handleResendRegistrationOTP,
@@ -40,7 +46,26 @@ router.post(
 );
 router.post('/register/resend-otp', normalizeEmail, handleResendRegistrationOTP);
 
-// Old registration endpoint (kept for backward compatibility)
+router.post(
+  '/password-reset/initiate',
+  normalizeEmail,
+  validate(userSchemas.initiatePasswordReset),
+  handleInitiatePasswordReset,
+);
+router.post(
+  '/password-reset/verify',
+  normalizeEmail,
+  validate(userSchemas.verifyPasswordResetOTP),
+  handleVerifyPasswordResetOTP,
+);
+router.post(
+  '/password-reset/reset',
+  normalizeEmail,
+  validate(userSchemas.resetPassword),
+  handleResetPassword,
+);
+router.post('/password-reset/resend-otp', normalizeEmail, handleResendPasswordResetOTP);
+
 router.post('/register', normalizeEmail, normalizeUsername, validateCreateUser, createUser);
 
 // Login endpoint

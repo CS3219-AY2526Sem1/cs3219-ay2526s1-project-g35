@@ -29,6 +29,14 @@ router.get('/', verifyToken, QuestionController.getAllQuestions);
 
 // GET /api/questions/random - Get random question by difficulty and topics (both required)
 // Query params: ?difficulty=Easy&topics=Arrays,Strings (topics can be comma-separated for multiple)
+//GET /api/questions/recent10 - Get the 10 most recently updated questions
+router.get('/recent10', verifyToken, QuestionController.getRecentTenQuestions);
+
+// GET /api/questions/search - Search questions with filters
+router.get('/search', verifyToken, QuestionController.searchQuestions);
+
+// GET /api/questions/random - Get random question by topic and difficulty (for matching)
+// Query params: ?topic=Arrays&difficulty=Easy
 router.get('/random', verifyToken, QuestionController.getRandomQuestion);
 
 // GET /api/questions/difficulty/:difficulty - Get questions by difficulty
