@@ -57,13 +57,32 @@ class SessionManager {
     // Generate unique session ID
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+    // Determine the default language (prefer python)
+    const defaultLanguage = questionDetails?.preferredLanguage || 'python';
+    
+    // Get starter code for the selected language
+    // starterCode can be either a string (old format) or an object with language keys (new format)
+    let initialCode = '';
+    if (questionDetails?.starterCode) {
+      if (typeof questionDetails.starterCode === 'string') {
+        // Old format: starterCode is a string
+        initialCode = questionDetails.starterCode;
+      } else if (typeof questionDetails.starterCode === 'object') {
+        // New format: starterCode is an object with language keys
+        initialCode = questionDetails.starterCode[defaultLanguage] || 
+                     questionDetails.starterCode.python || 
+                     questionDetails.starterCode.javascript || 
+                     '';
+      }
+    }
+
     // Create the session
     this.sessions.set(sessionId, {
       id: sessionId,
       users: [],
       allUsers: [], // Track all users who have joined (for history tracking)
-      code: questionDetails?.starterCode || '',
-      language: questionDetails?.preferredLanguage || 'python',
+      code: initialCode,
+      language: defaultLanguage,
       problem: questionDetails,
       questionId: questionId,
       testCases: questionDetails?.testCases || [],

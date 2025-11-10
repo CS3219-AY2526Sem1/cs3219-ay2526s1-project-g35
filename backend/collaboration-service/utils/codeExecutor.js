@@ -62,36 +62,63 @@ class CodeExecutor {
 
   /**
    * Parse test cases into structured format
+   * New format: { params: [...], expected: ..., explanation: '', type: '' }
    */
   parseTestCases(testCases) {
-    return testCases.map((tc) => {
-      // For Two Sum problem
-      if (tc.nums && tc.target !== undefined) {
-        // Legacy format with separate nums and target fields
-        return {
-          input: JSON.parse(tc.nums),
-          target: parseInt(tc.target),
-          expected: tc.expected ? JSON.parse(tc.expected) : null,
-        };
-      } else if (tc.input && tc.input.includes('nums =') && tc.input.includes('target =')) {
-        // Parse input string like "nums = [2,7,11,15], target = 9"
-        const numsMatch = tc.input.match(/nums\s*=\s*\[(.*?)\]/);
-        const targetMatch = tc.input.match(/target\s*=\s*(\d+)/);
+    // Test cases are already in the correct format from the question service
+    // No parsing needed - just pass them through
+    return testCases;
+  }
 
-        if (numsMatch && targetMatch) {
-          const nums = numsMatch[1].split(',').map((n) => parseInt(n.trim()));
-          const target = parseInt(targetMatch[1]);
+  /**
+   * Prepare test case parameters based on function signature
+   * Handles construction of complex data structures (LinkedList, Tree, Graph)
+   */
+  prepareTestCaseParams(testCase, functionSignature) {
+    if (!functionSignature || !functionSignature.parameters) {
+      // No signature metadata - use params as-is (backward compatibility)
+      return testCase.params || [];
+    }
 
-          return {
-            input: nums,
-            target: target,
-            expected: tc.expectedOutput ? JSON.parse(tc.expectedOutput) : null,
-          };
-        }
+    const preparedParams = [];
+
+    functionSignature.parameters.forEach((paramDef, index) => {
+      const rawValue = testCase.params[index];
+
+      switch (paramDef.type) {
+        case 'ListNode':
+          // For linked lists: params[0] is array, params[1] is cycle position
+          preparedParams.push({
+            type: 'ListNode',
+            values: rawValue,
+            cyclePos: testCase.params[index + 1] !== undefined ? testCase.params[index + 1] : -1,
+          });
+          break;
+
+        case 'TreeNode':
+          // For trees: construct from level-order array
+          preparedParams.push({
+            type: 'TreeNode',
+            values: rawValue,
+          });
+          break;
+
+        case 'Graph':
+          // For graphs: adjacency list representation
+          preparedParams.push({
+            type: 'Graph',
+            values: rawValue,
+          });
+          break;
+
+        default:
+          // Simple types (number, string, boolean, array, object)
+          preparedParams.push(rawValue);
+          break;
       }
-
-      return tc;
     });
+
+    return preparedParams;
   }
 
   /**
@@ -150,7 +177,7 @@ class CodeExecutor {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => {});
+      await fs.unlink(tempFile).catch(() => { });
     } catch (error) {
       // Catch execution errors (timeout, file errors, etc.)
       results.success = false;
@@ -166,7 +193,7 @@ class CodeExecutor {
       // Clean up on error
       try {
         const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.py`);
-        await fs.unlink(tempFile).catch(() => {});
+        await fs.unlink(tempFile).catch(() => { });
       } catch (cleanupError) {
         // Ignore cleanup errors
       }
@@ -184,6 +211,32 @@ class CodeExecutor {
 import sys
 import json
 
+# ListNode class for linked list problems
+class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+# Helper function to construct linked list
+def construct_linked_list(values, cycle_pos=-1):
+    if not values:
+        return None
+    
+    head = ListNode(values[0])
+    current = head
+    nodes = [head]
+    
+    for val in values[1:]:
+        current.next = ListNode(val)
+        current = current.next
+        nodes.append(current)
+    
+    # Create cycle if specified
+    if cycle_pos >= 0 and cycle_pos < len(nodes):
+        current.next = nodes[cycle_pos]
+    
+    return head
+
 # User's code
 ${code}
 
@@ -198,16 +251,29 @@ try:
     
     for i, test in enumerate(testCases):
         try:
-            nums = test['input']
-            target = test['target']
+            params = test.get('params', [])
             expected = test.get('expected')
             
-            # Call user's solution
-            result = twoSum(nums, target)
+            # Prepare parameters - construct complex data structures if needed
+            prepared_params = []
+            for param in params:
+                if isinstance(param, dict) and param.get('type') == 'ListNode':
+                    # Construct linked list
+                    head = construct_linked_list(param.get('values', []), param.get('cyclePos', -1))
+                    prepared_params.append(head)
+                else:
+                    prepared_params.append(param)
+            
+            # Call user's solution function
+            result = solution(*prepared_params)
             
             if expected is not None:
                 # Check if result is correct
-                isCorrect = sorted(result) == sorted(expected)
+                if isinstance(result, list) and isinstance(expected, list):
+                    isCorrect = json.dumps(sorted(result), sort_keys=True) == json.dumps(sorted(expected), sort_keys=True)
+                else:
+                    isCorrect = json.dumps(result, sort_keys=True) == json.dumps(expected, sort_keys=True)
+                
                 status = "PASSED" if isCorrect else "FAILED"
                 
                 if isCorrect:
@@ -217,20 +283,15 @@ try:
                 
                 testResults.append({
                     "test": i + 1,
-                    "input": nums,
-                    "target": target,
                     "expected": expected,
                     "got": result,
                     "status": status
                 })
             else:
-                # Just print the result if no expected value
                 output += f"Test {i+1}: {result}\\n"
                 passed += 1
                 testResults.append({
                     "test": i + 1,
-                    "input": nums,
-                    "target": target,
                     "got": result,
                     "status": "EXECUTED"
                 })
@@ -256,7 +317,7 @@ except Exception as e:
     error_result = {
         "error": str(e),
         "passed": 0,
-        "failed": len(testCases),
+        "failed": len(testCases) if 'testCases' in locals() else 0,
         "testResults": []
     }
     print(json.dumps(error_result))
@@ -314,7 +375,7 @@ except Exception as e:
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -334,52 +395,59 @@ except Exception as e:
    * Wrap Java code with test execution logic
    */
   wrapJavaCode(code, testCases) {
-    // Helper function to convert JS array to Java array syntax
-    const toJavaArray = (arr) => {
-      return `new int[]{${arr.join(',')}}`;
-    };
+    const testCasesJson = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
     return `
+import com.google.gson.*;
+import java.util.*;
+
 ${code}
 
 class SolutionTests {
     public static void main(String[] args) {
         try {
-            Solution solution = new Solution();
+            Solution solutionInstance = new Solution();
+            Gson gson = new Gson();
+            
+            String testCasesJson = "${testCasesJson}";
+            JsonArray testCases = JsonParser.parseString(testCasesJson).getAsJsonArray();
+            
             int passed = 0;
             int failed = 0;
+            JsonArray testResults = new JsonArray();
             
-            ${testCases
-              .map(
-                (tc, idx) => `
-            // Test ${idx + 1}
-            int[] test${idx}_nums = ${toJavaArray(tc.input)};
-            int test${idx}_target = ${tc.target};
-            int[] test${idx}_expected = ${toJavaArray(tc.expected)};
-            int[] test${idx}_result = solution.twoSum(test${idx}_nums, test${idx}_target);
-            boolean test${idx}_matches = (test${idx}_result.length == 2 && test${idx}_expected.length == 2) &&
-                                        ((test${idx}_result[0] == test${idx}_expected[0] && test${idx}_result[1] == test${idx}_expected[1]) ||
-                                         (test${idx}_result[0] == test${idx}_expected[1] && test${idx}_result[1] == test${idx}_expected[0]));
-            if (test${idx}_matches) passed++; else failed++;
-            `,
-              )
-              .join('')}
+            for (int i = 0; i < testCases.size(); i++) {
+                JsonObject testResult = new JsonObject();
+                testResult.addProperty("test", i + 1);
+                
+                try {
+                    JsonObject test = testCases.get(i).getAsJsonObject();
+                    JsonArray params = test.getAsJsonArray("params");
+                    JsonElement expected = test.get("expected");
+                    
+                    // NOTE: This is a simplified version
+                    // For full Java support, you'd need reflection or method generation
+                    // For now, this provides a framework
+                    
+                    testResult.addProperty("status", "ERROR");
+                    testResult.addProperty("error", "Java dynamic execution requires method signature matching");
+                    failed++;
+                } catch (Exception e) {
+                    testResult.addProperty("status", "ERROR");
+                    testResult.addProperty("error", e.getMessage());
+                    failed++;
+                }
+                
+                testResults.add(testResult);
+            }
             
-            // Build JSON output
-            System.out.print("{");
-            System.out.print("\\"passed\\":" + passed + ",");
-            System.out.print("\\"failed\\":" + failed + ",");
-            System.out.print("\\"testResults\\":[");
-            ${testCases
-              .map(
-                (tc, idx) => `
-            ${idx > 0 ? 'System.out.print(",");' : ''}
-            System.out.print("{\\"test\\":" + ${idx + 1} + ",\\"status\\":\\"" + (test${idx}_matches ? "PASSED" : "FAILED") + "\\"}");
-            `,
-              )
-              .join('')}
-            System.out.print("],\\"output\\":\\"\\"");
-            System.out.println("}");
+            JsonObject result = new JsonObject();
+            result.addProperty("passed", passed);
+            result.addProperty("failed", failed);
+            result.add("testResults", testResults);
+            result.addProperty("output", "");
+            
+            System.out.println(gson.toJson(result));
             
         } catch (Exception e) {
             System.out.println("{\\"error\\":\\"" + e.getMessage().replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"") + "\\",\\"passed\\":0,\\"failed\\":" + ${testCases.length} + ",\\"testResults\\":[]}");
@@ -440,7 +508,7 @@ class SolutionTests {
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -460,21 +528,28 @@ class SolutionTests {
    * Wrap C++ code with test execution logic
    */
   wrapCppCode(code, testCases) {
-    const testCasesStr = JSON.stringify(testCases);
+    const testCasesJson = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
     return `
 #include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 
 ${code}
 
 int main() {
-    // Note: This is a simplified test runner
-    // For production, implement proper JSON parsing
-    cout << "${testCasesStr}" << endl;
+    // NOTE: C++ dynamic execution is complex
+    // This is a placeholder that indicates C++ test execution needs implementation
+    // For production, you would need:
+    // 1. JSON parsing library (like nlohmann/json)
+    // 2. Template-based or reflection-like mechanism for dynamic calls
+    // 3. Type inference from test cases
+    
+    cout << "{\\"error\\":\\"C++ dynamic execution not fully implemented\\",\\"passed\\":0,\\"failed\\":${testCases.length},\\"testResults\\":[]}" << endl;
     return 0;
 }
 `;
@@ -527,7 +602,7 @@ int main() {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => {});
+      await fs.unlink(tempFile).catch(() => { });
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -562,18 +637,23 @@ try {
     for (let i = 0; i < testCases.length; i++) {
         try {
             const test = testCases[i];
-            const nums = test.input;
-            const target = test.target;
+            const params = test.params || [];
             const expected = test.expected;
             
-            const result = twoSum(nums, target);
+            // Call user's solution function dynamically with params
+            const result = solution(...params);
             
             if (expected !== undefined && expected !== null) {
-                // Sort arrays for comparison
-                const sortedResult = [...result].sort((a, b) => a - b);
-                const sortedExpected = [...expected].sort((a, b) => a - b);
+                // Compare results - handle arrays and other types
+                let isCorrect;
+                if (Array.isArray(result) && Array.isArray(expected)) {
+                    // For arrays, compare JSON strings (normalized)
+                    isCorrect = JSON.stringify(result) === JSON.stringify(expected);
+                } else {
+                    // For other types, direct comparison
+                    isCorrect = JSON.stringify(result) === JSON.stringify(expected);
+                }
                 
-                const isCorrect = JSON.stringify(sortedResult) === JSON.stringify(sortedExpected);
                 const status = isCorrect ? 'PASSED' : 'FAILED';
                 
                 if (isCorrect) {
@@ -584,8 +664,7 @@ try {
                 
                 testResults.push({
                     test: i + 1,
-                    input: nums,
-                    target: target,
+                    params: params,
                     expected: expected,
                     got: result,
                     status: status
@@ -594,8 +673,7 @@ try {
                 passed++;
                 testResults.push({
                     test: i + 1,
-                    input: nums,
-                    target: target,
+                    params: params,
                     got: result,
                     status: 'EXECUTED'
                 });

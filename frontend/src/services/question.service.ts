@@ -17,8 +17,13 @@ export type QuestionsListResponse<T> = {
 export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 export type QuestionTestCase = {
-  input: string;
-  expectedOutput: string;
+  // New format
+  params?: unknown[];
+  expected?: unknown;
+  // Old format (for backward compatibility)
+  input?: string;
+  expectedOutput?: string;
+  // Common fields
   explanation?: string;
   type: 'Sample' | 'Hidden';
 };
@@ -129,4 +134,47 @@ export async function updateQuestion(id: string, payload: UpdateQuestionPayload)
 export async function deleteQuestion(id: string) {
   const res = await questionApi.delete(`/api/questions/${id}`);
   return res.data;
+}
+
+/**
+ * Helper function to format test case params for display
+ * Converts the new params array format to a readable string
+ */
+export function formatTestCaseInput(testCase: QuestionTestCase): string {
+  // If old format exists, use it
+  if (testCase.input) {
+    return testCase.input;
+  }
+
+  // If new format exists, format it
+  if (testCase.params) {
+    return testCase.params
+      .map((param, index) => {
+        const formattedParam = typeof param === 'string' ? `"${param}"` : JSON.stringify(param);
+        return index === 0 ? formattedParam : formattedParam;
+      })
+      .join(', ');
+  }
+
+  return '';
+}
+
+/**
+ * Helper function to format test case expected output for display
+ * Converts the new expected format to a readable string
+ */
+export function formatTestCaseOutput(testCase: QuestionTestCase): string {
+  // If old format exists, use it
+  if (testCase.expectedOutput) {
+    return testCase.expectedOutput;
+  }
+
+  // If new format exists, format it
+  if (testCase.expected !== undefined) {
+    return typeof testCase.expected === 'string'
+      ? `"${testCase.expected}"`
+      : JSON.stringify(testCase.expected);
+  }
+
+  return '';
 }

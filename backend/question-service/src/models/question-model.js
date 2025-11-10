@@ -86,6 +86,47 @@ const questionSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    functionSignature: {
+      type: {
+        name: {
+          type: String,
+          default: 'solution',
+        },
+        parameters: [
+          {
+            name: {
+              type: String,
+              required: true,
+            },
+            type: {
+              type: String,
+              enum: [
+                'number',
+                'string',
+                'boolean',
+                'array',
+                'object',
+                'ListNode',
+                'TreeNode',
+                'Graph',
+              ],
+              required: true,
+            },
+            constructFrom: {
+              type: String,
+              enum: ['array', 'object', 'adjacencyList'],
+              required: false,
+            },
+          },
+        ],
+        returnType: {
+          type: String,
+          enum: ['number', 'string', 'boolean', 'array', 'object', 'ListNode', 'TreeNode', 'void'],
+          default: 'number',
+        },
+      },
+      required: false, // Optional for backward compatibility
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt
@@ -216,6 +257,214 @@ questionSchema.statics.getAllCategories = async function () {
 questionSchema.statics.getAllDifficulties = async function () {
   const difficulties = await this.distinct('difficulty');
   return difficulties.sort();
+};
+
+/**
+ * Generate starter code template based on function signature
+ * @param {Object} functionSignature - Function signature metadata
+ * @param {string} language - Programming language (python, javascript, java, cpp)
+ * @returns {string} - Starter code template
+ */
+questionSchema.statics.generateStarterCode = function (functionSignature, language) {
+  if (!functionSignature || !functionSignature.parameters) {
+    // No signature - return basic template
+    return this.getBasicTemplate(language);
+  }
+
+  const funcName = functionSignature.name || 'solution';
+  const params = functionSignature.parameters || [];
+  const returnType = functionSignature.returnType || 'void';
+
+  switch (language.toLowerCase()) {
+    case 'python':
+      return this.generatePythonTemplate(funcName, params, returnType);
+    case 'javascript':
+    case 'js':
+      return this.generateJavaScriptTemplate(funcName, params, returnType);
+    case 'java':
+      return this.generateJavaTemplate(funcName, params, returnType);
+    case 'cpp':
+    case 'c++':
+      return this.generateCppTemplate(funcName, params, returnType);
+    default:
+      return this.getBasicTemplate(language);
+  }
+};
+
+// Python template generator
+questionSchema.statics.generatePythonTemplate = function (funcName, params, returnType) {
+  const paramList = params.map((p) => p.name).join(', ');
+  const paramDocs = params
+    .map((p) => `    :param ${p.name}: ${this.getPythonTypeHint(p.type)}`)
+    .join('\n');
+
+  return `def ${funcName}(${paramList}):
+    """
+    Write your solution here
+${paramDocs}
+    :return: ${this.getPythonTypeHint(returnType)}
+    """
+    # Your code here
+    pass
+`;
+};
+
+// JavaScript template generator
+questionSchema.statics.generateJavaScriptTemplate = function (funcName, params, returnType) {
+  const paramList = params.map((p) => p.name).join(', ');
+  const paramDocs = params
+    .map((p) => `     * @param {${this.getJSTypeHint(p.type)}} ${p.name}`)
+    .join('\n');
+
+  return `function ${funcName}(${paramList}) {
+    /**
+     * Write your solution here
+${paramDocs}
+     * @return {${this.getJSTypeHint(returnType)}}
+     */
+    // Your code here
+    
+}
+`;
+};
+
+// Java template generator
+questionSchema.statics.generateJavaTemplate = function (funcName, params, returnType) {
+  const paramList = params
+    .map((p) => `${this.getJavaType(p.type)} ${p.name}`)
+    .join(', ');
+
+  return `class Solution {
+    /**
+     * Write your solution here
+     */
+    public ${this.getJavaType(returnType)} ${funcName}(${paramList}) {
+        // Your code here
+        ${this.getJavaReturnDefault(returnType)}
+    }
+}
+`;
+};
+
+// C++ template generator
+questionSchema.statics.generateCppTemplate = function (funcName, params, returnType) {
+  const paramList = params
+    .map((p) => `${this.getCppType(p.type)} ${p.name}`)
+    .join(', ');
+
+  return `class Solution {
+public:
+    /**
+     * Write your solution here
+     */
+    ${this.getCppType(returnType)} ${funcName}(${paramList}) {
+        // Your code here
+        ${this.getCppReturnDefault(returnType)}
+    }
+};
+`;
+};
+
+// Type hint helpers
+questionSchema.statics.getPythonTypeHint = function (type) {
+  const typeMap = {
+    number: 'int',
+    string: 'str',
+    boolean: 'bool',
+    array: 'List',
+    object: 'Dict',
+    ListNode: 'ListNode',
+    TreeNode: 'TreeNode',
+    Graph: 'Graph',
+    void: 'None',
+  };
+  return typeMap[type] || 'Any';
+};
+
+questionSchema.statics.getJSTypeHint = function (type) {
+  const typeMap = {
+    number: 'number',
+    string: 'string',
+    boolean: 'boolean',
+    array: 'Array',
+    object: 'Object',
+    ListNode: 'ListNode',
+    TreeNode: 'TreeNode',
+    Graph: 'Graph',
+    void: 'void',
+  };
+  return typeMap[type] || 'any';
+};
+
+questionSchema.statics.getJavaType = function (type) {
+  const typeMap = {
+    number: 'int',
+    string: 'String',
+    boolean: 'boolean',
+    array: 'int[]',
+    object: 'Object',
+    ListNode: 'ListNode',
+    TreeNode: 'TreeNode',
+    Graph: 'Graph',
+    void: 'void',
+  };
+  return typeMap[type] || 'Object';
+};
+
+questionSchema.statics.getCppType = function (type) {
+  const typeMap = {
+    number: 'int',
+    string: 'string',
+    boolean: 'bool',
+    array: 'vector<int>',
+    object: 'map<string, int>',
+    ListNode: 'ListNode*',
+    TreeNode: 'TreeNode*',
+    Graph: 'Graph',
+    void: 'void',
+  };
+  return typeMap[type] || 'auto';
+};
+
+questionSchema.statics.getJavaReturnDefault = function (type) {
+  const defaults = {
+    number: 'return 0;',
+    string: 'return "";',
+    boolean: 'return false;',
+    array: 'return new int[]{};',
+    object: 'return null;',
+    ListNode: 'return null;',
+    TreeNode: 'return null;',
+    Graph: 'return null;',
+    void: '',
+  };
+  return defaults[type] || 'return null;';
+};
+
+questionSchema.statics.getCppReturnDefault = function (type) {
+  const defaults = {
+    number: 'return 0;',
+    string: 'return "";',
+    boolean: 'return false;',
+    array: 'return {};',
+    object: 'return {};',
+    ListNode: 'return nullptr;',
+    TreeNode: 'return nullptr;',
+    Graph: 'return {};',
+    void: '',
+  };
+  return defaults[type] || 'return {};';
+};
+
+// Basic template for questions without signature
+questionSchema.statics.getBasicTemplate = function (language) {
+  const templates = {
+    python: 'def solution():\n    # Your code here\n    pass\n',
+    javascript: 'function solution() {\n    // Your code here\n    \n}\n',
+    java: 'class Solution {\n    public void solution() {\n        // Your code here\n    }\n}\n',
+    cpp: 'class Solution {\npublic:\n    void solution() {\n        // Your code here\n    }\n};\n',
+  };
+  return templates[language.toLowerCase()] || '// Write your solution here\n';
 };
 
 const Question = mongoose.model('Question', questionSchema);

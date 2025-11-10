@@ -206,8 +206,8 @@ export default function AddQuestionPage() {
     );
 
     const preparedTestCases = testCases.map(({ input, expectedOutput, type, explanation }) => {
-      const trimmedInput = input.trim();
-      const trimmedExpectedOutput = expectedOutput.trim();
+      const trimmedInput = input?.trim() ?? '';
+      const trimmedExpectedOutput = expectedOutput?.trim() ?? '';
       return {
         input: trimmedInput,
         expectedOutput: trimmedExpectedOutput,

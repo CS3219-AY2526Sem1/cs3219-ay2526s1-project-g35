@@ -46,17 +46,45 @@ const DEFAULT_DIFFICULTIES: QuestionDifficulty[] = ['Easy', 'Medium', 'Hard'];
 
 const createTestCase = (
   initial?: Partial<QuestionTestCase> & { id?: string },
-): EditableTestCase => ({
-  id:
-    initial?.id ??
-    (typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random()}`),
-  input: initial?.input ?? '',
-  expectedOutput: initial?.expectedOutput ?? '',
-  explanation: initial?.explanation ?? '',
-  type: initial?.type ?? 'Sample',
-});
+): EditableTestCase => {
+  // Handle both old format (input/expectedOutput) and new format (params/expected)
+  let input = '';
+  let expectedOutput = '';
+  
+  if (initial) {
+    // If old format exists, use it
+    if (typeof initial.input === 'string') {
+      input = initial.input;
+    }
+    // If new format exists, convert to string for editing
+    else if (initial.params && Array.isArray(initial.params)) {
+      input = initial.params
+        .map((param) => (typeof param === 'string' ? `"${param}"` : JSON.stringify(param)))
+        .join(', ');
+    }
+    
+    // Same for expected output
+    if (typeof initial.expectedOutput === 'string') {
+      expectedOutput = initial.expectedOutput;
+    } else if (initial.expected !== undefined) {
+      expectedOutput = typeof initial.expected === 'string' 
+        ? `"${initial.expected}"` 
+        : JSON.stringify(initial.expected);
+    }
+  }
+  
+  return {
+    id:
+      initial?.id ??
+      (typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`),
+    input,
+    expectedOutput,
+    explanation: initial?.explanation ?? '',
+    type: initial?.type ?? 'Sample',
+  };
+};
 
 type MultiValuePopoverProps = {
   buttonLabel: string;
@@ -397,8 +425,8 @@ export default function EditQuestionPage() {
     );
 
     const preparedTestCases = testCases.map(({ input, expectedOutput, type, explanation }) => {
-      const trimmedInput = input.trim();
-      const trimmedExpectedOutput = expectedOutput.trim();
+      const trimmedInput = input?.trim() ?? '';
+      const trimmedExpectedOutput = expectedOutput?.trim() ?? '';
       return {
         input: trimmedInput,
         expectedOutput: trimmedExpectedOutput,
