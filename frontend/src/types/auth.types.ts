@@ -10,7 +10,7 @@ export interface User {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  lastLogin: string;
+  lastLogin: string | null;
   profile: {
     firstName: string;
     lastName: string;

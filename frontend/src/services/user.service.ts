@@ -6,6 +6,7 @@
 
 import apiClient from '@/lib/api/client';
 import {
+  AdminUsersResponse,
   UpdateUserProfilePayload,
   UpdateUserProfileResponse,
   UserProfileResponse,
@@ -29,6 +30,36 @@ export class UserServiceError extends Error {
 
 class UserService {
   private readonly USER_BASE_PATH = '/users';
+
+  async fetchUsers(
+    params: {
+      page?: number;
+      limit?: number;
+      query?: string;
+      role?: 'all' | 'admin' | 'user';
+    } = {},
+  ): Promise<AdminUsersResponse> {
+    try {
+      const { page = 1, limit = 10, query, role } = params;
+      const trimmedQuery = query?.trim();
+
+      const response: AxiosResponse<AdminUsersResponse> = await apiClient.get(
+        `${this.USER_BASE_PATH}`,
+        {
+          params: {
+            page,
+            limit,
+            ...(trimmedQuery ? { search: trimmedQuery } : {}),
+            ...(role && role !== 'all' ? { role } : {}),
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
 
   /**
    * Get current user's profile

@@ -2,25 +2,26 @@ import express from 'express';
 
 import {
   createUser,
-  deleteUser,
   deleteSelf,
+  deleteUser,
   getUser,
-  getUserProfile,
   getUserIdByUsername,
+  getUserProfile,
+  listUsers,
   updateUser,
   updateUserPrivilege,
   uploadAvatar,
 } from '../controller/user-controller.js';
-import { verifyToken, isAdmin } from '../middleware/jwtAuth.js';
+import { isAdmin, verifyToken } from '../middleware/jwtAuth.js';
+import upload from '../middleware/upload.js';
 import {
-  validateCreateUser,
-  validateUpdateUser,
-  validateUpdatePrivilege,
-  validateUserIdParam,
   normalizeEmail,
   normalizeUsername,
+  validateCreateUser,
+  validateUpdatePrivilege,
+  validateUpdateUser,
+  validateUserIdParam,
 } from '../middleware/validation.js';
-import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
@@ -32,6 +33,9 @@ router.get('/username/:username', getUserIdByUsername);
 
 // Get current user's profile (authenticated users)
 router.get('/profile', verifyToken, getUserProfile);
+
+// Admin: list users with pagination
+router.get('/', verifyToken, isAdmin, listUsers);
 
 // Get specific user (authenticated users & only access own data)
 router.get('/:id', validateUserIdParam, verifyToken, getUser);

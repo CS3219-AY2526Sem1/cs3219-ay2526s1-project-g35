@@ -1,10 +1,9 @@
 import argon2 from 'argon2';
-import { isValidObjectId } from 'mongoose';
+import { USER_ERRORS, sendErrorResponse, sendUserErrorResponse } from '../errors/index.js';
 import { UserRepository } from '../model/user-repository.js';
-import { USER_ERRORS, sendUserErrorResponse, sendErrorResponse } from '../errors/index.js';
+import storageService from '../services/storage-service.js';
 import * as tokenService from '../services/token-service.js';
 import { setAuthCookies } from '../utils/cookie-helper.js';
-import storageService from '../services/storage-service.js';
 
 export async function createUser(req, res) {
   try {
@@ -57,6 +56,48 @@ export async function createUser(req, res) {
     }
 
     return sendUserErrorResponse(res, USER_ERRORS.SERVER_ERROR);
+  }
+}
+
+export async function listUsers(req, res) {
+  try {
+    const pageParam = parseInt(req.query.page, 10);
+    const limitParam = parseInt(req.query.limit, 10);
+    const searchParam = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const rawRole = typeof req.query.role === 'string' ? req.query.role.toLowerCase() : 'all';
+    const roleParam = ['admin', 'user', 'all'].includes(rawRole) ? rawRole : 'all';
+
+    const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+    const limit = Number.isNaN(limitParam) || limitParam < 1 ? 10 : limitParam;
+    const cappedLimit = Math.min(limit, 50);
+
+    const result = await UserRepository.searchUsers({
+      searchTerm: searchParam,
+      page,
+      pageSize: cappedLimit,
+      role: roleParam,
+    });
+
+    const totalPages = Math.max(1, result.totalPages || Math.ceil(result.total / cappedLimit) || 1);
+    const users = (result.users || []).map((user) => formatUserResponse(user));
+
+    return res.status(200).json({
+      message: 'Users retrieved successfully',
+      data: {
+        users,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: result.pageSize,
+          totalPages,
+          hasNextPage: result.page < totalPages,
+          hasPreviousPage: result.page > 1,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('List users error:', err);
+    return sendErrorResponse(res, USER_ERRORS.INTERNAL_SERVER_ERROR);
   }
 }
 
