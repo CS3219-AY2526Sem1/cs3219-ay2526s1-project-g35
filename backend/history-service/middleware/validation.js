@@ -77,6 +77,13 @@ const schemas = {
       'date.min': 'To date must be after from date',
     }),
   }),
+
+  updateHistoryStatus: Joi.object({
+    status: Joi.string().valid('attempted', 'incomplete', 'completed').required().messages({
+      'any.only': 'Status must be attempted, incomplete, or completed',
+      'any.required': 'Status is required',
+    }),
+  }),
 };
 
 const validateBody = (schema) => {

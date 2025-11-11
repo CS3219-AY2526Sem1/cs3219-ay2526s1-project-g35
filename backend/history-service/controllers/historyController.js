@@ -116,6 +116,42 @@ const HistoryController = {
       next(error);
     }
   },
+
+  async updateHistoryStatus(req, res, next) {
+    try {
+      const { historyId } = req.params;
+      const { status } = req.body;
+      const userId = req.user?.id || null;
+
+      const history = await historyService.updateHistoryStatus(historyId, status, userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'History status updated successfully',
+        data: history,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updateHistoryBySession(req, res, next) {
+    try {
+      const { sessionId } = req.params;
+      const { status } = req.body;
+      const userId = req.user?.id || null;
+
+      const histories = await historyService.updateHistoryBySessionId(sessionId, status, userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'History status updated successfully',
+        data: histories,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
 module.exports = HistoryController;

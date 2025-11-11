@@ -121,6 +121,74 @@ class HistoryService {
     return stats;
   }
 
+  async updateHistoryStatus(historyId, status, userId = null) {
+    const History = getHistoryModel();
+
+    // Find the history entry
+    const history = await History.findByPk(historyId);
+
+    if (!history) {
+      throw new Error('History entry not found');
+    }
+
+    // If userId is provided, verify ownership
+    if (userId && history.user_id !== userId) {
+      throw new Error('Unauthorized: Cannot update history for another user');
+    }
+
+    // Validate status
+    const validStatuses = ['attempted', 'incomplete', 'completed'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    // Update status
+    history.status = status;
+    await history.save();
+
+    const historyJson = history.toJSON();
+    if (historyJson.created_at instanceof Date) {
+      historyJson.created_at = historyJson.created_at.toISOString();
+    }
+
+    return historyJson;
+  }
+
+  async updateHistoryBySessionId(sessionId, status, userId = null) {
+    const History = getHistoryModel();
+
+    // Find history entries by session_id
+    const where = { session_id: sessionId };
+    if (userId) {
+      where.user_id = userId;
+    }
+
+    const histories = await History.findAll({ where });
+
+    if (histories.length === 0) {
+      throw new Error('No history entries found for this session');
+    }
+
+    // Validate status
+    const validStatuses = ['attempted', 'incomplete', 'completed'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    // Update all matching histories
+    await History.update({ status }, { where });
+
+    // Return updated histories
+    const updatedHistories = await History.findAll({ where });
+    return updatedHistories.map((h) => {
+      const historyJson = h.toJSON();
+      if (historyJson.created_at instanceof Date) {
+        historyJson.created_at = historyJson.created_at.toISOString();
+      }
+      return historyJson;
+    });
+  }
+
   canAccessUserHistory(requestUser, targetUserId) {
     if (!requestUser) {
       return false;

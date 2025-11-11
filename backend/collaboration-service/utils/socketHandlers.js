@@ -356,6 +356,13 @@ const setupSocketHandlers = (io, sessionManager) => {
           preparedTestCases,
         );
 
+        // Track test results in session - check if all tests passed
+        if (result.success && result.passed === result.total && result.total > 0) {
+          session.allTestsPassed = true;
+          session.lastTestPassTime = Date.now();
+          console.log(`All tests passed for session ${sessionId}`);
+        }
+
         // Send results back to the socket
         io.to(socket.id).emit('code-execution-result', result);
 
