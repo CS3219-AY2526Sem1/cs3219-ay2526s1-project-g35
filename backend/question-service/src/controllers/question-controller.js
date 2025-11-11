@@ -7,6 +7,29 @@ const cache = require('../utils/cacheService');
  * Includes Redis caching for improved performance
  */
 
+/**
+ * Helper function to enrich question data with starter code templates
+ * @param {Object} question - Question document
+ * @returns {Object} - Enriched question with starterCode field
+ */
+function enrichQuestionWithStarterCode(question) {
+  if (!question) return question;
+
+  const questionObj = question.toObject ? question.toObject() : question;
+
+  // Only generate starter code if functionSignature exists
+  if (questionObj.functionSignature) {
+    questionObj.starterCode = {
+      python: Question.generateStarterCode(questionObj.functionSignature, 'python'),
+      javascript: Question.generateStarterCode(questionObj.functionSignature, 'javascript'),
+      java: Question.generateStarterCode(questionObj.functionSignature, 'java'),
+      cpp: Question.generateStarterCode(questionObj.functionSignature, 'cpp'),
+    };
+  }
+
+  return questionObj;
+}
+
 const QuestionController = {
   /**
    * Get all questions
@@ -95,6 +118,7 @@ const QuestionController = {
    * Get a single question by ID
    * GET /api/questions/:id
    * Uses Redis cache for improved performance
+   * Returns question with starter code templates
    */
   async getQuestionById(req, res, next) {
     try {
@@ -103,9 +127,10 @@ const QuestionController = {
       // Try to get from cache first
       const cachedQuestion = await cache.getQuestion(id);
       if (cachedQuestion) {
+        const enrichedQuestion = enrichQuestionWithStarterCode(cachedQuestion);
         return res.status(200).json({
           success: true,
-          data: cachedQuestion,
+          data: enrichedQuestion,
           cached: true,
         });
       }
@@ -123,9 +148,12 @@ const QuestionController = {
       // Store in cache for future requests
       await cache.setQuestion(id, question);
 
+      // Enrich with starter code before returning
+      const enrichedQuestion = enrichQuestionWithStarterCode(question);
+
       res.status(200).json({
         success: true,
-        data: question,
+        data: enrichedQuestion,
         cached: false,
       });
     } catch (error) {
@@ -386,18 +414,20 @@ const QuestionController = {
   },
 
   /**
-   * Get random question by topic and difficulty (for matching)
-   * GET /api/questions/random?topic=X&difficulty=Y
+   * Get random question by topics and difficulty (for matching)
+   * GET /api/questions/random?topics=Arrays,Strings&difficulty=Easy
+   * Supports multiple topics (comma-separated)
    * Returns question ID and caches full question for efficient retrieval
    */
   async getRandomQuestion(req, res) {
     try {
-      const { topic, difficulty } = req.query;
+      const { topics, difficulty } = req.query;
 
-      if (!topic || !difficulty) {
+      // Both topics and difficulty are required
+      if (!topics || !difficulty) {
         return res.status(400).json({
           success: false,
-          error: 'Please provide both topic and difficulty as query parameters',
+          error: 'Please provide both topics and difficulty as query parameters',
         });
       }
 
@@ -410,8 +440,30 @@ const QuestionController = {
         });
       }
 
+      // Parse topics - support both comma-separated string and array
+      let topicsArray = [];
+      if (typeof topics === 'string') {
+        topicsArray = topics
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+      } else if (Array.isArray(topics)) {
+        topicsArray = topics;
+      }
+
+      // Validate that at least one topic is provided
+      if (topicsArray.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'At least one topic is required',
+        });
+      }
+
+      // Create cache key based on topics and difficulty
+      const cacheKey = `${topicsArray.sort().join(',')}_${difficulty}`;
+
       // Check if we have a cached random question ID
-      const cachedQuestionId = await cache.getRandomQuestion(topic, difficulty);
+      const cachedQuestionId = await cache.getRandomQuestion(cacheKey, difficulty);
       if (cachedQuestionId) {
         return res.status(200).json({
           success: true,
@@ -421,24 +473,26 @@ const QuestionController = {
       }
 
       // Get a random question from database
-      const question = await Question.getRandomByTopicAndDifficulty(topic, difficulty);
+      const question = await Question.getRandomByTopicsAndDifficulty(topicsArray, difficulty);
 
       if (!question) {
         return res.status(404).json({
           success: false,
-          error: `No questions found with topic "${topic}" and difficulty "${difficulty}"`,
+          error: `No questions found with topics "${topicsArray.join(', ')}" and difficulty "${difficulty}"`,
         });
       }
 
       const questionId = question._id.toString();
 
       // Cache both the question ID (for random selection) and full question (for retrieval)
-      await cache.setRandomQuestion(topic, difficulty, questionId);
+      await cache.setRandomQuestion(cacheKey, difficulty, questionId);
       await cache.setQuestion(questionId, question);
 
       res.status(200).json({
         success: true,
         questionId,
+        topics: topicsArray,
+        difficulty,
         cached: false,
       });
     } catch (error) {

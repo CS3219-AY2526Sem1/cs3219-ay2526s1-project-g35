@@ -1,14 +1,9 @@
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 
-/**
- * JWT Authentication Middleware
- * Verifies JWT tokens from cookies or Authorization header
- */
-
-// User service URL for token verification
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:8000';
 
+<<<<<<< HEAD
 /**
  * Get JWT secret at runtime
  * This ensures we read the secret after it's been loaded by Secret Manager
@@ -22,6 +17,8 @@ function getJwtSecret() {
  * Supports both cookie-based and header-based authentication
  * Also verifies with user service to get complete user data including isAdmin
  */
+=======
+>>>>>>> master
 const verifyToken = async (req, res, next) => {
   try {
     let token = req.cookies?.accessToken || req.cookies?.token;
@@ -40,7 +37,11 @@ const verifyToken = async (req, res, next) => {
       });
     }
 
+<<<<<<< HEAD
     const jwtSecret = getJwtSecret();
+=======
+    const jwtSecret = process.env.JWT_SECRET;
+>>>>>>> master
     if (!jwtSecret) {
       console.error('JWT_SECRET is not configured');
       return res.status(500).json({
@@ -111,11 +112,6 @@ const verifyToken = async (req, res, next) => {
   }
 };
 
-/**
- * Optional authentication middleware
- * Verifies token if present, but doesn't fail if missing
- * Useful for endpoints that have different behavior for authenticated users
- */
 const optionalAuth = (req, res, next) => {
   try {
     let token = req.cookies?.accessToken || req.cookies?.token;
@@ -149,11 +145,6 @@ const optionalAuth = (req, res, next) => {
   }
 };
 
-/**
- * Admin role verification middleware
- * Requires user to be authenticated
- * TODO: Add proper admin verification once user service integration is stable
- */
 const requireAdmin = async (req, res, next) => {
   try {
     if (!req.user) {

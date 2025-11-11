@@ -18,9 +18,9 @@ const ServiceIntegration = require('../utils/serviceIntegration');
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Session Manager and Service Integration
-const sessionManager = new SessionManager();
+// Initialize Service Integration and Session Manager
 const serviceIntegration = new ServiceIntegration();
+const sessionManager = new SessionManager(serviceIntegration);
 
 // Socket.IO setup with CORS
 const io = socketIo(server, {

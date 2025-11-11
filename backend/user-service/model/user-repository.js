@@ -1,6 +1,6 @@
-import userModel from './user-model.js';
-import mongoose from 'mongoose';
 import 'dotenv/config';
+import mongoose from 'mongoose';
+import userModel from './user-model.js';
 
 /**
  * Database Connection
@@ -87,6 +87,53 @@ export class UserRepository {
       });
     } catch (error) {
       throw new Error(`Failed to find user by username or email: ${error.message}`);
+    }
+  }
+
+  /**
+   * Search users with pagination support (admin only)
+   */
+  static async searchUsers({ searchTerm = '', page = 1, pageSize = 10, role = 'all' }) {
+    try {
+      const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+      const safePageSize = Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : 10;
+
+      const filter = {};
+      if (searchTerm.trim().length > 0) {
+        filter.$or = [
+          { username: { $regex: searchTerm.trim(), $options: 'i' } },
+          { email: { $regex: searchTerm.trim(), $options: 'i' } },
+        ];
+      }
+
+      const normalizedRole = typeof role === 'string' ? role.toLowerCase() : 'all';
+      if (normalizedRole === 'admin') {
+        filter.isAdmin = true;
+      } else if (normalizedRole === 'user') {
+        filter.isAdmin = false;
+      }
+
+      const total = await userModel.countDocuments(filter);
+      const totalPages = Math.max(1, Math.ceil(total / safePageSize));
+      const currentPage = Math.min(safePage, totalPages);
+      const skip = (currentPage - 1) * safePageSize;
+
+      const users = await userModel
+        .find(filter)
+        .select('-password')
+        .sort({ updatedAt: -1, _id: 1 })
+        .skip(skip)
+        .limit(safePageSize);
+
+      return {
+        users,
+        total,
+        page: currentPage,
+        pageSize: safePageSize,
+        totalPages,
+      };
+    } catch (error) {
+      throw new Error(`Failed to search users: ${error.message}`);
     }
   }
 

@@ -38,7 +38,14 @@ import {
   updateQuestion,
 } from '@/services/question.service';
 
-type EditableTestCase = QuestionTestCase & { id: string };
+// EditableTestCase extends QuestionTestCase but uses string fields for UI editing
+type EditableTestCase = {
+  id: string;
+  input: string; // JSON string representation of params array
+  expectedOutput: string; // JSON string representation of expected value
+  explanation?: string;
+  type: 'Sample' | 'Hidden';
+};
 
 const TEST_CASE_TYPES: QuestionTestCase['type'][] = ['Sample', 'Hidden'];
 
@@ -46,17 +53,34 @@ const DEFAULT_DIFFICULTIES: QuestionDifficulty[] = ['Easy', 'Medium', 'Hard'];
 
 const createTestCase = (
   initial?: Partial<QuestionTestCase> & { id?: string },
-): EditableTestCase => ({
-  id:
-    initial?.id ??
-    (typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random()}`),
-  input: initial?.input ?? '',
-  expectedOutput: initial?.expectedOutput ?? '',
-  explanation: initial?.explanation ?? '',
-  type: initial?.type ?? 'Sample',
-});
+): EditableTestCase => {
+  let input = '';
+  let expectedOutput = '';
+
+  if (initial) {
+    // Convert params array to JSON string for editing
+    if (initial.params && Array.isArray(initial.params)) {
+      input = JSON.stringify(initial.params);
+    }
+
+    // Convert expected to JSON string for editing
+    if (initial.expected !== undefined) {
+      expectedOutput = JSON.stringify(initial.expected);
+    }
+  }
+
+  return {
+    id:
+      initial?.id ??
+      (typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random()}`),
+    input,
+    expectedOutput,
+    explanation: initial?.explanation ?? '',
+    type: initial?.type ?? 'Sample',
+  };
+};
 
 type MultiValuePopoverProps = {
   buttonLabel: string;
@@ -238,10 +262,10 @@ export default function EditQuestionPage() {
     setTagInput('');
   };
 
-  const handleTestCaseChange = <K extends keyof QuestionTestCase>(
+  const handleTestCaseChange = <K extends keyof EditableTestCase>(
     id: string,
     field: K,
-    value: QuestionTestCase[K],
+    value: EditableTestCase[K],
   ) => {
     setTestCases((prev) =>
       prev.map((testCase) => (testCase.id === id ? { ...testCase, [field]: value } : testCase)),
@@ -409,23 +433,59 @@ export default function EditQuestionPage() {
       new Set(selectedTags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)),
     );
 
-    const preparedTestCases = testCases.map(({ input, expectedOutput, type, explanation }) => {
-      const trimmedInput = input.trim();
-      const trimmedExpectedOutput = expectedOutput.trim();
-      return {
-        input: trimmedInput,
-        expectedOutput: trimmedExpectedOutput,
-        type,
-        explanation: explanation?.trim() ?? '',
-      };
-    });
+    // Transform test cases from UI format to API format
+    const preparedTestCases = testCases.map(
+      ({ input, expectedOutput, type, explanation }, index) => {
+        const trimmedInput = input?.trim() ?? '';
+        const trimmedExpectedOutput = expectedOutput?.trim() ?? '';
 
-    const hasInvalidTestCase = preparedTestCases.some(
-      (testCase) => !testCase.input || !testCase.expectedOutput,
+        // Parse input parameters as JSON array
+        let parsedParams;
+        try {
+          parsedParams = JSON.parse(trimmedInput);
+          if (!Array.isArray(parsedParams)) {
+            throw new Error(`Test case ${index + 1}: Input parameters must be a JSON array`);
+          }
+        } catch (error) {
+          throw new Error(
+            `Test case ${index + 1}: Invalid input format. ${error instanceof Error ? error.message : 'Must be a valid JSON array.'}`,
+          );
+        }
+
+        // Parse expected output as JSON
+        let parsedExpected;
+        try {
+          parsedExpected = JSON.parse(trimmedExpectedOutput);
+        } catch {
+          throw new Error(
+            `Test case ${index + 1}: Invalid expected output format. Must be valid JSON.`,
+          );
+        }
+
+        return {
+          params: parsedParams,
+          expected: parsedExpected,
+          type,
+          explanation: explanation?.trim() ?? '',
+        };
+      },
+    );
+
+    let transformedTestCases;
+    try {
+      transformedTestCases = preparedTestCases;
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Invalid test case format');
+      return;
+    }
+
+    const hasInvalidTestCase = transformedTestCases.some(
+      (testCase) =>
+        !testCase.params || testCase.params.length === 0 || testCase.expected === undefined,
     );
 
     if (hasInvalidTestCase) {
-      setFormError('Each test case requires input and expected output.');
+      setFormError('Each test case requires valid input parameters and expected output.');
       return;
     }
 
@@ -435,7 +495,7 @@ export default function EditQuestionPage() {
       difficulty,
       topics: sanitizedTopics,
       tags: sanitizedTags,
-      testCases: preparedTestCases,
+      testCases: transformedTestCases,
     };
 
     try {
@@ -645,16 +705,19 @@ export default function EditQuestionPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">
-                        Input <span className="text-destructive">*</span>
+                        Input Parameters <span className="text-destructive">*</span>
                       </label>
                       <textarea
                         value={testCase.input}
                         onChange={(event) =>
                           handleTestCaseChange(testCase.id, 'input', event.target.value)
                         }
-                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="nums = [2,7,11,15], target = 9"
+                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm font-mono shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="[[2,7,11,15], 9]"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        JSON array of parameters. Example: [[1,2,3], &quot;test&quot;, true]
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">
@@ -665,9 +728,12 @@ export default function EditQuestionPage() {
                         onChange={(event) =>
                           handleTestCaseChange(testCase.id, 'expectedOutput', event.target.value)
                         }
-                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm font-mono shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                         placeholder="[0,1]"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        JSON value. Example: [0,1] or &quot;result&quot; or 42
+                      </p>
                     </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">

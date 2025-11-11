@@ -1,10 +1,14 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
+import { Button } from '@/components/ui/button';
 import socketService from '@/services/socketService';
+<<<<<<< HEAD
 import { getAccessToken } from '@/lib/cookies';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+=======
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+>>>>>>> master
 
 // Original React Code made by Basil - Enhanced with Collaboration
 
@@ -18,8 +22,8 @@ interface Message {
 
 interface TestCase {
   id: string;
-  input?: string;
-  expected?: string;
+  params: unknown[];
+  expected: unknown;
   explanation?: string;
 }
 
@@ -35,9 +39,8 @@ interface QuestionData {
   starterCode?: string;
   examples?: QuestionExample[];
   testCases?: Array<{
-    input?: string;
-    expected?: string;
-    expectedOutput?: string;
+    params: unknown[];
+    expected: unknown;
     explanation?: string;
   }>;
 }
@@ -144,7 +147,19 @@ const Session = (): React.ReactElement => {
 
         // Update code with starter code if available
         if (matchedData.question.starterCode) {
-          setCode(matchedData.question.starterCode);
+          // starterCode can be either a string (old format) or object with language keys (new format)
+          if (typeof matchedData.question.starterCode === 'string') {
+            setCode(matchedData.question.starterCode);
+          } else if (typeof matchedData.question.starterCode === 'object') {
+            // Use the current language's starter code, fallback to python
+            const starterCodeObj = matchedData.question.starterCode as Record<string, string>;
+            const languageCode =
+              starterCodeObj[selectedLanguage] ||
+              starterCodeObj.python ||
+              starterCodeObj.javascript ||
+              '';
+            setCode(languageCode);
+          }
         }
 
         // Update examples if available
@@ -157,8 +172,8 @@ const Session = (): React.ReactElement => {
           setTestCases(
             matchedData.question.testCases.map((tc, index: number) => ({
               id: `Case ${index + 1}`,
-              input: tc.input || '',
-              expected: (tc.expected ?? tc.expectedOutput) || '',
+              params: tc.params,
+              expected: tc.expected,
               explanation: tc.explanation || '',
             })),
           );
@@ -180,6 +195,10 @@ const Session = (): React.ReactElement => {
         if (langKey) {
           setSelectedLanguage(data.language);
         }
+      }
+      // If new starter code is provided (auto-switched), update it
+      if (data.code) {
+        setCode(data.code);
       }
     });
 
@@ -583,18 +602,20 @@ const Session = (): React.ReactElement => {
 
                 {currentTestCase && (
                   <div className="bg-muted p-4 rounded-2xl">
-                    {currentTestCase.input && (
+                    {currentTestCase.params && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Input:</p>
                         <p className="font-mono text-sm whitespace-pre-wrap">
-                          {currentTestCase.input}
+                          {JSON.stringify(currentTestCase.params)}
                         </p>
                       </div>
                     )}
-                    {currentTestCase.expected && (
+                    {currentTestCase.expected !== undefined && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Expected Output:</p>
-                        <p className="font-mono text-sm">{currentTestCase.expected}</p>
+                        <p className="font-mono text-sm">
+                          {JSON.stringify(currentTestCase.expected)}
+                        </p>
                       </div>
                     )}
                     {currentTestCase.explanation && (

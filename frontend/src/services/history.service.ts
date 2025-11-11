@@ -5,7 +5,7 @@
  */
 
 import apiClient from '@/lib/api/client';
-import { AxiosResponse } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 
 export interface HistoryEntry {
   id: string;
@@ -14,6 +14,7 @@ export interface HistoryEntry {
   question_title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   category: string;
+  status: 'attempted' | 'incomplete' | 'completed';
   created_at: string;
 }
 
@@ -57,13 +58,17 @@ export class HistoryServiceError extends Error {
 }
 
 class HistoryService {
-  private readonly HISTORY_BASE_PATH = '/history';
+  // For local development, call history service directly at http://localhost:8004
+  // For production with API gateway, use /api/history through gateway
   private readonly HISTORY_SERVICE_URL =
-    process.env.NEXT_PUBLIC_API_HISTORY_URL || 'http://localhost:8004';
+    process.env.NEXT_PUBLIC_API_HISTORY_URL || 'http://localhost:8004'; // Direct to history service for local dev
+  private readonly HISTORY_BASE_PATH = this.HISTORY_SERVICE_URL.includes('localhost:8004')
+    ? '/history' // Direct to service (routes are at /history)
+    : '/api/history'; // Through API gateway
 
   /**
    * Get user's history
-   * GET /history?user_id={userId}&limit={limit}&offset={offset}
+   * GET /api/history?user_id={userId}&limit={limit}&offset={offset}
    */
   async getUserHistory(
     userId: string,
@@ -71,16 +76,27 @@ class HistoryService {
     offset: number = 0,
   ): Promise<GetHistoryResponse> {
     try {
-      const response: AxiosResponse<GetHistoryResponse> = await apiClient.get(
-        `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`,
-        {
-          params: {
-            user_id: userId,
-            limit,
-            offset,
-          },
+      // If using direct service URL, use it directly; otherwise use apiClient (gateway)
+      const url = this.HISTORY_SERVICE_URL.startsWith('http')
+        ? `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`
+        : this.HISTORY_BASE_PATH;
+
+      const client = this.HISTORY_SERVICE_URL.startsWith('http')
+        ? axios.create({
+            baseURL: '',
+            timeout: 10000,
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+          })
+        : apiClient;
+
+      const response: AxiosResponse<GetHistoryResponse> = await client.get(url, {
+        params: {
+          user_id: userId,
+          limit,
+          offset,
         },
-      );
+      });
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -89,14 +105,25 @@ class HistoryService {
 
   /**
    * Create a new history entry
-   * POST /history
+   * POST /api/history
    */
   async createHistoryEntry(payload: CreateHistoryPayload): Promise<CreateHistoryResponse> {
     try {
-      const response: AxiosResponse<CreateHistoryResponse> = await apiClient.post(
-        `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`,
-        payload,
-      );
+      // If using direct service URL, use it directly; otherwise use apiClient (gateway)
+      const url = this.HISTORY_SERVICE_URL.startsWith('http')
+        ? `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`
+        : this.HISTORY_BASE_PATH;
+
+      const client = this.HISTORY_SERVICE_URL.startsWith('http')
+        ? axios.create({
+            baseURL: '',
+            timeout: 10000,
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+          })
+        : apiClient;
+
+      const response: AxiosResponse<CreateHistoryResponse> = await client.post(url, payload);
       return response.data;
     } catch (error) {
       throw this.handleError(error);

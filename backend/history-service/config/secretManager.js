@@ -16,11 +16,6 @@ async function accessSecretVersion(secretName, version = 'latest') {
   }
 }
 
-/**
- * Load ONLY sensitive secrets from Google Secret Manager
- * Non-sensitive configuration should be in environment variables or ConfigMaps
- * @returns {Promise<Object>} - Object containing only secret values
- */
 async function loadSecrets() {
   try {
     console.log('Loading secrets from Google Secret Manager...');

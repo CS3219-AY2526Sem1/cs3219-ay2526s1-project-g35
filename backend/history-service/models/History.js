@@ -1,15 +1,5 @@
 const { DataTypes } = require('sequelize');
 
-/**
- * History Model
- * Represents a user's question attempt/submission history
- */
-
-/**
- * Initialize the History model
- * @param {Sequelize} sequelize - Sequelize instance
- * @returns {Model} - History model
- */
 function initHistoryModel(sequelize) {
   const History = sequelize.define(
     'History',
@@ -55,7 +45,7 @@ function initHistoryModel(sequelize) {
         },
       },
       difficulty: {
-        type: DataTypes.ENUM('Easy', 'Medium', 'Hard'),
+        type: DataTypes.STRING(10),
         allowNull: false,
         validate: {
           isIn: {
@@ -77,6 +67,17 @@ function initHistoryModel(sequelize) {
           },
         },
       },
+      status: {
+        type: DataTypes.STRING(20),
+        allowNull: false,
+        defaultValue: 'attempted',
+        validate: {
+          isIn: {
+            args: [['attempted', 'incomplete', 'completed']],
+            msg: 'Status must be attempted, incomplete, or completed',
+          },
+        },
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -86,7 +87,7 @@ function initHistoryModel(sequelize) {
     },
     {
       tableName: 'histories',
-      timestamps: false, // We're manually managing created_at
+      timestamps: false,
       indexes: [
         {
           name: 'idx_user_id',
@@ -112,19 +113,14 @@ function initHistoryModel(sequelize) {
           name: 'idx_user_created',
           fields: ['user_id', 'created_at'],
         },
+        {
+          name: 'idx_status',
+          fields: ['status'],
+        },
       ],
     }
   );
 
-  /**
-   * Model methods for business logic
-   */
-
-  /**
-   * Create a new history entry
-   * @param {Object} data - History data
-   * @returns {Promise<History>} - Created history record
-   */
   History.createHistory = async function (data) {
     try {
       const history = await this.create({
@@ -133,6 +129,7 @@ function initHistoryModel(sequelize) {
         question_title: data.question_title,
         difficulty: data.difficulty,
         category: data.category,
+        status: data.status || 'attempted',
         created_at: new Date(),
       });
       return history;
@@ -142,12 +139,6 @@ function initHistoryModel(sequelize) {
     }
   };
 
-  /**
-   * Get all history entries for a specific user
-   * @param {string} userId - User ID
-   * @param {Object} options - Query options (limit, offset, order)
-   * @returns {Promise<Array>} - Array of history records
-   */
   History.getByUserId = async function (userId, options = {}) {
     try {
       const { limit = 100, offset = 0, order = [['created_at', 'DESC']] } = options;
@@ -165,10 +156,6 @@ function initHistoryModel(sequelize) {
     }
   };
 
-  /**
-   * Get statistics by category
-   * @returns {Promise<Array>} - Array of category stats
-   */
   History.getStatsByCategory = async function () {
     try {
       const { QueryTypes } = require('sequelize');
@@ -193,10 +180,6 @@ function initHistoryModel(sequelize) {
     }
   };
 
-  /**
-   * Get statistics by difficulty
-   * @returns {Promise<Array>} - Array of difficulty stats
-   */
   History.getStatsByDifficulty = async function () {
     try {
       const { QueryTypes } = require('sequelize');
@@ -226,10 +209,6 @@ function initHistoryModel(sequelize) {
     }
   };
 
-  /**
-   * Get statistics by user
-   * @returns {Promise<Array>} - Array of user stats
-   */
   History.getStatsByUser = async function () {
     try {
       const { QueryTypes } = require('sequelize');
@@ -257,10 +236,6 @@ function initHistoryModel(sequelize) {
     }
   };
 
-  /**
-   * Get comprehensive admin statistics
-   * @returns {Promise<Object>} - Object containing all statistics
-   */
   History.getAdminStats = async function () {
     try {
       const [categoryStats, difficultyStats, userStats] = await Promise.all([

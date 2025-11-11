@@ -3,7 +3,7 @@
  * Handles session creation, user joining/leaving, and session state
  */
 class SessionManager {
-  constructor() {
+  constructor(serviceIntegration = null) {
     // Store active sessions in memory
     // Structure: { sessionId: { users: [], code: '', language: '', createdAt: timestamp } }
     this.sessions = new Map();
@@ -12,6 +12,9 @@ class SessionManager {
 
     // Track pending sessions waiting for users to join
     this.pendingSessions = new Map(); // sessionId -> { userIds: [], questionId, createdAt }
+
+    // Service integration for creating history entries
+    this.serviceIntegration = serviceIntegration;
   }
 
   /**
@@ -25,6 +28,7 @@ class SessionManager {
     this.sessions.set(sessionId, {
       id: sessionId,
       users: [],
+      allUsers: [], // Track all users who have joined (for history tracking)
       code: initialData.code || '',
       language: initialData.language || 'javascript',
       problem: initialData.problem || null,
@@ -53,12 +57,33 @@ class SessionManager {
     // Generate unique session ID
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+    // Determine the default language (prefer python)
+    const defaultLanguage = questionDetails?.preferredLanguage || 'python';
+
+    // Get starter code for the selected language
+    // starterCode can be either a string (old format) or an object with language keys (new format)
+    let initialCode = '';
+    if (questionDetails?.starterCode) {
+      if (typeof questionDetails.starterCode === 'string') {
+        // Old format: starterCode is a string
+        initialCode = questionDetails.starterCode;
+      } else if (typeof questionDetails.starterCode === 'object') {
+        // New format: starterCode is an object with language keys
+        initialCode =
+          questionDetails.starterCode[defaultLanguage] ||
+          questionDetails.starterCode.python ||
+          questionDetails.starterCode.javascript ||
+          '';
+      }
+    }
+
     // Create the session
     this.sessions.set(sessionId, {
       id: sessionId,
       users: [],
-      code: questionDetails?.starterCode || '',
-      language: questionDetails?.preferredLanguage || 'python',
+      allUsers: [], // Track all users who have joined (for history tracking)
+      code: initialCode,
+      language: defaultLanguage,
       problem: questionDetails,
       questionId: questionId,
       testCases: questionDetails?.testCases || [],
@@ -139,6 +164,16 @@ class SessionManager {
 
       existingUser.socketId = socketId;
       existingUser.reconnectedAt = Date.now();
+
+      // Ensure user is tracked in allUsers
+      if (!session.allUsers.some((u) => u.userId === userId)) {
+        session.allUsers.push({
+          userId,
+          username: existingUser.username,
+          joinedAt: existingUser.joinedAt,
+        });
+      }
+
       console.log(
         `User reconnected: ${userId} to session ${sessionId}, updating from socket ${oldSocketId} to ${socketId}`,
       );
@@ -178,12 +213,19 @@ class SessionManager {
     }
 
     // Add new user
-    session.users.push({
+    const userData = {
       userId,
       socketId,
       username: userInfo.username || `User${userId}`,
       joinedAt: Date.now(),
-    });
+    };
+    session.users.push(userData);
+
+    // Track user in allUsers if not already there
+    if (!session.allUsers.some((u) => u.userId === userId)) {
+      session.allUsers.push({ userId, username: userData.username, joinedAt: userData.joinedAt });
+    }
+
     console.log(`User joined: ${userId} to session ${sessionId}`);
 
     // Track user's session
@@ -233,8 +275,15 @@ class SessionManager {
     this.userToSession.delete(socketId);
     session.lastActivity = Date.now();
 
-    // Clean up empty sessions after 5 minutes of inactivity
+    // If session is now empty (all users left), create history entries
     if (session.users.length === 0) {
+      // Create history entries for all users who were in the session
+      // Do this before cleanup to ensure we have session data
+      this.createHistoryForSession(sessionId, session).catch((error) => {
+        console.error(`Failed to create history for session ${sessionId}:`, error);
+      });
+
+      // Clean up empty sessions after 5 minutes of inactivity
       setTimeout(
         () => {
           const currentSession = this.sessions.get(sessionId);
@@ -253,6 +302,69 @@ class SessionManager {
       removedUser,
       remainingUsers: session.users.length,
     };
+  }
+
+  /**
+   * Create history entries for all users in a session
+   * Called when a session ends (all users have left)
+   * @param {string} sessionId - Session ID
+   * @param {Object} session - Session data
+   */
+  async createHistoryForSession(sessionId, session) {
+    // Only create history if we have question information and service integration
+    if (!this.serviceIntegration || !session.questionId || !session.problem) {
+      console.log(
+        `Skipping history creation for session ${sessionId}: missing question info or service integration`,
+      );
+      return;
+    }
+
+    // Get question details from session
+    const question = session.problem;
+    const questionTitle = question.title || 'Unknown Question';
+    const difficulty = question.difficulty || 'Medium';
+    // Use first topic as category, or default to 'General'
+    const category = question.topics && question.topics.length > 0 ? question.topics[0] : 'General';
+
+    // Get all users who were in the session (including those who just left)
+    // Use allUsers to track all participants, fallback to matchedUserIds or current users
+    const userIds =
+      session.allUsers?.map((u) => u.userId) ||
+      session.matchedUserIds ||
+      session.users.map((u) => u.userId);
+
+    if (!userIds || userIds.length === 0) {
+      console.log(`No users found for session ${sessionId}, skipping history creation`);
+      return;
+    }
+
+    // Create history entries for each user
+    const historyPromises = userIds.map(async (userId) => {
+      try {
+        // Determine status: if session ended, mark as 'attempted' (can be updated later based on completion)
+        // For now, we'll mark all as 'attempted' since we don't track completion in collaboration service
+        const result = await this.serviceIntegration.createHistoryEntry({
+          user_id: userId,
+          session_id: sessionId,
+          question_title: questionTitle,
+          difficulty: difficulty,
+          category: category,
+          status: 'attempted', // Default status, can be updated when question is completed
+        });
+
+        if (result.success) {
+          console.log(`History entry created for user ${userId} in session ${sessionId}`);
+        } else {
+          console.error(
+            `Failed to create history entry for user ${userId} in session ${sessionId}: ${result.error}`,
+          );
+        }
+      } catch (error) {
+        console.error(`Error creating history entry for user ${userId}:`, error.message);
+      }
+    });
+
+    await Promise.allSettled(historyPromises);
   }
 
   /**

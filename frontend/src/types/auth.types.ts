@@ -10,7 +10,7 @@ export interface User {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  lastLogin: string;
+  lastLogin: string | null;
   profile: {
     firstName: string;
     lastName: string;
@@ -77,4 +77,8 @@ export interface AuthContextType extends AuthState {
   completeRegistration: (email: string, otp: string) => Promise<AuthResponse>;
   resendRegistrationOTP: (email: string) => Promise<SendOTPResponse>;
   updateUser: (updatedUser: Partial<User>) => void;
+  initiatePasswordReset: (email: string) => Promise<SendOTPResponse>;
+  verifyPasswordResetOTP: (email: string, otp: string) => Promise<SendOTPResponse>;
+  resetPassword: (email: string, otp: string, newPassword: string) => Promise<AuthResponse>;
+  resendPasswordResetOTP: (email: string) => Promise<SendOTPResponse>;
 }

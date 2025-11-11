@@ -1,11 +1,6 @@
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
-/**
- * Swagger Configuration
- * API documentation setup
- */
-
 const swaggerOptions = {
   definition: {
     openapi: '3.0.0',
@@ -131,20 +126,14 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ['./routes/*.js', './src/index.js'], // Path to the API routes
+  apis: ['./routes/*.js', './src/index.js'],
 };
 
 const swaggerSpec = swaggerJsDoc(swaggerOptions);
 
-/**
- * Setup Swagger documentation
- * @param {Express} app - Express application
- */
 function setupSwagger(app) {
-  // Swagger UI
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-  // Swagger JSON endpoint
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);

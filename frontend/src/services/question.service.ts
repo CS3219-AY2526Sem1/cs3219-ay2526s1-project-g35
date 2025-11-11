@@ -17,8 +17,8 @@ export type QuestionsListResponse<T> = {
 export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 export type QuestionTestCase = {
-  input: string;
-  expectedOutput: string;
+  params: unknown[];
+  expected: unknown;
   explanation?: string;
   type: 'Sample' | 'Hidden';
 };
@@ -129,4 +129,28 @@ export async function updateQuestion(id: string, payload: UpdateQuestionPayload)
 export async function deleteQuestion(id: string) {
   const res = await questionApi.delete(`/questions/${id}`);
   return res.data;
+}
+
+/**
+ * Helper function to format test case params for display
+ * Converts the params array to a readable string
+ */
+export function formatTestCaseInput(testCase: QuestionTestCase): string {
+  if (!testCase.params || testCase.params.length === 0) {
+    return '';
+  }
+
+  return JSON.stringify(testCase.params);
+}
+
+/**
+ * Helper function to format test case expected output for display
+ * Converts the expected value to a readable string
+ */
+export function formatTestCaseOutput(testCase: QuestionTestCase): string {
+  if (testCase.expected === undefined) {
+    return '';
+  }
+
+  return JSON.stringify(testCase.expected);
 }
