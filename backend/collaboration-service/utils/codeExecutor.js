@@ -395,66 +395,375 @@ except Exception as e:
    * Wrap Java code with test execution logic
    */
   wrapJavaCode(code, testCases) {
-    const testCasesJson = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-
+    // Generate Java code to embed test cases
+    const testCasesCode = this.generateJavaTestCasesCode(testCases);
+    const testCasesLength = testCases.length;
+    
     return `
-import com.google.gson.*;
 import java.util.*;
+import java.lang.reflect.*;
 
 ${code}
 
 class SolutionTests {
+    // Helper to escape JSON strings
+    private static String escapeJson(String s) {
+        if (s == null) return "null";
+        return s.replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"").replace("\\n", "\\\\n").replace("\\r", "\\\\r").replace("\\t", "\\\\t");
+    }
+    
+    // Helper to convert Object to JSON string
+    private static String toJson(Object obj) {
+        if (obj == null) return "null";
+        if (obj instanceof String) return "\\"" + escapeJson((String)obj) + "\\"";
+        if (obj instanceof Integer || obj instanceof Boolean || obj instanceof Long || obj instanceof Double) return obj.toString();
+        if (obj instanceof int[]) {
+            int[] arr = (int[])obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append(arr[i]);
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof String[]) {
+            String[] arr = (String[])obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length; i++) {
+                if (i > 0) sb.append(",");
+                sb.append("\\"").append(escapeJson(arr[i])).append("\\"");
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+        if (obj instanceof List) {
+            List<?> list = (List<?>)obj;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < list.size(); i++) {
+                if (i > 0) sb.append(",");
+                sb.append(toJson(list.get(i)));
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+        return "\\"" + escapeJson(obj.toString()) + "\\"";
+    }
+    
+    // Helper to compare objects deeply
+    private static boolean deepEquals(Object a, Object b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        if (a instanceof int[] && b instanceof int[]) {
+            return Arrays.equals((int[])a, (int[])b);
+        }
+        if (a instanceof String[] && b instanceof String[]) {
+            return Arrays.equals((String[])a, (String[])b);
+        }
+        if (a instanceof List && b instanceof List) {
+            List<?> listA = (List<?>)a;
+            List<?> listB = (List<?>)b;
+            if (listA.size() != listB.size()) return false;
+            for (int i = 0; i < listA.size(); i++) {
+                if (!deepEquals(listA.get(i), listB.get(i))) return false;
+            }
+            return true;
+        }
+        return a.equals(b);
+    }
+    
+    // Convert test case parameter to appropriate Java type
+    private static Object convertParam(Object param, Class<?> targetType) {
+        if (param == null) return null;
+        
+        // Handle void type
+        if (targetType == void.class || targetType == Void.class) {
+            return null;
+        }
+        
+        if (targetType == int.class || targetType == Integer.class) {
+            if (param instanceof Number) return ((Number)param).intValue();
+            if (param instanceof String) return Integer.parseInt((String)param);
+            return Integer.parseInt(param.toString());
+        }
+        if (targetType == String.class) {
+            return param.toString();
+        }
+        if (targetType == boolean.class || targetType == Boolean.class) {
+            if (param instanceof Boolean) return param;
+            if (param instanceof String) return Boolean.parseBoolean((String)param);
+            return Boolean.parseBoolean(param.toString());
+        }
+        if (targetType == long.class || targetType == Long.class) {
+            if (param instanceof Number) return ((Number)param).longValue();
+            if (param instanceof String) return Long.parseLong((String)param);
+            return Long.parseLong(param.toString());
+        }
+        if (targetType == double.class || targetType == Double.class) {
+            if (param instanceof Number) return ((Number)param).doubleValue();
+            if (param instanceof String) return Double.parseDouble((String)param);
+            return Double.parseDouble(param.toString());
+        }
+        if (targetType.isArray()) {
+            if (param instanceof List) {
+                List<?> list = (List<?>)param;
+                Class<?> componentType = targetType.getComponentType();
+                if (componentType == int.class) {
+                    int[] arr = new int[list.size()];
+                    for (int i = 0; i < list.size(); i++) {
+                        Object elem = list.get(i);
+                        arr[i] = elem instanceof Number ? ((Number)elem).intValue() : Integer.parseInt(elem.toString());
+                    }
+                    return arr;
+                }
+                if (componentType == String.class) {
+                    String[] arr = new String[list.size()];
+                    for (int i = 0; i < list.size(); i++) {
+                        arr[i] = list.get(i).toString();
+                    }
+                    return arr;
+                }
+            }
+            // If param is already the right array type, return it
+            if (targetType.isInstance(param)) {
+                return param;
+            }
+        }
+        // For List types, check if param is a List
+        if (List.class.isAssignableFrom(targetType)) {
+            if (param instanceof List) {
+                return param;
+            }
+        }
+        // For other types, try to return as-is or convert to string
+        if (targetType.isInstance(param)) {
+            return param;
+        }
+        return param;
+    }
+    
     public static void main(String[] args) {
         try {
-            Solution solutionInstance = new Solution();
-            Gson gson = new Gson();
+            Solution solution = new Solution();
             
-            String testCasesJson = "${testCasesJson}";
-            JsonArray testCases = JsonParser.parseString(testCasesJson).getAsJsonArray();
+            // Find solution method using reflection
+            Method solutionMethod = null;
+            Method[] methods = Solution.class.getDeclaredMethods();
+            for (Method m : methods) {
+                if (m.getName().equals("solution") && Modifier.isPublic(m.getModifiers())) {
+                    solutionMethod = m;
+                    break;
+                }
+            }
+            
+            if (solutionMethod == null) {
+                System.out.println("{\\"error\\":\\"Solution class must have a public method named 'solution'\\",\\"passed\\":0,\\"failed\\":${testCasesLength},\\"testResults\\":[]}");
+                return;
+            }
+            
+            solutionMethod.setAccessible(true);
+            Class<?>[] paramTypes = solutionMethod.getParameterTypes();
+            
+            // Test cases
+            ${testCasesCode}
             
             int passed = 0;
             int failed = 0;
-            JsonArray testResults = new JsonArray();
+            StringBuilder testResultsJson = new StringBuilder("[");
             
-            for (int i = 0; i < testCases.size(); i++) {
-                JsonObject testResult = new JsonObject();
-                testResult.addProperty("test", i + 1);
+            for (int i = 0; i < testCases.length; i++) {
+                if (i > 0) testResultsJson.append(",");
+                testResultsJson.append("{");
+                testResultsJson.append("\\"test\\":").append(i + 1).append(",");
                 
                 try {
-                    JsonObject test = testCases.get(i).getAsJsonObject();
-                    JsonArray params = test.getAsJsonArray("params");
-                    JsonElement expected = test.get("expected");
+                    Object[] testCase = testCases[i];
+                    Object[] params = (Object[])testCase[0];
+                    Object expected = testCase[1];
                     
-                    // NOTE: This is a simplified version
-                    // For full Java support, you'd need reflection or method generation
-                    // For now, this provides a framework
+                    // Validate parameter count
+                    if (params.length != paramTypes.length) {
+                        throw new IllegalArgumentException("Expected " + paramTypes.length + " parameters, got " + params.length);
+                    }
                     
-                    testResult.addProperty("status", "ERROR");
-                    testResult.addProperty("error", "Java dynamic execution requires method signature matching");
-                    failed++;
+                    // Convert parameters to match method signature
+                    Object[] javaParams = new Object[params.length];
+                    for (int j = 0; j < params.length; j++) {
+                        javaParams[j] = convertParam(params[j], paramTypes[j]);
+                    }
+                    
+                    // Invoke solution method
+                    Object result = solutionMethod.invoke(solution, javaParams);
+                    
+                    // Handle void return type
+                    Class<?> returnType = solutionMethod.getReturnType();
+                    if (returnType == void.class || returnType == Void.class) {
+                        // For void methods, just mark as executed
+                        passed++;
+                        testResultsJson.append("\\"status\\":\\"EXECUTED\\",");
+                        testResultsJson.append("\\"got\\":null");
+                    } else {
+                        // Compare with expected result
+                        Object expectedJava = convertParam(expected, returnType);
+                        boolean isCorrect = deepEquals(result, expectedJava);
+                        
+                        if (isCorrect) {
+                            passed++;
+                            testResultsJson.append("\\"status\\":\\"PASSED\\",");
+                        } else {
+                            failed++;
+                            testResultsJson.append("\\"status\\":\\"FAILED\\",");
+                        }
+                        
+                        testResultsJson.append("\\"expected\\":").append(toJson(expectedJava)).append(",");
+                        testResultsJson.append("\\"got\\":").append(toJson(result));
+                    }
+                    
                 } catch (Exception e) {
-                    testResult.addProperty("status", "ERROR");
-                    testResult.addProperty("error", e.getMessage());
                     failed++;
+                    String errorMsg = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+                    if (errorMsg == null) errorMsg = e.toString();
+                    testResultsJson.append("\\"status\\":\\"ERROR\\",");
+                    testResultsJson.append("\\"error\\":\\"").append(escapeJson(errorMsg)).append("\\"");
                 }
                 
-                testResults.add(testResult);
+                testResultsJson.append("}");
             }
             
-            JsonObject result = new JsonObject();
-            result.addProperty("passed", passed);
-            result.addProperty("failed", failed);
-            result.add("testResults", testResults);
-            result.addProperty("output", "");
+            testResultsJson.append("]");
             
-            System.out.println(gson.toJson(result));
+            // Build final JSON result
+            StringBuilder resultJson = new StringBuilder("{");
+            resultJson.append("\\"passed\\":").append(passed).append(",");
+            resultJson.append("\\"failed\\":").append(failed).append(",");
+            resultJson.append("\\"testResults\\":").append(testResultsJson.toString()).append(",");
+            resultJson.append("\\"output\\":\\"\\"");
+            resultJson.append("}");
+            
+            System.out.println(resultJson.toString());
             
         } catch (Exception e) {
-            System.out.println("{\\"error\\":\\"" + e.getMessage().replace("\\\\", "\\\\\\\\").replace("\\"", "\\\\\\"") + "\\",\\"passed\\":0,\\"failed\\":" + ${testCases.length} + ",\\"testResults\\":[]}");
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+            String escapedError = escapeJson(errorMsg);
+            System.out.println("{\\"error\\":\\"" + escapedError + "\\",\\"passed\\":0,\\"failed\\":${testCasesLength},\\"testResults\\":[]}");
         }
     }
 }
 `;
+  }
+  
+  /**
+   * Generate Java code to represent test cases
+   */
+  generateJavaTestCasesCode(testCases) {
+    let code = 'Object[][] testCases = new Object[][]{\n';
+    
+    for (let i = 0; i < testCases.length; i++) {
+      if (i > 0) code += ',\n';
+      const testCase = testCases[i];
+      const params = testCase.params || [];
+      const expected = testCase.expected;
+      
+      // Each test case is: [params array, expected value]
+      // Structure: new Object[]{params_array, expected_object}
+      code += '    new Object[]{\n';
+      
+      // First element: params array (Object[])
+      code += '        new Object[]{';
+      if (params.length > 0) {
+        for (let j = 0; j < params.length; j++) {
+          if (j > 0) code += ', ';
+          code += this.javaValueLiteral(params[j], true); // true = in Object array context
+        }
+      }
+      code += '},\n';
+      
+      // Second element: expected value (Object)
+      code += '        ' + this.javaValueLiteral(expected, true) + '\n';
+      code += '    }';
+    }
+    
+    code += '\n};';
+    return code;
+  }
+  
+  /**
+   * Convert JavaScript value to Java literal
+   * @param {any} value - The value to convert
+   * @param {boolean} inObjectArray - Whether this value is going into an Object array (needs boxing)
+   */
+  javaValueLiteral(value, inObjectArray = false) {
+    if (value === null || value === undefined) {
+      return 'null';
+    }
+    
+    if (typeof value === 'number') {
+      if (Number.isInteger(value)) {
+        // Java auto-boxes primitives in Object arrays, so just use the literal
+        return value.toString();
+      }
+      // For doubles - ensure proper format
+      const doubleStr = value.toString();
+      return doubleStr.includes('.') || doubleStr.includes('e') || doubleStr.includes('E') 
+        ? doubleStr 
+        : doubleStr + '.0';
+    }
+    
+    if (typeof value === 'boolean') {
+      // Java auto-boxes booleans in Object arrays
+      return value.toString();
+    }
+    
+    if (typeof value === 'string') {
+      const escaped = value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t');
+      return `"${escaped}"`;
+    }
+    
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        // Empty array - use ArrayList for Object context
+        return 'new java.util.ArrayList()';
+      }
+      // Check if all elements are integers - use ArrayList for Object array context
+      if (value.every(v => typeof v === 'number' && Number.isInteger(v))) {
+        // Java auto-boxes, so just use literals in ArrayList
+        const items = value.map(v => v.toString()).join(', ');
+        return `java.util.Arrays.asList(${items})`;
+      }
+      // Check if all elements are strings
+      if (value.every(v => typeof v === 'string')) {
+        const items = value.map(v => this.javaValueLiteral(v, false)).join(', ');
+        return `new String[]{${items}}`;
+      }
+      // Mixed types or numbers with decimals - use ArrayList
+      const items = value.map(v => this.javaValueLiteral(v, false)).join(', ');
+      return `java.util.Arrays.asList(${items})`;
+    }
+    
+    if (typeof value === 'object') {
+      // Handle special types like ListNode
+      if (value.type === 'ListNode') {
+        return this.javaValueLiteral(value.values || [], inObjectArray);
+      }
+      // For generic objects, convert to Map-like structure
+      // But for simplicity, represent as List of key-value pairs
+      const entries = Object.entries(value);
+      if (entries.length === 0) {
+        return 'new java.util.HashMap<String, Object>()';
+      }
+      // Use ArrayList for object representation
+      const pairs = entries.map(([k, v]) => {
+        return `java.util.Arrays.asList("${k}", ${this.javaValueLiteral(v)})`;
+      }).join(', ');
+      return `java.util.Arrays.asList(${pairs})`;
+    }
+    
+    return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
   }
 
   /**
