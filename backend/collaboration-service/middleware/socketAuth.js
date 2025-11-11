@@ -10,17 +10,14 @@ const jwt = require('jsonwebtoken');
  */
 const socketAuthMiddleware = (socket, next) => {
   try {
-    // Extract token from multiple sources
     const cookieHeader = socket.handshake.headers.cookie;
     const authHeader = socket.handshake.headers.authorization;
     let token = null;
     
-    // 1. Try to get from Authorization header first
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
     }
     
-    // 2. Try to get from cookies (httpOnly)
     if (!token && cookieHeader) {
       const cookies = cookieHeader.split(';');
       for (const cookie of cookies) {
@@ -32,7 +29,6 @@ const socketAuthMiddleware = (socket, next) => {
       }
     }
     
-    // 3. Fallback to auth/query parameters
     if (!token) {
       token = socket.handshake.auth.token || socket.handshake.query.token;
     }

@@ -86,7 +86,7 @@ spec:
           averageUtilization: 80
 
 ---
-# Matching Service HPA (WebSocket - needs more pods)
+
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -98,7 +98,7 @@ spec:
     kind: Deployment
     name: matching-service
   minReplicas: 1
-  maxReplicas: 3
+  maxReplicas: 1
   metrics:
     - type: Resource
       resource:
@@ -229,7 +229,7 @@ metadata:
   name: matching-service-pdb
   namespace: peerprep
 spec:
-  minAvailable: 2
+  minAvailable: 1
   selector:
     matchLabels:
       app: matching-service
