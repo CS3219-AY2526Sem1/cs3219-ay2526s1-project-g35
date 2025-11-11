@@ -398,7 +398,7 @@ except Exception as e:
     // Generate Java code to embed test cases
     const testCasesCode = this.generateJavaTestCasesCode(testCases);
     const testCasesLength = testCases.length;
-    
+
     return `
 import java.util.*;
 import java.lang.reflect.*;
@@ -651,23 +651,23 @@ class SolutionTests {
 }
 `;
   }
-  
+
   /**
    * Generate Java code to represent test cases
    */
   generateJavaTestCasesCode(testCases) {
     let code = 'Object[][] testCases = new Object[][]{\n';
-    
+
     for (let i = 0; i < testCases.length; i++) {
       if (i > 0) code += ',\n';
       const testCase = testCases[i];
       const params = testCase.params || [];
       const expected = testCase.expected;
-      
+
       // Each test case is: [params array, expected value]
       // Structure: new Object[]{params_array, expected_object}
       code += '    new Object[]{\n';
-      
+
       // First element: params array (Object[])
       code += '        new Object[]{';
       if (params.length > 0) {
@@ -677,16 +677,16 @@ class SolutionTests {
         }
       }
       code += '},\n';
-      
+
       // Second element: expected value (Object)
       code += '        ' + this.javaValueLiteral(expected, true) + '\n';
       code += '    }';
     }
-    
+
     code += '\n};';
     return code;
   }
-  
+
   /**
    * Convert JavaScript value to Java literal
    * @param {any} value - The value to convert
@@ -696,7 +696,7 @@ class SolutionTests {
     if (value === null || value === undefined) {
       return 'null';
     }
-    
+
     if (typeof value === 'number') {
       if (Number.isInteger(value)) {
         // Java auto-boxes primitives in Object arrays, so just use the literal
@@ -704,16 +704,16 @@ class SolutionTests {
       }
       // For doubles - ensure proper format
       const doubleStr = value.toString();
-      return doubleStr.includes('.') || doubleStr.includes('e') || doubleStr.includes('E') 
-        ? doubleStr 
+      return doubleStr.includes('.') || doubleStr.includes('e') || doubleStr.includes('E')
+        ? doubleStr
         : doubleStr + '.0';
     }
-    
+
     if (typeof value === 'boolean') {
       // Java auto-boxes booleans in Object arrays
       return value.toString();
     }
-    
+
     if (typeof value === 'string') {
       const escaped = value
         .replace(/\\/g, '\\\\')
@@ -723,28 +723,28 @@ class SolutionTests {
         .replace(/\t/g, '\\t');
       return `"${escaped}"`;
     }
-    
+
     if (Array.isArray(value)) {
       if (value.length === 0) {
         // Empty array - use ArrayList for Object context
         return 'new java.util.ArrayList()';
       }
       // Check if all elements are integers - use ArrayList for Object array context
-      if (value.every(v => typeof v === 'number' && Number.isInteger(v))) {
+      if (value.every((v) => typeof v === 'number' && Number.isInteger(v))) {
         // Java auto-boxes, so just use literals in ArrayList
-        const items = value.map(v => v.toString()).join(', ');
+        const items = value.map((v) => v.toString()).join(', ');
         return `java.util.Arrays.asList(${items})`;
       }
       // Check if all elements are strings
-      if (value.every(v => typeof v === 'string')) {
-        const items = value.map(v => this.javaValueLiteral(v, false)).join(', ');
+      if (value.every((v) => typeof v === 'string')) {
+        const items = value.map((v) => this.javaValueLiteral(v, false)).join(', ');
         return `new String[]{${items}}`;
       }
       // Mixed types or numbers with decimals - use ArrayList
-      const items = value.map(v => this.javaValueLiteral(v, false)).join(', ');
+      const items = value.map((v) => this.javaValueLiteral(v, false)).join(', ');
       return `java.util.Arrays.asList(${items})`;
     }
-    
+
     if (typeof value === 'object') {
       // Handle special types like ListNode
       if (value.type === 'ListNode') {
@@ -757,12 +757,14 @@ class SolutionTests {
         return 'new java.util.HashMap<String, Object>()';
       }
       // Use ArrayList for object representation
-      const pairs = entries.map(([k, v]) => {
-        return `java.util.Arrays.asList("${k}", ${this.javaValueLiteral(v)})`;
-      }).join(', ');
+      const pairs = entries
+        .map(([k, v]) => {
+          return `java.util.Arrays.asList("${k}", ${this.javaValueLiteral(v)})`;
+        })
+        .join(', ');
       return `java.util.Arrays.asList(${pairs})`;
     }
-    
+
     return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
   }
 
@@ -840,21 +842,21 @@ class SolutionTests {
     if (!testCases || testCases.length === 0) {
       throw new Error('No test cases provided');
     }
-    
+
     // Check if code uses a Solution class (C++ solutions are class-based)
     // Look for "class Solution" pattern (case-sensitive, with optional whitespace)
     const isClassBased = /\bclass\s+Solution\b/.test(code);
-    
+
     // Infer function signature from first test case
     // All test cases should have the same signature
     const firstTestCase = testCases[0];
     const params = firstTestCase.params || [];
     const expected = firstTestCase.expected;
-    
+
     // Determine parameter and return types from first test case
     const paramTypes = this.inferCppTypes(params);
     const returnType = this.inferCppType(expected);
-    
+
     // Validate that all test cases have the same parameter count
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
@@ -862,11 +864,16 @@ class SolutionTests {
         throw new Error(`Test case ${i + 1} has different parameter count`);
       }
     }
-    
+
     // Generate test execution code
-    const testExecutionCode = this.generateCppTestExecution(testCases, paramTypes, returnType, isClassBased);
+    const testExecutionCode = this.generateCppTestExecution(
+      testCases,
+      paramTypes,
+      returnType,
+      isClassBased,
+    );
     const testCasesLength = testCases.length;
-    
+
     return `
 #include <iostream>
 #include <vector>
@@ -983,14 +990,14 @@ int main() {
 }
 `;
   }
-  
+
   /**
    * Infer C++ types from JavaScript values
    */
   inferCppTypes(values) {
-    return values.map(v => this.inferCppType(v));
+    return values.map((v) => this.inferCppType(v));
   }
-  
+
   /**
    * Infer C++ type from a JavaScript value
    */
@@ -998,19 +1005,19 @@ int main() {
     if (value === null || value === undefined) {
       return 'int'; // Default to int
     }
-    
+
     if (typeof value === 'number') {
       return Number.isInteger(value) ? 'int' : 'double';
     }
-    
+
     if (typeof value === 'string') {
       return 'string';
     }
-    
+
     if (typeof value === 'boolean') {
       return 'bool';
     }
-    
+
     if (Array.isArray(value)) {
       if (value.length === 0) {
         return 'vector<int>';
@@ -1025,33 +1032,33 @@ int main() {
       }
       return 'vector<int>'; // Default
     }
-    
+
     if (typeof value === 'object') {
       if (value.type === 'ListNode') {
         return 'vector<int>';
       }
       return 'string'; // Default objects to string
     }
-    
+
     return 'int'; // Default
   }
-  
+
   /**
    * Generate C++ test execution code
    */
   generateCppTestExecution(testCases, paramTypes, returnType, isClassBased = false) {
     let code = '';
-    
+
     // If class-based, create Solution instance once
     if (isClassBased) {
       code += 'Solution sol;\n        ';
     }
-    
+
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
       const params = testCase.params || [];
       const expected = testCase.expected;
-      
+
       if (i > 0) code += '\n        ';
       code += `// Test case ${i + 1}\n        `;
       code += 'try {\n            ';
@@ -1060,13 +1067,13 @@ int main() {
       }
       code += 'testResultsJson += "{";\n            ';
       code += `testResultsJson += "\\"test\\":${i + 1},";\n            `;
-      
+
       // Generate parameter values
       const paramValues = params.map((p, idx) => this.cppValueCode(p, paramTypes[idx])).join(', ');
-      
+
       // Generate expected value
       const expectedCode = this.cppValueCode(expected, returnType);
-      
+
       // Call solution function or method
       if (isClassBased) {
         code += `auto result${i} = sol.solution(${paramValues});\n            `;
@@ -1074,14 +1081,18 @@ int main() {
         code += `auto result${i} = solution(${paramValues});\n            `;
       }
       code += `auto expected${i} = ${expectedCode};\n            `;
-      
+
       // Compare results based on return type
-      if (returnType === 'vector<int>' || returnType === 'vector<string>' || returnType === 'vector<double>') {
+      if (
+        returnType === 'vector<int>' ||
+        returnType === 'vector<string>' ||
+        returnType === 'vector<double>'
+      ) {
         code += `bool isCorrect${i} = vectorEquals(result${i}, expected${i});\n            `;
       } else {
         code += `bool isCorrect${i} = (result${i} == expected${i});\n            `;
       }
-      
+
       code += `if (isCorrect${i}) {\n                `;
       code += `passed++;\n                `;
       code += `testResultsJson += "\\"status\\":\\"PASSED\\",";\n            `;
@@ -1089,7 +1100,7 @@ int main() {
       code += `failed++;\n                `;
       code += `testResultsJson += "\\"status\\":\\"FAILED\\",";\n            `;
       code += `}\n            `;
-      
+
       // Generate JSON for expected and result based on return type
       if (returnType === 'vector<int>') {
         code += `testResultsJson += "\\"expected\\":" + toJsonVector(expected${i}) + ",";\n            `;
@@ -1117,10 +1128,10 @@ int main() {
       code += `testResultsJson += "}";\n        `;
       code += '}';
     }
-    
+
     return code;
   }
-  
+
   /**
    * Generate C++ code for a value
    */
@@ -1128,19 +1139,19 @@ int main() {
     if (value === null || value === undefined) {
       return cppType === 'string' ? '""' : '0';
     }
-    
+
     if (cppType === 'int') {
       return Math.floor(Number(value)).toString();
     }
-    
+
     if (cppType === 'double') {
       return Number(value).toString();
     }
-    
+
     if (cppType === 'bool') {
       return value ? 'true' : 'false';
     }
-    
+
     if (cppType === 'string') {
       const escaped = String(value)
         .replace(/\\/g, '\\\\')
@@ -1150,37 +1161,44 @@ int main() {
         .replace(/\t/g, '\\t');
       return `"${escaped}"`;
     }
-    
+
     if (cppType === 'vector<int>') {
-      const arr = Array.isArray(value) ? value : (value.values || []);
+      const arr = Array.isArray(value) ? value : value.values || [];
       if (arr.length === 0) {
         return '{}';
       }
-      const items = arr.map(v => Math.floor(Number(v)).toString()).join(', ');
+      const items = arr.map((v) => Math.floor(Number(v)).toString()).join(', ');
       return `{${items}}`;
     }
-    
+
     if (cppType === 'vector<string>') {
       const arr = Array.isArray(value) ? value : [];
       if (arr.length === 0) {
         return '{}';
       }
-      const items = arr.map(v => {
-        const escaped = String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
-        return `"${escaped}"`;
-      }).join(', ');
+      const items = arr
+        .map((v) => {
+          const escaped = String(v)
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t');
+          return `"${escaped}"`;
+        })
+        .join(', ');
       return `{${items}}`;
     }
-    
+
     if (cppType === 'vector<double>') {
       const arr = Array.isArray(value) ? value : [];
       if (arr.length === 0) {
         return '{}';
       }
-      const items = arr.map(v => Number(v).toString()).join(', ');
+      const items = arr.map((v) => Number(v).toString()).join(', ');
       return `{${items}}`;
     }
-    
+
     // Default fallback
     return String(value);
   }

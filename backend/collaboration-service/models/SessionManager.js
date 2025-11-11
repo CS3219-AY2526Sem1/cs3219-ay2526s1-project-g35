@@ -347,7 +347,7 @@ class SessionManager {
       try {
         // Determine status: if all tests passed, mark as 'completed', otherwise 'attempted'
         const status = session.allTestsPassed ? 'completed' : 'attempted';
-        
+
         const result = await this.serviceIntegration.createHistoryEntry({
           user_id: userId,
           session_id: sessionId,
