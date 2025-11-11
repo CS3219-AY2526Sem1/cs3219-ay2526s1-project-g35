@@ -35,6 +35,8 @@ class SessionManager {
       questionId: initialData.questionId || null,
       createdAt: Date.now(),
       lastActivity: Date.now(),
+      allTestsPassed: false, // Track if all tests have passed
+      lastTestPassTime: null, // Track when all tests passed
     });
 
     console.log(`Session created: ${sessionId}`);
@@ -91,6 +93,8 @@ class SessionManager {
       createdAt: Date.now(),
       lastActivity: Date.now(),
       isMatchedSession: true,
+      allTestsPassed: false, // Track if all tests have passed
+      lastTestPassTime: null, // Track when all tests passed
     });
 
     console.log(
@@ -341,15 +345,16 @@ class SessionManager {
     // Create history entries for each user
     const historyPromises = userIds.map(async (userId) => {
       try {
-        // Determine status: if session ended, mark as 'attempted' (can be updated later based on completion)
-        // For now, we'll mark all as 'attempted' since we don't track completion in collaboration service
+        // Determine status: if all tests passed, mark as 'completed', otherwise 'attempted'
+        const status = session.allTestsPassed ? 'completed' : 'attempted';
+        
         const result = await this.serviceIntegration.createHistoryEntry({
           user_id: userId,
           session_id: sessionId,
           question_title: questionTitle,
           difficulty: difficulty,
           category: category,
-          status: 'attempted', // Default status, can be updated when question is completed
+          status: status,
         });
 
         if (result.success) {

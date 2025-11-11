@@ -269,6 +269,7 @@ class ServiceIntegration {
         question_title: historyData.question_title,
         difficulty: historyData.difficulty,
         category: historyData.category,
+        status: historyData.status || 'attempted',
       });
 
       if (response.data && response.data.success) {

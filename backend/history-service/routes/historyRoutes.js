@@ -48,4 +48,18 @@ router.get(
 
 router.get('/admin/stats/user', verifyToken, requireAdmin, HistoryController.getStatsByUser);
 
+router.patch(
+  '/:historyId/status',
+  verifyToken,
+  validateBody(schemas.updateHistoryStatus),
+  HistoryController.updateHistoryStatus
+);
+
+router.patch(
+  '/session/:sessionId/status',
+  verifyToken,
+  validateBody(schemas.updateHistoryStatus),
+  HistoryController.updateHistoryBySession
+);
+
 module.exports = router;
