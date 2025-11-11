@@ -154,7 +154,7 @@ export default function ManageAccountsPage() {
         <table className="w-full text-sm">
           <thead className="bg-muted/60 text-muted-foreground">
             <tr className="border-b [&_th]:px-6 [&_th]:py-4">
-              <th className="text-left w-[80px]">ID No.</th>
+              <th className="text-left w-[90px]">ID No.</th>
               <th className="text-left min-w-[180px]">Username</th>
               <th className="text-left min-w-[220px]">Email</th>
               <th className="text-left w-[120px]">Role</th>
