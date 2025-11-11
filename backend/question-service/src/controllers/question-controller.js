@@ -1,3 +1,12 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: Claude 3.5 Sonnet (via Cursor), Date: 2025-11-10 to 2025-11-11
+ * Scope: Implemented getRandomQuestion endpoint with MongoDB aggregation pipeline,
+ *        multiple topics support, Redis caching, and enrichQuestionWithStarterCode helper
+ * Author review: Query logic validated, tested with multiple topics and difficulty levels,
+ *                caching behavior verified by Johannsen Lum
+ */
+
 const Question = require('../models/question-model');
 const cache = require('../utils/cacheService');
 
