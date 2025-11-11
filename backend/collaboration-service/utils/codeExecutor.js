@@ -837,31 +837,352 @@ class SolutionTests {
    * Wrap C++ code with test execution logic
    */
   wrapCppCode(code, testCases) {
-    const testCasesJson = JSON.stringify(testCases).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-
+    if (!testCases || testCases.length === 0) {
+      throw new Error('No test cases provided');
+    }
+    
+    // Check if code uses a Solution class (C++ solutions are class-based)
+    // Look for "class Solution" pattern (case-sensitive, with optional whitespace)
+    const isClassBased = /\bclass\s+Solution\b/.test(code);
+    
+    // Infer function signature from first test case
+    // All test cases should have the same signature
+    const firstTestCase = testCases[0];
+    const params = firstTestCase.params || [];
+    const expected = firstTestCase.expected;
+    
+    // Determine parameter and return types from first test case
+    const paramTypes = this.inferCppTypes(params);
+    const returnType = this.inferCppType(expected);
+    
+    // Validate that all test cases have the same parameter count
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      if (!testCase.params || testCase.params.length !== params.length) {
+        throw new Error(`Test case ${i + 1} has different parameter count`);
+      }
+    }
+    
+    // Generate test execution code
+    const testExecutionCode = this.generateCppTestExecution(testCases, paramTypes, returnType, isClassBased);
+    const testCasesLength = testCases.length;
+    
     return `
 #include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <cmath>
 
 using namespace std;
 
 ${code}
 
+// Helper function to escape JSON strings
+string escapeJson(const string& s) {
+    string result = "";
+    for (char c : s) {
+        if (c == '\\\\') result += "\\\\\\\\";
+        else if (c == '"') result += "\\\\\\"";
+        else if (c == '\\n') result += "\\\\n";
+        else if (c == '\\r') result += "\\\\r";
+        else if (c == '\\t') result += "\\\\t";
+        else result += c;
+    }
+    return result;
+}
+
+// Helper to convert value to JSON string
+string toJson(int value) {
+    return to_string(value);
+}
+
+string toJson(double value) {
+    stringstream ss;
+    ss << value;
+    return ss.str();
+}
+
+string toJson(const string& value) {
+    return "\\"" + escapeJson(value) + "\\"";
+}
+
+string toJson(bool value) {
+    return value ? "true" : "false";
+}
+
+string toJsonVector(const vector<int>& vec) {
+    string result = "[";
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (i > 0) result += ",";
+        result += to_string(vec[i]);
+    }
+    result += "]";
+    return result;
+}
+
+string toJsonVector(const vector<string>& vec) {
+    string result = "[";
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (i > 0) result += ",";
+        result += "\\"" + escapeJson(vec[i]) + "\\"";
+    }
+    result += "]";
+    return result;
+}
+
+string toJsonVector(const vector<double>& vec) {
+    string result = "[";
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (i > 0) result += ",";
+        stringstream ss;
+        ss << vec[i];
+        result += ss.str();
+    }
+    result += "]";
+    return result;
+}
+
+// Helper to compare vectors
+template<typename T>
+bool vectorEquals(const vector<T>& a, const vector<T>& b) {
+    if (a.size() != b.size()) return false;
+    for (size_t i = 0; i < a.size(); i++) {
+        if (a[i] != b[i]) return false;
+    }
+    return true;
+}
+
 int main() {
-    // NOTE: C++ dynamic execution is complex
-    // This is a placeholder that indicates C++ test execution needs implementation
-    // For production, you would need:
-    // 1. JSON parsing library (like nlohmann/json)
-    // 2. Template-based or reflection-like mechanism for dynamic calls
-    // 3. Type inference from test cases
+    try {
+        int passed = 0;
+        int failed = 0;
+        string testResultsJson = "[";
+        
+        ${testExecutionCode}
+        
+        testResultsJson += "]";
+        
+        // Build final result
+        string resultJson = "{";
+        resultJson += "\\"passed\\":" + to_string(passed) + ",";
+        resultJson += "\\"failed\\":" + to_string(failed) + ",";
+        resultJson += "\\"testResults\\":" + testResultsJson + ",";
+        resultJson += "\\"output\\":\\"\\"";
+        resultJson += "}";
+        
+        cout << resultJson << endl;
+        
+    } catch (const exception& e) {
+        string errorMsg = escapeJson(e.what());
+        cout << "{\\"error\\":\\"" + errorMsg + "\\",\\"passed\\":0,\\"failed\\":${testCasesLength},\\"testResults\\":[]}" << endl;
+    }
     
-    cout << "{\\"error\\":\\"C++ dynamic execution not fully implemented\\",\\"passed\\":0,\\"failed\\":${testCases.length},\\"testResults\\":[]}" << endl;
     return 0;
 }
 `;
+  }
+  
+  /**
+   * Infer C++ types from JavaScript values
+   */
+  inferCppTypes(values) {
+    return values.map(v => this.inferCppType(v));
+  }
+  
+  /**
+   * Infer C++ type from a JavaScript value
+   */
+  inferCppType(value) {
+    if (value === null || value === undefined) {
+      return 'int'; // Default to int
+    }
+    
+    if (typeof value === 'number') {
+      return Number.isInteger(value) ? 'int' : 'double';
+    }
+    
+    if (typeof value === 'string') {
+      return 'string';
+    }
+    
+    if (typeof value === 'boolean') {
+      return 'bool';
+    }
+    
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return 'vector<int>';
+      }
+      const firstType = this.inferCppType(value[0]);
+      if (firstType === 'int') {
+        return 'vector<int>';
+      } else if (firstType === 'string') {
+        return 'vector<string>';
+      } else if (firstType === 'double') {
+        return 'vector<double>';
+      }
+      return 'vector<int>'; // Default
+    }
+    
+    if (typeof value === 'object') {
+      if (value.type === 'ListNode') {
+        return 'vector<int>';
+      }
+      return 'string'; // Default objects to string
+    }
+    
+    return 'int'; // Default
+  }
+  
+  /**
+   * Generate C++ test execution code
+   */
+  generateCppTestExecution(testCases, paramTypes, returnType, isClassBased = false) {
+    let code = '';
+    
+    // If class-based, create Solution instance once
+    if (isClassBased) {
+      code += 'Solution sol;\n        ';
+    }
+    
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      const params = testCase.params || [];
+      const expected = testCase.expected;
+      
+      if (i > 0) code += '\n        ';
+      code += `// Test case ${i + 1}\n        `;
+      code += 'try {\n            ';
+      if (i > 0) {
+        code += 'testResultsJson += ",";\n            ';
+      }
+      code += 'testResultsJson += "{";\n            ';
+      code += `testResultsJson += "\\"test\\":${i + 1},";\n            `;
+      
+      // Generate parameter values
+      const paramValues = params.map((p, idx) => this.cppValueCode(p, paramTypes[idx])).join(', ');
+      
+      // Generate expected value
+      const expectedCode = this.cppValueCode(expected, returnType);
+      
+      // Call solution function or method
+      if (isClassBased) {
+        code += `auto result${i} = sol.solution(${paramValues});\n            `;
+      } else {
+        code += `auto result${i} = solution(${paramValues});\n            `;
+      }
+      code += `auto expected${i} = ${expectedCode};\n            `;
+      
+      // Compare results based on return type
+      if (returnType === 'vector<int>' || returnType === 'vector<string>' || returnType === 'vector<double>') {
+        code += `bool isCorrect${i} = vectorEquals(result${i}, expected${i});\n            `;
+      } else {
+        code += `bool isCorrect${i} = (result${i} == expected${i});\n            `;
+      }
+      
+      code += `if (isCorrect${i}) {\n                `;
+      code += `passed++;\n                `;
+      code += `testResultsJson += "\\"status\\":\\"PASSED\\",";\n            `;
+      code += `} else {\n                `;
+      code += `failed++;\n                `;
+      code += `testResultsJson += "\\"status\\":\\"FAILED\\",";\n            `;
+      code += `}\n            `;
+      
+      // Generate JSON for expected and result based on return type
+      if (returnType === 'vector<int>') {
+        code += `testResultsJson += "\\"expected\\":" + toJsonVector(expected${i}) + ",";\n            `;
+        code += `testResultsJson += "\\"got\\":" + toJsonVector(result${i});\n            `;
+      } else if (returnType === 'vector<string>') {
+        code += `testResultsJson += "\\"expected\\":" + toJsonVector(expected${i}) + ",";\n            `;
+        code += `testResultsJson += "\\"got\\":" + toJsonVector(result${i});\n            `;
+      } else if (returnType === 'vector<double>') {
+        code += `testResultsJson += "\\"expected\\":" + toJsonVector(expected${i}) + ",";\n            `;
+        code += `testResultsJson += "\\"got\\":" + toJsonVector(result${i});\n            `;
+      } else {
+        code += `testResultsJson += "\\"expected\\":" + toJson(expected${i}) + ",";\n            `;
+        code += `testResultsJson += "\\"got\\":" + toJson(result${i});\n            `;
+      }
+      code += `testResultsJson += "}";\n        `;
+      code += `} catch (const exception& e) {\n            `;
+      code += `failed++;\n            `;
+      if (i > 0) {
+        code += 'testResultsJson += ",";\n            ';
+      }
+      code += `testResultsJson += "{";\n            `;
+      code += `testResultsJson += "\\"test\\":${i + 1},";\n            `;
+      code += `testResultsJson += "\\"status\\":\\"ERROR\\",";\n            `;
+      code += `testResultsJson += "\\"error\\":\\"" + escapeJson(e.what()) + "\\"";\n            `;
+      code += `testResultsJson += "}";\n        `;
+      code += '}';
+    }
+    
+    return code;
+  }
+  
+  /**
+   * Generate C++ code for a value
+   */
+  cppValueCode(value, cppType) {
+    if (value === null || value === undefined) {
+      return cppType === 'string' ? '""' : '0';
+    }
+    
+    if (cppType === 'int') {
+      return Math.floor(Number(value)).toString();
+    }
+    
+    if (cppType === 'double') {
+      return Number(value).toString();
+    }
+    
+    if (cppType === 'bool') {
+      return value ? 'true' : 'false';
+    }
+    
+    if (cppType === 'string') {
+      const escaped = String(value)
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r')
+        .replace(/\t/g, '\\t');
+      return `"${escaped}"`;
+    }
+    
+    if (cppType === 'vector<int>') {
+      const arr = Array.isArray(value) ? value : (value.values || []);
+      if (arr.length === 0) {
+        return '{}';
+      }
+      const items = arr.map(v => Math.floor(Number(v)).toString()).join(', ');
+      return `{${items}}`;
+    }
+    
+    if (cppType === 'vector<string>') {
+      const arr = Array.isArray(value) ? value : [];
+      if (arr.length === 0) {
+        return '{}';
+      }
+      const items = arr.map(v => {
+        const escaped = String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+        return `"${escaped}"`;
+      }).join(', ');
+      return `{${items}}`;
+    }
+    
+    if (cppType === 'vector<double>') {
+      const arr = Array.isArray(value) ? value : [];
+      if (arr.length === 0) {
+        return '{}';
+      }
+      const items = arr.map(v => Number(v).toString()).join(', ');
+      return `{${items}}`;
+    }
+    
+    // Default fallback
+    return String(value);
   }
 
   /**
