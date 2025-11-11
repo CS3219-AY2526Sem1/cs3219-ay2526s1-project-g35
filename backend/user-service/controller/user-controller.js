@@ -262,17 +262,10 @@ export async function deleteUser(req, res) {
     if (!user) {
       return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
-    if (process.env.NODE_ENV === 'production') {
-      await UserRepository.softDelete(userId);
-      return res.status(200).json({
-        message: 'User deactivated successfully',
-      });
-    } else {
-      await _deleteUserById(userId);
-      return res.status(200).json({
-        message: 'User deleted successfully',
-      });
-    }
+    await _deleteUserById(userId);
+    return res.status(200).json({
+      message: 'User deleted successfully',
+    });
   } catch (err) {
     console.error('Delete user error:', err);
     return sendErrorResponse(res, USER_ERRORS.DELETE_SERVER_ERROR);
