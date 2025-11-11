@@ -18,7 +18,7 @@ spec:
       serviceAccountName: matching-service-sa # Workload Identity for Secret Manager
       containers:
       - name: matching-service
-        image: gcr.io/peerprep-475911/matching-service:v2.6
+        image: gcr.io/peerprep-475911/matching-service:v2.9
         imagePullPolicy: Always
         ports:
           - containerPort: 8003

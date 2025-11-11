@@ -5,6 +5,8 @@ metadata:
   namespace: peerprep
   labels:
     app: frontend
+  annotations:
+    cloud.google.com/backend-config: '{"default": "frontend-backend-config"}'
 spec:
   type: NodePort
   selector:

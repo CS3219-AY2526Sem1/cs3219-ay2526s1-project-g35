@@ -18,7 +18,7 @@ spec:
       serviceAccountName: frontend-sa
       containers:
       - name: frontend
-        image: gcr.io/peerprep-475911/frontend:v6.18
+        image: gcr.io/peerprep-475911/frontend:v6.27
         imagePullPolicy: Always
         ports:
           - containerPort: 3000

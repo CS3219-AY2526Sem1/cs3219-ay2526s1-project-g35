@@ -18,7 +18,7 @@ spec:
       serviceAccountName: peerprep-analytics-service
       containers:
       - name: analytics-service
-        image: gcr.io/peerprep-475911/analytics-service:v1.0.7
+        image: gcr.io/peerprep-475911/analytics-service:v1.1.0
         imagePullPolicy: Always
         ports:
           - containerPort: 8005

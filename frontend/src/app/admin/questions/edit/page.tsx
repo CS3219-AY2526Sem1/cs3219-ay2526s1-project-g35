@@ -52,7 +52,7 @@ const TEST_CASE_TYPES: QuestionTestCase['type'][] = ['Sample', 'Hidden'];
 const DEFAULT_DIFFICULTIES: QuestionDifficulty[] = ['Easy', 'Medium', 'Hard'];
 
 const createTestCase = (
-  initial?: Partial<QuestionTestCase> & { id?: string },
+  initial?: Partial<QuestionTestCase & EditableTestCase> & { id?: string },
 ): EditableTestCase => {
   let input = '';
   let expectedOutput = '';
@@ -347,17 +347,26 @@ export default function EditQuestionPage() {
             const hasOldFormat = 'params' in testCase || 'expected' in testCase;
             
             if (hasOldFormat) {
+              // Old format: params (array) and expected (value)
               const oldTestCase = testCase as Record<string, unknown>;
               return createTestCase({
-                input: JSON.stringify(oldTestCase.params ?? ''),
-                expectedOutput: JSON.stringify(oldTestCase.expected ?? ''),
+                params: oldTestCase.params as unknown[],
+                expected: oldTestCase.expected,
                 explanation: testCase.explanation,
                 type: testCase.type,
                 id: `${question._id}-${index}`,
               });
             }
 
-            return createTestCase({ ...testCase, id: `${question._id}-${index}` });
+            // New format: input and expectedOutput are already JSON strings
+            const newTestCase = testCase as EditableTestCase;
+            return {
+              id: `${question._id}-${index}`,
+              input: newTestCase.input,
+              expectedOutput: newTestCase.expectedOutput,
+              explanation: newTestCase.explanation ?? '',
+              type: newTestCase.type,
+            };
           });
           return nextCases.length > 0 ? nextCases : [createTestCase()];
         });

@@ -54,13 +54,9 @@ app.use((req, res, next) => {
   console.log(`[History Service] ${req.method} ${req.path} - Query:`, req.query);
   next();
 });
-<<<<<<< HEAD
 
-// API Routes - handle full ingress path /api/history
+// API Routes - Ingress forwards full path, so we need /api/history
 app.use('/api/history', historyRoutes);
-=======
-app.use('/', historyRoutes);
->>>>>>> master
 
 app.use(notFoundHandler);
 

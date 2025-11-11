@@ -59,12 +59,12 @@ export class HistoryServiceError extends Error {
 
 class HistoryService {
   // For local development, call history service directly at http://localhost:8004
-  // For production with API gateway, use /api/history through gateway
+  // For production, NEXT_PUBLIC_API_HISTORY_URL already includes /api/history
   private readonly HISTORY_SERVICE_URL =
     process.env.NEXT_PUBLIC_API_HISTORY_URL || 'http://localhost:8004'; // Direct to history service for local dev
   private readonly HISTORY_BASE_PATH = this.HISTORY_SERVICE_URL.includes('localhost:8004')
-    ? '/history' // Direct to service (routes are at /history)
-    : '/api/history'; // Through API gateway
+    ? '/api/history' // Direct to service (routes are at /api/history)
+    : ''; // Production URL already includes /api/history
 
   /**
    * Get user's history
@@ -76,10 +76,8 @@ class HistoryService {
     offset: number = 0,
   ): Promise<GetHistoryResponse> {
     try {
-      // If using direct service URL, use it directly; otherwise use apiClient (gateway)
-      const url = this.HISTORY_SERVICE_URL.startsWith('http')
-        ? `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`
-        : this.HISTORY_BASE_PATH;
+      // Construct full URL
+      const url = `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`;
 
       const client = this.HISTORY_SERVICE_URL.startsWith('http')
         ? axios.create({
@@ -109,10 +107,8 @@ class HistoryService {
    */
   async createHistoryEntry(payload: CreateHistoryPayload): Promise<CreateHistoryResponse> {
     try {
-      // If using direct service URL, use it directly; otherwise use apiClient (gateway)
-      const url = this.HISTORY_SERVICE_URL.startsWith('http')
-        ? `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`
-        : this.HISTORY_BASE_PATH;
+      // Construct full URL
+      const url = `${this.HISTORY_SERVICE_URL}${this.HISTORY_BASE_PATH}`;
 
       const client = this.HISTORY_SERVICE_URL.startsWith('http')
         ? axios.create({

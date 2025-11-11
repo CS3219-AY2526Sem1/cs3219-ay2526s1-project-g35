@@ -3,12 +3,9 @@
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
 import { Button } from '@/components/ui/button';
 import socketService from '@/services/socketService';
-<<<<<<< HEAD
+
 import { getAccessToken } from '@/lib/cookies';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-=======
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
->>>>>>> master
 
 // Original React Code made by Basil - Enhanced with Collaboration
 

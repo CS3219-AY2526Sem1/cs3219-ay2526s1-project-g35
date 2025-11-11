@@ -18,16 +18,16 @@ spec:
     - http:
         paths:
           # User Service - authentication and user management
-          - path: /api/users/*
-            pathType: ImplementationSpecific
+          - path: /api/users
+            pathType: Prefix
             backend:
               service:
                 name: user-service
                 port:
                   number: 8000
 
-          - path: /api/auth/*
-            pathType: ImplementationSpecific
+          - path: /api/auth
+            pathType: Prefix
             backend:
               service:
                 name: user-service
@@ -35,8 +35,8 @@ spec:
                   number: 8000
 
           # Question Service
-          - path: /api/questions/*
-            pathType: ImplementationSpecific
+          - path: /api/questions
+            pathType: Prefix
             backend:
               service:
                 name: question-service
@@ -44,8 +44,8 @@ spec:
                   number: 8001
 
           # Collaboration Service
-          - path: /api/collaboration/*
-            pathType: ImplementationSpecific
+          - path: /api/collaboration
+            pathType: Prefix
             backend:
               service:
                 name: collaboration-service
@@ -53,8 +53,8 @@ spec:
                   number: 8002
 
           # Collaboration Service WebSocket
-          - path: /socket.io/*
-            pathType: ImplementationSpecific
+          - path: /socket.io
+            pathType: Prefix
             backend:
               service:
                 name: collaboration-service
@@ -62,8 +62,8 @@ spec:
                   number: 8002
 
           # Matching Service
-          - path: /api/matching/*
-            pathType: ImplementationSpecific
+          - path: /api/matching
+            pathType: Prefix
             backend:
               service:
                 name: matching-service
@@ -72,7 +72,7 @@ spec:
 
           # Matching Service WebSocket
           - path: /matching-ws
-            pathType: ImplementationSpecific
+            pathType: Prefix
             backend:
               service:
                 name: matching-service
@@ -80,8 +80,8 @@ spec:
                   number: 8003
 
           # History Service
-          - path: /api/history/*
-            pathType: ImplementationSpecific
+          - path: /api/history
+            pathType: Prefix
             backend:
               service:
                 name: history-service
@@ -89,16 +89,16 @@ spec:
                   number: 8004
 
           # Analytics Service
-          - path: /api/analytics/*
-            pathType: ImplementationSpecific
+          - path: /api/analytics
+            pathType: Prefix
             backend:
               service:
                 name: analytics-service
                 port:
                   number: 8005
 
-          - path: /*
-            pathType: ImplementationSpecific
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: frontend
