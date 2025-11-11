@@ -150,7 +150,10 @@ export async function getUser(req, res) {
   try {
     const userId = req.params.id;
     const tokenUserId = req.userId;
-    if (userId !== tokenUserId) {
+    const isAdminUser = req.user?.isAdmin || false;
+
+    // Allow admins to access any user, regular users can only access their own data
+    if (!isAdminUser && userId !== tokenUserId) {
       return sendErrorResponse(res, USER_ERRORS.UNAUTHORIZED_ACCESS);
     }
 

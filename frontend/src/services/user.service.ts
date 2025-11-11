@@ -62,6 +62,52 @@ class UserService {
   }
 
   /**
+   * Get user by ID (admin only)
+   * GET /users/:id
+   */
+  async getUserById(userId: string): Promise<UserProfileResponse> {
+    try {
+      const response: AxiosResponse<UserProfileResponse> = await apiClient.get(
+        `${this.USER_BASE_PATH}/${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update user by ID (admin only)
+   * PATCH /users/:id
+   */
+  async updateUserById(
+    userId: string,
+    payload: UpdateUserProfilePayload & { email?: string; password?: string },
+  ): Promise<UpdateUserProfileResponse> {
+    try {
+      const response: AxiosResponse<UpdateUserProfileResponse> = await apiClient.patch(
+        `${this.USER_BASE_PATH}/${userId}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Delete user by ID (admin only)
+   * DELETE /users/:id
+   */
+  async deleteUserById(userId: string): Promise<void> {
+    try {
+      await apiClient.delete(`${this.USER_BASE_PATH}/${userId}`);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get current user's profile
    * GET /users/profile
    */
