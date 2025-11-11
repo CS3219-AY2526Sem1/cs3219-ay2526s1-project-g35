@@ -6,6 +6,7 @@
 
 import apiClient from '@/lib/api/client';
 import {
+  AdminUsersResponse,
   UpdateUserProfilePayload,
   UpdateUserProfileResponse,
   UserProfileResponse,
@@ -29,6 +30,82 @@ export class UserServiceError extends Error {
 
 class UserService {
   private readonly USER_BASE_PATH = '/users';
+
+  async fetchUsers(
+    params: {
+      page?: number;
+      limit?: number;
+      query?: string;
+      role?: 'all' | 'admin' | 'user';
+    } = {},
+  ): Promise<AdminUsersResponse> {
+    try {
+      const { page = 1, limit = 10, query, role } = params;
+      const trimmedQuery = query?.trim();
+
+      const response: AxiosResponse<AdminUsersResponse> = await apiClient.get(
+        `${this.USER_BASE_PATH}`,
+        {
+          params: {
+            page,
+            limit,
+            ...(trimmedQuery ? { search: trimmedQuery } : {}),
+            ...(role && role !== 'all' ? { role } : {}),
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get user by ID (admin only)
+   * GET /users/:id
+   */
+  async getUserById(userId: string): Promise<UserProfileResponse> {
+    try {
+      const response: AxiosResponse<UserProfileResponse> = await apiClient.get(
+        `${this.USER_BASE_PATH}/${userId}`,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update user by ID (admin only)
+   * PATCH /users/:id
+   */
+  async updateUserById(
+    userId: string,
+    payload: UpdateUserProfilePayload & { email?: string; password?: string },
+  ): Promise<UpdateUserProfileResponse> {
+    try {
+      const response: AxiosResponse<UpdateUserProfileResponse> = await apiClient.patch(
+        `${this.USER_BASE_PATH}/${userId}`,
+        payload,
+      );
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Delete user by ID (admin only)
+   * DELETE /users/:id
+   */
+  async deleteUserById(userId: string): Promise<void> {
+    try {
+      await apiClient.delete(`${this.USER_BASE_PATH}/${userId}`);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
 
   /**
    * Get current user's profile

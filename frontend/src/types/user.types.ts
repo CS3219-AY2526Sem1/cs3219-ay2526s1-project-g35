@@ -18,7 +18,7 @@ export interface UserData {
   isVerified: boolean;
   createdAt: string;
   updatedAt: string;
-  lastLogin: string;
+  lastLogin: string | null;
   profile: UserProfile;
 }
 
@@ -39,4 +39,21 @@ export interface UpdateUserProfilePayload {
 export interface UpdateUserProfileResponse {
   message: string;
   data: UserData;
+}
+
+export interface AdminUsersPagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface AdminUsersResponse {
+  message: string;
+  data: {
+    users: UserData[];
+    pagination: AdminUsersPagination;
+  };
 }

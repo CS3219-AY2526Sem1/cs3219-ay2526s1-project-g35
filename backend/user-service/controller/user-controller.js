@@ -1,10 +1,9 @@
 import argon2 from 'argon2';
-import { isValidObjectId } from 'mongoose';
+import { USER_ERRORS, sendErrorResponse, sendUserErrorResponse } from '../errors/index.js';
 import { UserRepository } from '../model/user-repository.js';
-import { USER_ERRORS, sendUserErrorResponse, sendErrorResponse } from '../errors/index.js';
+import storageService from '../services/storage-service.js';
 import * as tokenService from '../services/token-service.js';
 import { setAuthCookies } from '../utils/cookie-helper.js';
-import storageService from '../services/storage-service.js';
 
 export async function createUser(req, res) {
   try {
@@ -60,6 +59,48 @@ export async function createUser(req, res) {
   }
 }
 
+export async function listUsers(req, res) {
+  try {
+    const pageParam = parseInt(req.query.page, 10);
+    const limitParam = parseInt(req.query.limit, 10);
+    const searchParam = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const rawRole = typeof req.query.role === 'string' ? req.query.role.toLowerCase() : 'all';
+    const roleParam = ['admin', 'user', 'all'].includes(rawRole) ? rawRole : 'all';
+
+    const page = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
+    const limit = Number.isNaN(limitParam) || limitParam < 1 ? 10 : limitParam;
+    const cappedLimit = Math.min(limit, 50);
+
+    const result = await UserRepository.searchUsers({
+      searchTerm: searchParam,
+      page,
+      pageSize: cappedLimit,
+      role: roleParam,
+    });
+
+    const totalPages = Math.max(1, result.totalPages || Math.ceil(result.total / cappedLimit) || 1);
+    const users = (result.users || []).map((user) => formatUserResponse(user));
+
+    return res.status(200).json({
+      message: 'Users retrieved successfully',
+      data: {
+        users,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: result.pageSize,
+          totalPages,
+          hasNextPage: result.page < totalPages,
+          hasPreviousPage: result.page > 1,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('List users error:', err);
+    return sendErrorResponse(res, USER_ERRORS.INTERNAL_SERVER_ERROR);
+  }
+}
+
 export async function getUserProfile(req, res) {
   try {
     const userId = req.userId;
@@ -109,7 +150,10 @@ export async function getUser(req, res) {
   try {
     const userId = req.params.id;
     const tokenUserId = req.userId;
-    if (userId !== tokenUserId) {
+    const isAdminUser = req.user?.isAdmin || false;
+
+    // Allow admins to access any user, regular users can only access their own data
+    if (!isAdminUser && userId !== tokenUserId) {
       return sendErrorResponse(res, USER_ERRORS.UNAUTHORIZED_ACCESS);
     }
 
@@ -218,17 +262,10 @@ export async function deleteUser(req, res) {
     if (!user) {
       return sendErrorResponse(res, USER_ERRORS.USER_NOT_FOUND);
     }
-    if (process.env.NODE_ENV === 'production') {
-      await UserRepository.softDelete(userId);
-      return res.status(200).json({
-        message: 'User deactivated successfully',
-      });
-    } else {
-      await _deleteUserById(userId);
-      return res.status(200).json({
-        message: 'User deleted successfully',
-      });
-    }
+    await _deleteUserById(userId);
+    return res.status(200).json({
+      message: 'User deleted successfully',
+    });
   } catch (err) {
     console.error('Delete user error:', err);
     return sendErrorResponse(res, USER_ERRORS.DELETE_SERVER_ERROR);

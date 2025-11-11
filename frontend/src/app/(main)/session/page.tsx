@@ -1,9 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import MonacoCodeEditor from '@/components/MonacoCodeEditor';
+import { Button } from '@/components/ui/button';
 import socketService from '@/services/socketService';
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Original React Code made by Basil - Enhanced with Collaboration
 
@@ -17,12 +17,8 @@ interface Message {
 
 interface TestCase {
   id: string;
-  // New format
-  params?: unknown[];
-  expected?: unknown;
-  // Old format (backward compatibility)
-  input?: string;
-  expectedOutput?: string;
+  params: unknown[];
+  expected: unknown;
   explanation?: string;
 }
 
@@ -38,12 +34,8 @@ interface QuestionData {
   starterCode?: string;
   examples?: QuestionExample[];
   testCases?: Array<{
-    // New format
-    params?: unknown[];
-    expected?: unknown;
-    // Old format
-    input?: string;
-    expectedOutput?: string;
+    params: unknown[];
+    expected: unknown;
     explanation?: string;
   }>;
 }
@@ -175,12 +167,8 @@ const Session = (): React.ReactElement => {
           setTestCases(
             matchedData.question.testCases.map((tc, index: number) => ({
               id: `Case ${index + 1}`,
-              // New format
               params: tc.params,
               expected: tc.expected,
-              // Old format (backward compatibility)
-              input: tc.input || '',
-              expectedOutput: tc.expectedOutput || '',
               explanation: tc.explanation || '',
             })),
           );
@@ -604,33 +592,19 @@ const Session = (): React.ReactElement => {
 
                 {currentTestCase && (
                   <div className="bg-muted p-4 rounded-2xl">
-                    {(currentTestCase.input || currentTestCase.params) && (
+                    {currentTestCase.params && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Input:</p>
                         <p className="font-mono text-sm whitespace-pre-wrap">
-                          {currentTestCase.input ||
-                            (currentTestCase.params
-                              ? currentTestCase.params
-                                  .map((param: unknown) =>
-                                    typeof param === 'string'
-                                      ? `"${param}"`
-                                      : JSON.stringify(param),
-                                  )
-                                  .join(', ')
-                              : '')}
+                          {JSON.stringify(currentTestCase.params)}
                         </p>
                       </div>
                     )}
-                    {(currentTestCase.expected !== undefined || currentTestCase.expectedOutput) && (
+                    {currentTestCase.expected !== undefined && (
                       <div className="mb-3">
                         <p className="text-sm text-secondary-foreground mb-1">Expected Output:</p>
                         <p className="font-mono text-sm">
-                          {currentTestCase.expectedOutput ||
-                            (currentTestCase.expected !== undefined
-                              ? typeof currentTestCase.expected === 'string'
-                                ? `"${currentTestCase.expected}"`
-                                : JSON.stringify(currentTestCase.expected)
-                              : '')}
+                          {JSON.stringify(currentTestCase.expected)}
                         </p>
                       </div>
                     )}
