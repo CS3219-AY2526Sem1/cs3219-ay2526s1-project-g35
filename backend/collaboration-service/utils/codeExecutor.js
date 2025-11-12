@@ -1,11 +1,13 @@
 /*
  * AI Assistance Disclosure:
- * Tool: Claude 3.5 Sonnet (via Cursor), Date: 2025-11-11
- * Scope: Implemented prepareTestCaseParams for dynamic parameter construction,
- *        added ListNode class and construct_linked_list helper for Python,
- *        updated wrapPythonCode and wrapJavaScriptCode for params-based execution
- * Author review: Complex type construction logic validated, tested with linked list problems,
- *                edge cases verified by Johannsen Lum
+ * Tool: Claude 3.5 Sonnet (via Cursor), ChatGPT / Claude, Date: 2025-11-11
+ * Scope: 
+ *   - prepareTestCaseParams for dynamic parameter construction (Johannsen Lum)
+ *   - ListNode class and construct_linked_list helper for Python (Johannsen Lum)
+ *   - wrapPythonCode and wrapJavaScriptCode for params-based execution (Johannsen Lum)
+ *   - C++ code execution with compilation and test framework (Basil)
+ * Author review: Complex type construction logic validated, C++ execution tested,
+ *                all implementations verified by respective authors
  */
 
 const { exec } = require('child_process');
@@ -187,7 +189,7 @@ class CodeExecutor {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => {});
+      await fs.unlink(tempFile).catch(() => { });
     } catch (error) {
       // Catch execution errors (timeout, file errors, etc.)
       results.success = false;
@@ -203,7 +205,7 @@ class CodeExecutor {
       // Clean up on error
       try {
         const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.py`);
-        await fs.unlink(tempFile).catch(() => {});
+        await fs.unlink(tempFile).catch(() => { });
       } catch (cleanupError) {
         // Ignore cleanup errors
       }
@@ -385,7 +387,7 @@ except Exception as e:
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -518,7 +520,7 @@ class SolutionTests {
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -612,7 +614,7 @@ int main() {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => {});
+      await fs.unlink(tempFile).catch(() => { });
     } catch (error) {
       results.success = false;
       results.error = error.message;
