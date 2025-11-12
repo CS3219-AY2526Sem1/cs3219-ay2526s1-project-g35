@@ -318,8 +318,9 @@ wss.on('connection', (ws) => {
           activePairs.push([user, bestMatch]);
 
           // Proceed to create collaboration session (same flow as before)
+          const sharedTopicsForQuestion = getSharedTopics(user.topics, bestMatch.topics);
           const questionId = await fetchQuestionId({
-            topics: user.topics,
+            topics: sharedTopicsForQuestion,
             difficulty: user.difficulty,
             userId: user.userId,
           });
@@ -482,8 +483,9 @@ wss.on('connection', (ws) => {
         activePairs.push([user, bestMatch]);
 
         // Get a random question from question service based on shared topics
+        const sharedTopicsForQuestion = getSharedTopics(user.topics, bestMatch.topics);
         const questionId = await fetchQuestionId({
-          topics: user.topics,
+          topics: sharedTopicsForQuestion,
           difficulty: user.difficulty,
           userId: user.userId,
         });
@@ -647,6 +649,11 @@ wss.on('connection', (ws) => {
 function countSharedTopics(a, b) {
   const setA = new Set(a);
   return b.filter((t) => setA.has(t)).length;
+}
+
+function getSharedTopics(a, b) {
+  const setA = new Set(a || []);
+  return (b || []).filter((t) => setA.has(t));
 }
 
 function startTimeout(user) {
