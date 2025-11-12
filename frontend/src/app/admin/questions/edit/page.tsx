@@ -1,5 +1,15 @@
 'use client';
 
+/*
+ * AI Assistance Disclosure:
+ * Tool: ChatGPT, Date: 2025-11-10
+ * Scope: Component structure, form validation logic, state management patterns,
+ *        API integration with axios, UI component usage (shadcn/ui), test case management
+ * Author review: Component structure adapted to project requirements, integrated with
+ *                question service API, tested form submission and error handling
+ *                by Chin Cherng Yuen (Arren11111)
+ */
+
 import { isAxiosError } from 'axios';
 import { Loader2, Trash2, X } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';

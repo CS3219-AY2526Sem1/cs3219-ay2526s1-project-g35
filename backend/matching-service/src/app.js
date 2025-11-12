@@ -1,3 +1,12 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: Claude 3.5 Sonnet (via Cursor), Date: 2025-11-11
+ * Scope: Fixed fetchQuestionId to use plural 'topics' parameter with comma-separated values
+ *        instead of singular 'topic' to match question-service API expectations
+ * Author review: Parameter format validated, tested end-to-end matching flow,
+ *                verified by Johannsen Lum
+ */
+
 import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 import express from 'express';

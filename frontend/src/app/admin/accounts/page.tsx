@@ -1,5 +1,14 @@
 'use client';
 
+/*
+ * AI Assistance Disclosure:
+ * Tool: ChatGPT, Date: 2025-11-11
+ * Scope: User list page with pagination, search functionality, role-based filtering,
+ *        responsive table layout, API integration for user CRUD operations
+ * Author review: Integrated with user service API, added pagination and search logic,
+ *                tested all CRUD operations by Chin Cherng Yuen
+ */
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

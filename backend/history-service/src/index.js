@@ -1,3 +1,12 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: ChatGPT / Perplexity AI, Date: 2025-11-06
+ * Scope: Express.js server setup, middleware configuration, project structure patterns,
+ *        RESTful API endpoint structure, error handling patterns
+ * Author review: Service structure customized and integrated with project, all endpoints
+ *                tested by Kaidama97
+ */
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
