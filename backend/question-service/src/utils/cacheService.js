@@ -8,7 +8,7 @@ const { getRedisClient } = require('../config/redis');
 // Cache TTL configurations (in seconds)
 const CACHE_TTL = {
   QUESTION: 3600, // 1 hour for individual questions
-  RANDOM: 300, // 5 minutes for random question results
+  RANDOM: 3, // 5 minutes for random question results
   LIST: 600, // 10 minutes for question lists
 };
 

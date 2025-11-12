@@ -28,25 +28,6 @@ interface QuestionExample {
   explanation?: string;
 }
 
-interface QuestionData {
-  title?: string;
-  description?: string;
-  starterCode?: string;
-  examples?: QuestionExample[];
-  testCases?: Array<{
-    params: unknown[];
-    expected: unknown;
-    explanation?: string;
-  }>;
-}
-
-interface MatchedSessionData {
-  question?: QuestionData;
-  sessionId?: string;
-  questionId?: string;
-  users?: Array<{ userId: string; username: string }>;
-}
-
 interface TestResult {
   test: number;
   status: string;
@@ -88,12 +69,12 @@ const Session = (): React.ReactElement => {
     return 'user-' + Math.random().toString(36).substr(2, 9);
   });
   const [partnerInfo, setPartnerInfo] = useState<{ userId: string; username: string } | null>(null);
-  const [questionTitle, setQuestionTitle] = useState<string>('Two Sum');
-  const [questionDescription, setQuestionDescription] = useState<string>(
-    'Given an an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice. You can return the answer in any order.',
-  );
+  const [questionTitle, setQuestionTitle] = useState<string>('');
+  const [questionDescription, setQuestionDescription] = useState<string>('');
+  const [questionConstraints, setQuestionConstraints] = useState<string[]>([]);
   const [questionExamples, setQuestionExamples] = useState<QuestionExample[]>([]);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [isLoadingQuestion, setIsLoadingQuestion] = useState<boolean>(true);
   const [executionResults, setExecutionResults] = useState<{
     success: boolean;
     passed?: number;
@@ -131,41 +112,45 @@ const Session = (): React.ReactElement => {
     socketService.off('user-left');
 
     // Listen for matched session ready with question data
-    socketService.on('matched-session-ready', (data) => {
-      console.log('Matched session ready with question data:', data);
-      const matchedData = data as MatchedSessionData;
+    socketService.on('matched-session-ready', (data: unknown) => {
+      console.log('Session ready', data);
+      const matchedData = data as {
+        sessionId?: string;
+        language?: string;
+        participants?: Array<{ userId: string; username: string }>;
+        question?: {
+          title?: string;
+          description?: string;
+          constraints?: string[];
+          examples?: QuestionExample[];
+          testCases?: Array<{ params: unknown[]; expected: unknown; explanation?: string }>;
+          starterCode?: string;
+        };
+      };
 
+      if (matchedData.sessionId) {
+        setSessionId(matchedData.sessionId);
+      }
+
+      const partner = matchedData.participants?.find((p) => p.userId !== userId);
+      if (partner) {
+        setPartnerInfo(partner);
+      }
+
+      // Update question data
       if (matchedData.question) {
-        // Update question title and description
-        setQuestionTitle(matchedData.question.title || 'Two Sum');
-        setQuestionDescription(matchedData.question.description || '');
+        const questionData = matchedData.question;
+        setQuestionTitle(questionData.title || '');
+        setQuestionDescription(questionData.description || '');
+        setQuestionConstraints(questionData.constraints || []);
 
-        // Update code with starter code if available
-        if (matchedData.question.starterCode) {
-          // starterCode can be either a string (old format) or object with language keys (new format)
-          if (typeof matchedData.question.starterCode === 'string') {
-            setCode(matchedData.question.starterCode);
-          } else if (typeof matchedData.question.starterCode === 'object') {
-            // Use the current language's starter code, fallback to python
-            const starterCodeObj = matchedData.question.starterCode as Record<string, string>;
-            const languageCode =
-              starterCodeObj[selectedLanguage] ||
-              starterCodeObj.python ||
-              starterCodeObj.javascript ||
-              '';
-            setCode(languageCode);
-          }
+        if (questionData.examples && Array.isArray(questionData.examples)) {
+          setQuestionExamples(questionData.examples);
         }
 
-        // Update examples if available
-        if (matchedData.question.examples && Array.isArray(matchedData.question.examples)) {
-          setQuestionExamples(matchedData.question.examples);
-        }
-
-        // Update test cases if available
-        if (matchedData.question.testCases && Array.isArray(matchedData.question.testCases)) {
+        if (questionData.testCases && Array.isArray(questionData.testCases)) {
           setTestCases(
-            matchedData.question.testCases.map((tc, index: number) => ({
+            questionData.testCases.map((tc, index) => ({
               id: `Case ${index + 1}`,
               params: tc.params,
               expected: tc.expected,
@@ -173,10 +158,35 @@ const Session = (): React.ReactElement => {
             })),
           );
         }
-      }
-    });
 
-    // Listen for code updates from partner
+        // Set starter code if available
+        if (questionData.starterCode) {
+          if (typeof questionData.starterCode === 'string') {
+            setCode(questionData.starterCode);
+          } else if (typeof questionData.starterCode === 'object') {
+            // starterCode is an object with language keys
+            const starterCodeObj = questionData.starterCode as Record<string, string>;
+            const currentLangCode = matchedData.language || selectedLanguage;
+            const code =
+              starterCodeObj[currentLangCode] ||
+              starterCodeObj.python ||
+              starterCodeObj.javascript ||
+              starterCodeObj.java ||
+              starterCodeObj.cpp ||
+              '// Write your code here';
+            setCode(code);
+          }
+        }
+      }
+
+      // Set language if provided
+      if (matchedData.language) {
+        setSelectedLanguage(matchedData.language);
+      }
+
+      // Set loading to false once question is loaded
+      setIsLoadingQuestion(false);
+    }); // Listen for code updates from partner
     socketService.onCodeUpdate((data) => {
       if (data.userId !== userId) {
         setCode(data.code);
@@ -254,7 +264,7 @@ const Session = (): React.ReactElement => {
       setExecutionResults(result);
       setIsExecuting(false);
     });
-  }, [userId, languageMap]);
+  }, [userId, languageMap, selectedLanguage]);
 
   // Initialize collaboration session
   useEffect(() => {
@@ -415,33 +425,53 @@ const Session = (): React.ReactElement => {
             </div>
 
             <div className="p-5">
-              <h2 className="text-2xl font-bold mb-4">{questionTitle}</h2>
-              <p className="text-sm text-secondary-foreground mb-5 whitespace-pre-wrap">
-                {questionDescription}
-              </p>
-
-              {questionExamples.map((example, index: number) => (
-                <div key={index} className="mb-5">
-                  <h4 className="text-base font-semibold mb-2">Example {index + 1}:</h4>
-                  <div className="bg-muted p-3 rounded border-l-4 border-attention">
-                    {example.input && (
-                      <p className="text-sm mb-2">
-                        <strong>Input:</strong> {example.input}
-                      </p>
-                    )}
-                    {example.output && (
-                      <p className="text-sm mb-2">
-                        <strong>Output:</strong> {example.output}
-                      </p>
-                    )}
-                    {example.explanation && (
-                      <p className="text-sm">
-                        <strong>Explanation:</strong> {example.explanation}
-                      </p>
-                    )}
-                  </div>
+              {isLoadingQuestion ? (
+                <div className="flex flex-col items-center justify-center py-10">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mb-4"></div>
+                  <p className="text-sm text-secondary-foreground">Loading question...</p>
                 </div>
-              ))}
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold mb-4">{questionTitle}</h2>
+                  <p className="text-sm text-secondary-foreground mb-5 whitespace-pre-wrap">
+                    {questionDescription}
+                  </p>
+
+                  {questionConstraints && questionConstraints.length > 0 && (
+                    <div className="mb-5">
+                      <h4 className="text-base font-semibold mb-2">Constraints:</h4>
+                      <ul className="list-disc list-inside text-sm text-secondary-foreground space-y-1">
+                        {questionConstraints.map((constraint, index) => (
+                          <li key={index}>{constraint}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {questionExamples.map((example, index: number) => (
+                    <div key={index} className="mb-5">
+                      <h4 className="text-base font-semibold mb-2">Example {index + 1}:</h4>
+                      <div className="bg-muted p-3 rounded border-l-4 border-attention">
+                        {example.input && (
+                          <p className="text-sm mb-2">
+                            <strong>Input:</strong> {example.input}
+                          </p>
+                        )}
+                        {example.output && (
+                          <p className="text-sm mb-2">
+                            <strong>Output:</strong> {example.output}
+                          </p>
+                        )}
+                        {example.explanation && (
+                          <p className="text-sm">
+                            <strong>Explanation:</strong> {example.explanation}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </div>
 

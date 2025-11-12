@@ -169,7 +169,16 @@ const QuestionController = {
    */
   async createQuestion(req, res) {
     try {
-      const { title, description, difficulty, topics, tags, testCases, constraints } = req.body;
+      const {
+        title,
+        description,
+        difficulty,
+        topics,
+        tags,
+        testCases,
+        constraints,
+        functionSignature,
+      } = req.body;
 
       // Basic validation
       if (!title || !description || !difficulty || !topics || !testCases) {
@@ -203,6 +212,7 @@ const QuestionController = {
         tags: tags || [],
         testCases,
         constraints: constraints || [],
+        functionSignature: functionSignature || undefined,
       });
 
       // Cache the new question and invalidate random caches
@@ -239,7 +249,16 @@ const QuestionController = {
   async updateQuestion(req, res) {
     try {
       const { id } = req.params;
-      const { title, description, difficulty, topics, tags, testCases, constraints } = req.body;
+      const {
+        title,
+        description,
+        difficulty,
+        topics,
+        tags,
+        testCases,
+        constraints,
+        functionSignature,
+      } = req.body;
 
       const updatedQuestion = await Question.updateQuestion(id, {
         title,
@@ -249,6 +268,7 @@ const QuestionController = {
         tags,
         testCases,
         constraints,
+        functionSignature,
       });
 
       if (!updatedQuestion) {

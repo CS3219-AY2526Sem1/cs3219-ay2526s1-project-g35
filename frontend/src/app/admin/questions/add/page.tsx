@@ -19,9 +19,16 @@ import {
 import Header from '@/components/ui/Header';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
+  CONSTRUCT_FROM_OPTIONS,
   CreateQuestionPayload,
+  FunctionConstructFrom,
+  FunctionParameterType,
+  FunctionReturnType,
+  FunctionSignatureParameter,
+  PARAMETER_TYPE_OPTIONS,
   QuestionDifficulty,
   QuestionTestCase,
+  RETURN_TYPE_OPTIONS,
   createQuestion,
   fetchCategories,
   fetchDifficulties,
@@ -69,6 +76,12 @@ export default function AddQuestionPage() {
   const [tagInput, setTagInput] = useState('');
   const [tagsPopoverOpen, setTagsPopoverOpen] = useState(false);
   const tagsInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [constraintsInput, setConstraintsInput] = useState('');
+
+  const [functionName, setFunctionName] = useState('solution');
+  const [functionReturnType, setFunctionReturnType] = useState<FunctionReturnType>('number');
+  const [functionParameters, setFunctionParameters] = useState<FunctionSignatureParameter[]>([]);
 
   const [testCases, setTestCases] = useState<EditableTestCase[]>([createTestCase()]);
 
@@ -211,47 +224,58 @@ export default function AddQuestionPage() {
       new Set(selectedTags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)),
     );
 
-    // Transform test cases from UI format to API format
-    const preparedTestCases = testCases.map(
-      ({ input, expectedOutput, type, explanation }, index) => {
-        const trimmedInput = input?.trim() ?? '';
-        const trimmedExpectedOutput = expectedOutput?.trim() ?? '';
-
-        // Parse input parameters as JSON array
-        let parsedParams;
-        try {
-          parsedParams = JSON.parse(trimmedInput);
-          if (!Array.isArray(parsedParams)) {
-            throw new Error(`Test case ${index + 1}: Input parameters must be a JSON array`);
-          }
-        } catch (error) {
-          throw new Error(
-            `Test case ${index + 1}: Invalid input format. ${error instanceof Error ? error.message : 'Must be a valid JSON array.'}`,
-          );
-        }
-
-        // Parse expected output as JSON
-        let parsedExpected;
-        try {
-          parsedExpected = JSON.parse(trimmedExpectedOutput);
-        } catch {
-          throw new Error(
-            `Test case ${index + 1}: Invalid expected output format. Must be valid JSON.`,
-          );
-        }
-
-        return {
-          params: parsedParams,
-          expected: parsedExpected,
-          type,
-          explanation: explanation?.trim() ?? '',
-        };
-      },
+    const sanitizedConstraints = Array.from(
+      new Set(
+        constraintsInput
+          .split('\n')
+          .map((constraint) => constraint.trim())
+          .filter((constraint) => constraint.length > 0),
+      ),
     );
 
-    let transformedTestCases;
+    let transformedTestCases: QuestionTestCase[];
     try {
-      transformedTestCases = preparedTestCases;
+      transformedTestCases = testCases.map(
+        ({ input, expectedOutput, type, explanation }, index) => {
+          const trimmedInput = input?.trim() ?? '';
+          const trimmedExpectedOutput = expectedOutput?.trim() ?? '';
+
+          if (!trimmedInput) {
+            throw new Error(`Test case ${index + 1}: Input parameters are required.`);
+          }
+          if (!trimmedExpectedOutput) {
+            throw new Error(`Test case ${index + 1}: Expected output is required.`);
+          }
+
+          let parsedParams;
+          try {
+            parsedParams = JSON.parse(trimmedInput);
+          } catch (error) {
+            throw new Error(
+              `Test case ${index + 1}: Invalid input format. ${error instanceof Error ? error.message : 'Must be a valid JSON array.'}`,
+            );
+          }
+
+          if (!Array.isArray(parsedParams)) {
+            throw new Error(`Test case ${index + 1}: Input parameters must be a JSON array.`);
+          }
+
+          let parsedExpected: unknown = trimmedExpectedOutput;
+          try {
+            parsedExpected = JSON.parse(trimmedExpectedOutput);
+          } catch {
+            // Fallback to plain string if not valid JSON
+            parsedExpected = trimmedExpectedOutput;
+          }
+
+          return {
+            params: parsedParams,
+            expected: parsedExpected,
+            type,
+            explanation: explanation?.trim() ?? '',
+          };
+        },
+      );
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Invalid test case format');
       return;
@@ -274,6 +298,12 @@ export default function AddQuestionPage() {
       topics: sanitizedTopics,
       tags: sanitizedTags,
       testCases: transformedTestCases,
+      constraints: sanitizedConstraints.length > 0 ? sanitizedConstraints : undefined,
+      functionSignature: {
+        name: functionName,
+        returnType: functionReturnType,
+        parameters: functionParameters,
+      },
     };
 
     try {
@@ -400,6 +430,192 @@ export default function AddQuestionPage() {
                 placeholder="beginner-friendly, interview"
                 helperText="Press Enter to add comma-separated tags."
               />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">Constraints</label>
+              <textarea
+                value={constraintsInput}
+                onChange={(event) => setConstraintsInput(event.target.value)}
+                className="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder={'Use separate lines, e.g.\n1 <= nums.length <= 10^5'}
+              />
+              <p className="text-xs text-muted-foreground">
+                One constraint per line. Leave blank if not applicable.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Function Signature</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Optional but highly recommended for code execution to work properly
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Function Name</label>
+              <input
+                value={functionName}
+                onChange={(event) => setFunctionName(event.target.value)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="solution"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Return Type</label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {functionReturnType}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                >
+                  <DropdownMenuRadioGroup
+                    value={functionReturnType}
+                    onValueChange={(value) => setFunctionReturnType(value as FunctionReturnType)}
+                  >
+                    {RETURN_TYPE_OPTIONS.map((option) => (
+                      <DropdownMenuRadioItem key={option} value={option}>
+                        {option}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div className="space-y-4 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Parameters</label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setFunctionParameters((prev) => [
+                      ...prev,
+                      { name: '', type: 'number' as FunctionParameterType },
+                    ]);
+                  }}
+                >
+                  + Add Parameter
+                </Button>
+              </div>
+              {functionParameters.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No parameters yet. Click &quot;Add Parameter&quot; to begin.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {functionParameters.map((parameter, index) => (
+                    <div key={index} className="grid gap-3 md:grid-cols-12">
+                      <div className="space-y-2 md:col-span-4">
+                        <input
+                          value={parameter.name}
+                          onChange={(event) => {
+                            const updated = [...functionParameters];
+                            updated[index] = { ...updated[index], name: event.target.value };
+                            setFunctionParameters(updated);
+                          }}
+                          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="Parameter name"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-3">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full justify-between">
+                              {parameter.type}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="start"
+                            className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                          >
+                            <DropdownMenuRadioGroup
+                              value={parameter.type}
+                              onValueChange={(value) => {
+                                const updated = [...functionParameters];
+                                updated[index] = {
+                                  ...updated[index],
+                                  type: value as FunctionParameterType,
+                                };
+                                if (
+                                  ['ListNode', 'TreeNode', 'Graph'].includes(value) &&
+                                  !updated[index].constructFrom
+                                ) {
+                                  updated[index].constructFrom = 'array';
+                                } else if (!['ListNode', 'TreeNode', 'Graph'].includes(value)) {
+                                  delete updated[index].constructFrom;
+                                }
+                                setFunctionParameters(updated);
+                              }}
+                            >
+                              {PARAMETER_TYPE_OPTIONS.map((option) => (
+                                <DropdownMenuRadioItem key={option} value={option}>
+                                  {option}
+                                </DropdownMenuRadioItem>
+                              ))}
+                            </DropdownMenuRadioGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      {['ListNode', 'TreeNode', 'Graph'].includes(parameter.type) && (
+                        <div className="space-y-2 md:col-span-3">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                {parameter.constructFrom || 'Select'}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="start"
+                              className="min-w-0 w-[var(--radix-dropdown-menu-trigger-width)]"
+                            >
+                              <DropdownMenuRadioGroup
+                                value={parameter.constructFrom || ''}
+                                onValueChange={(value) => {
+                                  const updated = [...functionParameters];
+                                  updated[index] = {
+                                    ...updated[index],
+                                    constructFrom: value as FunctionConstructFrom,
+                                  };
+                                  setFunctionParameters(updated);
+                                }}
+                              >
+                                {CONSTRUCT_FROM_OPTIONS.map((option) => (
+                                  <DropdownMenuRadioItem key={option} value={option}>
+                                    {option}
+                                  </DropdownMenuRadioItem>
+                                ))}
+                              </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
+                      <div className="flex items-center md:col-span-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setFunctionParameters((prev) => prev.filter((_, i) => i !== index));
+                          }}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
