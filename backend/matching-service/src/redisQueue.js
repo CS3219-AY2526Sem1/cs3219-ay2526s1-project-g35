@@ -1,3 +1,12 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: ChatGPT / Claude (via Cursor), Date: 2025-11-08
+ * Scope: Redis queue implementation using lists and sets, topic-based matching algorithm,
+ *        FIFO queue structure, timeout handling, best-match selection algorithm
+ * Author review: Redis patterns implemented and integrated with matching service,
+ *                tested with multiple concurrent users by Wong Zenwei (zeotheburrito)
+ */
+
 import { createClient } from 'redis';
 
 let client;

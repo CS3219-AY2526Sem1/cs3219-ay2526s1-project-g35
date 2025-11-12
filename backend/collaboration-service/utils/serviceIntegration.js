@@ -1,3 +1,12 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: ChatGPT / Claude (via Cursor), Date: 2025-11-08 to 2025-11-10
+ * Scope: Service-to-service HTTP communication patterns, JWT token extraction and forwarding,
+ *        authenticated request handling, error handling for service communication
+ * Author review: Integration patterns implemented and tested with history service and JWT
+ *                authentication by Basil
+ */
+
 /**
  * Service Integration Module
  * Handles communication with other microservices

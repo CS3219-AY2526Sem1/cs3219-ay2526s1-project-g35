@@ -1,3 +1,12 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: Perplexity AI, Date: 2025-10-28 to 2025-11-09
+ * Scope: Researched JWT authentication patterns, Argon2 password hashing configuration,
+ *        authentication flow implementation patterns
+ * Author review: Implemented authentication with security best practices, tested end-to-end
+ *                by Kaidama97
+ */
+
 import argon2 from 'argon2';
 import { UserRepository } from '../model/user-repository.js';
 

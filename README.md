@@ -47,6 +47,54 @@
 - Tracks system downtime (manual + automated uptime monitor)
 - Exposes admin-only endpoints consumed by the Chart.js graphs
 
+## AI Use Summary
+
+**Compliance Statement**: This project complies with CS3219 AI Usage Policy (Appendix 3). Requirements, architecture, and design decisions were made by the team without AI assistance.
+
+**Tools Used**: Claude 3.5 Sonnet (via Cursor AI)
+
+**Usage Period**: 2025-11-10 to 2025-11-11
+
+### Prohibited Phases Avoided
+- ✅ Requirements and architecture created by team without AI
+- ✅ All design decisions and trade-offs made by team members
+- ✅ System architecture (microservices) designed independently
+- ✅ Technology stack and component boundaries decided by team
+
+### Allowed Uses
+AI tools were used only for implementation, debugging, and documentation:
+
+1. **Implementation Code**
+   - Random question endpoint with MongoDB aggregation and Redis caching
+   - Function signature schema for dynamic code execution
+   - Starter code template generation for multiple languages
+   - Test case format migration from string-based to params/expected structure
+
+2. **Debugging Assistance**
+   - JWT authentication token extraction from HTTP-only cookies
+   - Docker build TypeScript errors and type safety fixes
+   - Service communication parameter mismatches
+   - Code execution errors with complex data types
+
+3. **Refactoring**
+   - Code executor to support dynamic parameter construction
+   - Test case format standardization across all 48 questions
+   - Prettier formatting compliance
+
+4. **Documentation**
+   - API usage guide for adding questions with function signatures
+   - Code comments and inline documentation
+
+### Verification
+- ✅ All AI outputs reviewed and tested by team members
+- ✅ Code modified based on project-specific requirements
+- ✅ Full understanding of all implemented functionality
+- ✅ End-to-end testing performed on all AI-assisted features
+
+**Detailed Documentation**: See `/ai/usage-log.md` for complete prompts, outputs, and verification notes.
+
+**File Attributions**: AI-influenced files include header comments with specific attribution details.
+
 ## Getting Started
 
 1. Clone the repository

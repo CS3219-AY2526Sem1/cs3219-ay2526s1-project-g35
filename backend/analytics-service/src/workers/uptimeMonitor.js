@@ -32,32 +32,36 @@ const parseMonitoredServices = () => {
 };
 
 const initializeServiceStatus = async (services) => {
-  // Initialize status map from database to handle service restarts properly
+  // Query database for open downtime events to restore state across restarts
   const openEvents = await getOpenDowntimeEvents();
   const openServicesSet = new Set(openEvents.map((event) => event.serviceName));
 
-  // Check current status of each service
+  console.log(`Found ${openEvents.length} open downtime events during initialization`);
+
+  // Check current health status of each monitored service
   for (const { serviceName, url } of services) {
     try {
       const isUp = await pingService(url, Number(process.env.SERVICE_HEALTH_TIMEOUT_MS) || 5000);
 
       if (openServicesSet.has(serviceName)) {
-        // Service has an open downtime event
+        // Service has an open downtime event in database
         if (isUp) {
-          // Service is now up, close the existing downtime event
+          // Service recovered while analytics service was offline
           console.info(`Service ${serviceName} recovered during initialization`);
           await recordDowntimeRecovery(serviceName);
           serviceStatus.set(serviceName, 'up');
         } else {
-          // Service is still down, maintain the open event
+          // Service is still down, continue tracking existing downtime event
           serviceStatus.set(serviceName, 'down');
+          console.warn(`Service ${serviceName} is still DOWN from previous session`);
         }
       } else {
-        // No open downtime event
+        // No open downtime event exists for this service
         if (isUp) {
+          // Service is up, normal state
           serviceStatus.set(serviceName, 'up');
         } else {
-          // Service is down but has no open event, create one
+          // Service is down but no open event exists - create new downtime event
           console.warn(`Service ${serviceName} is DOWN at initialization`);
           await recordDowntimeStart(serviceName);
           serviceStatus.set(serviceName, 'down');
@@ -65,7 +69,6 @@ const initializeServiceStatus = async (services) => {
       }
     } catch (error) {
       console.error(`Failed to initialize status for ${serviceName}:`, error.message);
-      // Set to unknown on initialization failure
       serviceStatus.set(serviceName, 'unknown');
     }
   }
@@ -118,7 +121,7 @@ const startUptimeMonitor = async () => {
     return;
   }
 
-  // Initialize service status from database and current state
+  // Initialize service status from database before starting polling
   await initializeServiceStatus(services);
 
   const cronExpression = process.env.UPTIME_POLL_INTERVAL_CRON || '*/5 * * * *';

@@ -1,3 +1,15 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: Claude 3.5 Sonnet (via Cursor), ChatGPT / Claude, Date: 2025-11-11
+ * Scope:
+ *   - prepareTestCaseParams for dynamic parameter construction (Johannsen Lum)
+ *   - ListNode class and construct_linked_list helper for Python (Johannsen Lum)
+ *   - wrapPythonCode and wrapJavaScriptCode for params-based execution (Johannsen Lum)
+ *   - C++ code execution with compilation and test framework (Basil)
+ * Author review: Complex type construction logic validated, C++ execution tested,
+ *                all implementations verified by respective authors
+ */
+
 const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
