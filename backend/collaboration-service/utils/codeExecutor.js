@@ -1,7 +1,7 @@
 /*
  * AI Assistance Disclosure:
  * Tool: Claude 3.5 Sonnet (via Cursor), ChatGPT / Claude, Date: 2025-11-11
- * Scope: 
+ * Scope:
  *   - prepareTestCaseParams for dynamic parameter construction (Johannsen Lum)
  *   - ListNode class and construct_linked_list helper for Python (Johannsen Lum)
  *   - wrapPythonCode and wrapJavaScriptCode for params-based execution (Johannsen Lum)
@@ -189,7 +189,7 @@ class CodeExecutor {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => { });
+      await fs.unlink(tempFile).catch(() => {});
     } catch (error) {
       // Catch execution errors (timeout, file errors, etc.)
       results.success = false;
@@ -205,7 +205,7 @@ class CodeExecutor {
       // Clean up on error
       try {
         const tempFile = path.join('/tmp', `code_${crypto.randomBytes(8).toString('hex')}.py`);
-        await fs.unlink(tempFile).catch(() => { });
+        await fs.unlink(tempFile).catch(() => {});
       } catch (cleanupError) {
         // Ignore cleanup errors
       }
@@ -387,7 +387,7 @@ except Exception as e:
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -520,7 +520,7 @@ class SolutionTests {
       }
 
       // Clean up
-      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => { });
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     } catch (error) {
       results.success = false;
       results.error = error.message;
@@ -614,7 +614,7 @@ int main() {
       }
 
       // Clean up
-      await fs.unlink(tempFile).catch(() => { });
+      await fs.unlink(tempFile).catch(() => {});
     } catch (error) {
       results.success = false;
       results.error = error.message;
