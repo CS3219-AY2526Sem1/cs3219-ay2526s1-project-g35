@@ -21,7 +21,7 @@ const startServer = async () => {
     });
 
     if (process.env.ENABLE_UPTIME_MONITOR === 'true') {
-      startUptimeMonitor();
+      await startUptimeMonitor();
     }
 
     const handleShutdown = () => {

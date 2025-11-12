@@ -662,3 +662,40 @@ AI provided:
 **Level of AI Contribution**: Moderate (50%) - AI provided connection tracking patterns and validation logic, author implemented and tested bug fix
 
 ---
+
+## Entry 15: Fix Analytics Service Bugs
+
+**Date/Time**: 2025-11-13 01:09
+**Tool**: Claude 4.5 Sonnet
+
+**Author**: Chin Cherng Yuen (Arren11111)
+
+**Prompt/Command**:
+```
+[Requested help identifying and fixing bugs causing inaccurate downtime reportings in the analytics service]
+```
+
+**Output Summary**:
+AI provided:
+1. An analysis of possible issues contributing to inaccurate data
+2. Implementations of solutions proposed by the author to patch these issues
+
+**Action Taken**: Modified and Extended
+- Provided an analysis of possible issues compromising accuracy of analytics service data
+- Implemented duplicate prevention for Downtime event records in the database
+- Added initializeServiceStatus and helper functions to accurately calculate downtime after unexpected crashes, subsequently integrated into startup code.
+
+**Author Notes**:
+- Bug fix prevents multiple downtime events to be open at the same time for the same service
+- Bug fix ensures accurate calculation of downtime even after unexpected crashes
+
+**Files Affected**:
+- `backend/analytics-service/src/services/downtimeService.js`
+- `backend/analytics-service/src/workers/uptimeMonitor.js`
+- `backend/analytics-service/src/server.js`
+
+**Commit**: `ca7ad69` - "Implement analytics service bug fix"
+
+**Level of AI Contribution**: Significant (60%) - AI provided analysis of issues, author proposed solutions to the issues, and AI implemented the solutions into code.
+
+---

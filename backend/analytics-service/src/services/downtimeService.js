@@ -5,6 +5,7 @@ const { buildTimeWindow, formatBucketKey, generateBucketKeys } = require('../uti
 const recordDowntimeStart = async (serviceName, startedAt = new Date()) => {
   const existing = await DowntimeEvent.findOne({ serviceName, status: 'open' });
   if (existing) {
+    console.log(`Downtime event already open for ${serviceName}, skipping duplicate`);
     return existing;
   }
 
@@ -14,6 +15,7 @@ const recordDowntimeStart = async (serviceName, startedAt = new Date()) => {
     status: 'open',
   });
 
+  console.log(`Created downtime event for ${serviceName} at ${startedAt.toISOString()}`);
   return event;
 };
 
@@ -21,6 +23,7 @@ const recordDowntimeRecovery = async (serviceName, recoveredAt = new Date()) => 
   const event = await DowntimeEvent.findOne({ serviceName, status: 'open' });
 
   if (!event) {
+    console.warn(`No open downtime event found for ${serviceName}, cannot record recovery`);
     return null;
   }
 
@@ -30,7 +33,12 @@ const recordDowntimeRecovery = async (serviceName, recoveredAt = new Date()) => 
 
   await event.save();
 
+  console.log(`Closed downtime event for ${serviceName}, duration: ${event.durationSeconds}s`);
   return event;
+};
+
+const getOpenDowntimeEvents = async () => {
+  return await DowntimeEvent.find({ status: 'open' }).lean();
 };
 
 const getDowntimeSeries = async ({ range, month }) => {
@@ -152,5 +160,6 @@ module.exports = {
   recordDowntimeStart,
   recordDowntimeRecovery,
   getDowntimeSeries,
+  getOpenDowntimeEvents,
   pingService,
 };
