@@ -79,8 +79,19 @@ const initializeServiceStatus = async (services) => {
 const pollService = async ({ serviceName, url }) => {
   try {
     const isUp = await pingService(url, Number(process.env.SERVICE_HEALTH_TIMEOUT_MS) || 5000);
-    const previousStatus = serviceStatus.get(serviceName) || 'unknown';
+    const previousStatus = serviceStatus.get(serviceName);
 
+    // Skip transitions from unknown state
+    if (previousStatus === 'unknown') {
+      serviceStatus.set(serviceName, isUp ? 'up' : 'down');
+      if (!isUp) {
+        console.warn(`Service ${serviceName} is DOWN (first known state)`);
+        await recordDowntimeStart(serviceName);
+      }
+      return;
+    }
+
+    // Detect down transition (up → down OR first detection of down)
     if (!isUp && previousStatus !== 'down') {
       console.warn(`Service ${serviceName} is DOWN`);
       serviceStatus.set(serviceName, 'down');
@@ -88,6 +99,7 @@ const pollService = async ({ serviceName, url }) => {
       return;
     }
 
+    // Detect recovery transition (down → up)
     if (isUp && previousStatus === 'down') {
       console.info(`Service ${serviceName} has RECOVERED`);
       serviceStatus.set(serviceName, 'up');
@@ -95,6 +107,7 @@ const pollService = async ({ serviceName, url }) => {
       return;
     }
 
+    // No state change, update status anyway
     serviceStatus.set(serviceName, isUp ? 'up' : 'down');
   } catch (error) {
     console.error(`Failed to poll service ${serviceName}:`, error.message);

@@ -694,8 +694,64 @@ AI provided:
 - `backend/analytics-service/src/workers/uptimeMonitor.js`
 - `backend/analytics-service/src/server.js`
 
-**Commit**: `ca7ad69` - "Implement analytics service bug fix"
+**Commit**: `a734240` - "Implement analytics service bug fix"
 
 **Level of AI Contribution**: Significant (60%) - AI provided analysis of issues, author proposed solutions to the issues, and AI implemented the solutions into code.
 
 ---
+
+## Entry 16: Project README Documentation Update
+
+**Date/Time**: 2025-11-13 03:11
+
+**Tool**: Claude 4.5 Sonnet (via GitHub Copilot)
+
+**Author**: Chin Cherng Yuen (Arren11111)
+
+**Prompt/Command**:
+```
+Update the README.md file in the main project folder to display the latest information on all services in the project
+```
+
+**Output Summary**:
+AI provided comprehensive documentation updates:
+1. Expanded Project Structure section with detailed folder hierarchy for all 6 backend services
+2. Updated Services Overview with complete feature lists for all services including:
+   - Added missing History Service documentation (port 8004, PostgreSQL, session tracking)
+   - Enhanced Analytics Service details (5-minute cron polling, uptime monitoring)
+   - Updated all services with accurate ports, databases, and technologies
+3. Created new Technology Stack section covering:
+   - Frontend technologies (Next.js 14, Monaco Editor, Socket.io)
+   - Backend frameworks and runtime
+   - Database layer (MongoDB Atlas, PostgreSQL, 4 Redis instances)
+   - Security & authentication (JWT, Argon2id, OTP system)
+   - DevOps & infrastructure (Docker, Kubernetes, GKE)
+   - Development & testing tools
+   - Performance optimization strategies
+   - Monitoring & observability features
+   - Background processing systems
+
+**Action Taken**:
+- Gathered information from individual service README files and docker-compose.yml
+- Reviewed all service configurations and port mappings
+- Compiled comprehensive documentation for all 7 services (1 frontend + 6 backend)
+- Added detailed technology stack breakdown
+- Verified accuracy of all technical details
+
+**Author Notes**:
+- README now includes complete documentation for History Service (previously missing)
+- All port numbers verified (8000-8005 for backend services, 3000 for frontend)
+- Technology stack section provides comprehensive overview of all technologies used
+- Database configurations documented (MongoDB Atlas, PostgreSQL on Google Cloud SQL, 4 separate Redis instances)
+- Documentation serves as comprehensive reference for team and teaching staff
+- All information cross-referenced with service-specific README files
+
+**Files Affected**:
+- `README.md` (main project documentation)
+
+**Commit**: `a11111` - "Update project README with comprehensive service documentation and AI references"
+
+**Level of AI Contribution**: Significant (70%) - AI gathered information from multiple sources, compiled comprehensive documentation, author verified accuracy and technical details
+
+---
+

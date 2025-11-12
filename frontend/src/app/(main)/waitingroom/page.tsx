@@ -1,3 +1,11 @@
+/*
+ * AI Assistance Disclosure:
+ * Tool: ChatGPT/Claude
+ * Scope: Implementation of frontend elements and api integration with backend services based on author specified behaviors and figma mockups
+ * Author review: All behaviours and components to add specified by Arren11111, all behaviors
+ *                tested to function as intended by author
+ */
+
 'use client';
 
 import {

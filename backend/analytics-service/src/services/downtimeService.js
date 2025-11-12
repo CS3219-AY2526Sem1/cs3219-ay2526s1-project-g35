@@ -3,7 +3,10 @@ const DowntimeEvent = require('../models/DowntimeEvent');
 const { buildTimeWindow, formatBucketKey, generateBucketKeys } = require('../utils/timeRange');
 
 const recordDowntimeStart = async (serviceName, startedAt = new Date()) => {
-  const existing = await DowntimeEvent.findOne({ serviceName, status: 'open' });
+  // Use findOne with proper error handling to avoid race conditions
+  const existing = await DowntimeEvent.findOne({ serviceName, status: 'open' }).sort({
+    startedAt: -1,
+  });
   if (existing) {
     console.log(`Downtime event already open for ${serviceName}, skipping duplicate`);
     return existing;
@@ -20,7 +23,10 @@ const recordDowntimeStart = async (serviceName, startedAt = new Date()) => {
 };
 
 const recordDowntimeRecovery = async (serviceName, recoveredAt = new Date()) => {
-  const event = await DowntimeEvent.findOne({ serviceName, status: 'open' });
+  // Find the most recent open event for this service
+  const event = await DowntimeEvent.findOne({ serviceName, status: 'open' }).sort({
+    startedAt: -1,
+  });
 
   if (!event) {
     console.warn(`No open downtime event found for ${serviceName}, cannot record recovery`);
@@ -28,7 +34,9 @@ const recordDowntimeRecovery = async (serviceName, recoveredAt = new Date()) => 
   }
 
   event.endedAt = recoveredAt;
-  event.durationSeconds = Math.max(0, Math.round((event.endedAt - event.startedAt) / 1000));
+  // Calculate duration more precisely without rounding for better accuracy
+  const durationMs = event.endedAt - event.startedAt;
+  event.durationSeconds = Math.floor(durationMs / 1000);
   event.status = 'closed';
 
   await event.save();

@@ -52,7 +52,7 @@ backend/analytics-service/
 | `JWT_SECRET` | Must match `JWT_SECRET` from user-service to validate access tokens locally. |
 | `CORS_ORIGINS` | Comma-separated list of allowed origins (`http://localhost:3000`, `http://frontend:3000`). |
 | `ENABLE_UPTIME_MONITOR` | Set to `true` to run the cron-based monitor. |
-| `UPTIME_POLL_INTERVAL_CRON` | Cron expression for polling cadence (default `*/1 * * * *`). |
+| `UPTIME_POLL_INTERVAL_CRON` | Cron expression for polling cadence (default `*/5 * * * *`). |
 | `MONITORED_SERVICES` | Comma-separated `serviceName|url` entries for uptime checks. |
 | `SERVICE_HEALTH_TIMEOUT_MS` | Timeout (ms) for each health probe. |
 
